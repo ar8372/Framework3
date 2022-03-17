@@ -59,7 +59,7 @@ class ClassificationMetrics:
             "accuracy": self._accuracy,
             "f1": self._f1,
             "recall": self._recall,
-            "precisison": self._precision,
+            "precision": self._precision,
             "auc": self._auc,
             "logloss": self._logloss,
             "auc_tf": self._auc_tf,

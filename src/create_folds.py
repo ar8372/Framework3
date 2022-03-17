@@ -28,7 +28,7 @@ if __name__ == "__main__":
     df["fold"] = -1
 
     df = df.sample(frac=1).reset_index(drop=True)
-    kf = model_selection.StratifiedKFold(n_splits=5, shuffle=True, random_state=23)
+    kf = model_selection.StratifiedKFold(n_splits=a.no_folds, shuffle=True, random_state=23)
 
     target_name = a['target_name']
     for fold, (train_idx, val_idx) in enumerate(kf.split(X=df, y=df[target_name].values)):
