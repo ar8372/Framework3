@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     df = df.sample(frac=1).reset_index(drop=True)
     kf = model_selection.StratifiedKFold(
-        n_splits=a['no_folds'], shuffle=True, random_state=23
+        n_splits=a["no_folds"], shuffle=True, random_state=23
     )
 
     target_name = a["target_name"]
@@ -49,19 +49,15 @@ if __name__ == "__main__":
     with open(f"../models_{a['comp_name']}/useful_features_l1.pkl", "wb") as f:
         pickle.dump(useful_features, f)
 
-    #--------------------------------dump current  
+    # --------------------------------dump current
     current_dict = defaultdict()
     current_dict["exp_no"] = 0
-    current_dict["current_level"] = 1 
+    current_dict["current_level"] = 1
     current_dict["current_feature_no"] = 0
     with open(f"../models_{a['comp_name']}/current_dict.pkl", "wb") as f:
-        pickle.dump(current_dict, f)    
-    #--------------------------------dump features_dict 
+        pickle.dump(current_dict, f)
+    # --------------------------------dump features_dict
     feat_dict = defaultdict()
-    feat_dict["l1_f0"] = [useful_features, 0,'base']
+    feat_dict["l1_f0"] = [useful_features, 0, "base"]
     with open(f"../models_{a['comp_name']}/features_dict.pkl", "wb") as f:
         pickle.dump(feat_dict, f)
-
-
-
-
