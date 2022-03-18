@@ -1,8 +1,9 @@
 import pandas as pd
 from sklearn import model_selection
-import os 
-import sys 
+import os
+import sys
 import pickle
+from collections import defaultdict
 
 """
 import os 
@@ -28,12 +29,39 @@ if __name__ == "__main__":
     df["fold"] = -1
 
     df = df.sample(frac=1).reset_index(drop=True)
-    kf = model_selection.StratifiedKFold(n_splits=a.no_folds, shuffle=True, random_state=23)
+    kf = model_selection.StratifiedKFold(
+        n_splits=a['no_folds'], shuffle=True, random_state=23
+    )
 
-    target_name = a['target_name']
-    for fold, (train_idx, val_idx) in enumerate(kf.split(X=df, y=df[target_name].values)):
+    target_name = a["target_name"]
+    for fold, (train_idx, val_idx) in enumerate(
+        kf.split(X=df, y=df[target_name].values)
+    ):
         print(len(train_idx), len(val_idx))
 
         df.loc[val_idx, "fold"] = fold
 
-    df.to_csv(f"../input_{comp_name}/train_folds.csv", index=False)
+    df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
+    test = pd.read_csv(f"../input_{comp_name}/test.csv")
+    test.to_csv(f"../models_{comp_name}/test.csv", index=False)
+
+    useful_features = test.drop(a["id_name"], axis=1).columns.tolist()
+    with open(f"../models_{a['comp_name']}/useful_features_l1.pkl", "wb") as f:
+        pickle.dump(useful_features, f)
+
+    #--------------------------------dump current  
+    current_dict = defaultdict()
+    current_dict["exp_no"] = 0
+    current_dict["current_level"] = 1 
+    current_dict["current_feature_no"] = 0
+    with open(f"../models_{a['comp_name']}/current_dict.pkl", "wb") as f:
+        pickle.dump(current_dict, f)    
+    #--------------------------------dump features_dict 
+    feat_dict = defaultdict()
+    feat_dict["l1_f0"] = [useful_features, 0,'base']
+    with open(f"../models_{a['comp_name']}/features_dict.pkl", "wb") as f:
+        pickle.dump(feat_dict, f)
+
+
+
+

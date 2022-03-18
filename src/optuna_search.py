@@ -84,23 +84,10 @@ import warnings
 np.random.seed(1337) # for reproducibility
 warnings.filterwarnings("ignore")
 
-            # "accuracy": self._accuracy,
-            # "f1": self._f1,
-            # "recall": self._recall,
-            # "precision": self._precision,
-            # "auc": self._auc,
-            # "logloss": self._logloss,
-            # "auc_tf": self._auc_tf,
-
-            # "mae": self._mae,
-            # "mse": self._mse,
-            # "rmse": self._rmse,
-            # "msle": self._msle,
-            # "rmsle": self._rmsle,
-            # "r2": self._r2,
+from metrics import ClassificationMetrics, RegressionMetrics
 
 class OptunaOptimizer:
-    def __init__(self, model_name= "lgr",comp_type="2class",metrics_name="accuracy", aim='maximize',n_trials=50,optimize_on=0):
+    def __init__(self, model_name= "lgr",comp_type="2class",metrics_name="accuracy", aim='maximize',n_trials=50,optimize_on=0,prep_set=[]):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
@@ -112,10 +99,14 @@ class OptunaOptimizer:
         self.comp_list = ["regression", "2class","multi_class", "multi_label"]
         self.metrics_list = ["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
         self.model_list = ["lgr","lir","xgbc","xgbr"]
-
+        self._prep_list = ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"]
+        self.prep_set = prep_set
         self.comp_type = comp_type
         self.metrics_name = metrics_name
-        self.aim = aim
+        if self.metrics_name is in ["accuracy","f1","recall","precision","auc","auc_tf","r2"]:
+            self._aim = 'maximize'
+        else:
+            self._aim = 'minimize'
         self.n_trials = 50 
         self.best_params = None
         self.best_value = None
@@ -126,7 +117,7 @@ class OptunaOptimizer:
     def show(self):
         print(f"comp_type: {self.comp_type}")
         print(f"metrics_name: {self.metrics_name}")
-        print(f"aim: {self.aim}")
+        print(f"_aim: {self._aim}")
         print(f"n_trials: {self.n_trials}")
         print(f"best_params: {self.best_params}")
         print(f"best_params: {self.best_params}")
@@ -142,11 +133,30 @@ class OptunaOptimizer:
             raise Exception( f"{self.model_name} not in the list {self.model_list}")
         if self.optimize_on >= self.locker['no_folds']:
             raise Exception( f"{self.optimize_on} out of range {self.locker['no_folds']}")
+        for p in self.prep_set:
+            if p not in list(self.prep_list):
+                raise Exception(f"{p} is invalid preprocessing type!")
 
     def help(self):
         print("comp_type:=> ",[comp for i,comp in enumerate(self.comp_list)])
         print("metrics_name:=>",[mt for i,mt in enumerate(self.metrics_list)])
-        print("model_name:=>",[mt for i,mt in enumerate(self.model_list)])
+        print()
+        models= ["LogisticRegression","LinearRegression","XGBClassifier","XGBRegressor"]
+        print("model_name:=>")
+        for a,b in list(zip(self.model_list,models)): #,[mt for i,mt in enumerate(self.model_list)])
+            print(f"{a}:=> {b}")
+        print()
+        preps = ["SimpleImputer_mean","SimpleImputer_median","SimpleImputer_mode","RobustScaler","StandardScaler","LogarithmicScaler"]
+        print("preprocess_names:=>")
+        for a,b in list(zip(self._prep_list,preps)): #,[mt for i,mt in enumerate(self.model_list)])
+            print(f"{a}:=> {b}")
+        print("preprocess_names:=>",[p for i,p in enumerate(self._prep_list)])
+        ## preprocess
+        # Si: SimpleImputer SiMe SiMd SiMo
+        # Mi: MinMaxScaler
+        # Ro: RobustScaler
+        # Sd: StandardScaler
+        # Lg: Logarithmic Scaler
 
     def generate_random_no(self):
         comp_random_state = self.locker["random_state"]
@@ -155,77 +165,131 @@ class OptunaOptimizer:
         metric_no = self.metrics_list.index(self.metrics_name)
         comp_type_no = self.comp_list.index(self.comp_type)
         model_no = self.model_list.index(self.model_name)
+        prep_no = 0
+        for p in self._prep_list:
+            if p == "Lg":
+                prep_no += 10
+            else:
+                prep_no += self._prep_list.index(p)
         # round_on 
         # level_on 
         # 
         seed = comp_random_state + total_no_folds * 2 + fold_on* 3 + metric_no*4 
-        seed += comp_type_no * 5 + moel_no * 6 # + round_on * 4 + level_on * 5
-
+        seed += comp_type_no * 5 + model_no * 6  + prep_no * 7# + round_on * 4 + level_on * 5
+        seed = int(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
         np.random.seed(seed)
         random.seed(seed)
         tf.random.set_seed(seed)
         return np.random.randint(3,1000) # it should return 5
 
-    def get_params(self,trial):
+    def get_params(self,trial,ytrain):
         model_name = self.model_name 
         if model_name == "lgr":
-                params = {
-                            "class_weight": trial.suggest_categorical("class_weight", ['balanced',None,{1:1,0:(sum(list(ytrain==0))/sum(list(ytrain==1)))}]),
-                            "penalty": trial.suggest_categorical("penalty", ['l1','l2']),
-                            'C': trial.suggest_float('c',.01,1000)
-                        } 
-            return LogisticRegression(**params, random_state)
+            params = {
+                        "class_weight": trial.suggest_categorical("class_weight", ['balanced',None,{1:1,0:(sum(list(ytrain==0))/sum(list(ytrain==1)))}]),
+                        "penalty": trial.suggest_categorical("penalty", ['l1','l2']),
+                        'C': trial.suggest_float('c',.01,1000)
+                    } 
+            return params 
         if model_name == "lir":
-            return LinearRegression(**params, random_state)
+            return {}
         if model_name == "xgbc":
-            return XGBClassifier(**params, random_state)
+            return {}
         if model_name == "xgbr":
-            return XGBRegressor(**params, random_state)        
-    
+            params={
+                    "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
+                    "max_depth": trial.suggest_categorical("max_depth", [3,5,7,10]),
+                    "min_child_weight": trial.suggest_categorical("min_child_weight", [1,3,5]),
+                    "subsample": trial.suggest_float("subsample", 0.01, 0.5),
+                    "n_estimators": trial.suggest_categorical("n_estimators", [100,200,300,400,500,1000,1200,1500]),
+                    "objective": trial.suggest_categorical("objective", ['reg:squarederror']),
+                    "tree_method": trial.suggest_categorical("tree_method", ['gpu_hist']),
+                    "gpu_id": trial.suggest_categorical("gpu_id", [0]),
+                    "predictor": trial.suggest_categorical("predictor", ['gpu_predictor'])
+                    }      
+            return params
+
     def get_model(self,params):
         #["lgr","lir","xgbc","xgbr"]
         model_name = self.model_name
-        random_state = generate_random_no(self)
+        random_state = self.generate_random_no()
         if model_name == "lgr":
-            return LogisticRegression(**params, random_state)
+            return LogisticRegression(**params, random_state=random_state)
         if model_name == "lir":
-            return LinearRegression(**params, random_state)
+            return LinearRegression(**params, random_state=random_state)
         if model_name == "xgbc":
-            return XGBClassifier(**params, random_state)
+            return XGBClassifier(**params, random_state=random_state)
         if model_name == "xgbr":
-            return XGBRegressor(**params, random_state)
-
-        
-            
-        list_models = []
+            return XGBRegressor(**params, random_state=random_state)
+        else:
+            raise Exception(f"{model_name} is invalid!")
 
     def obj(self,trial,xtrain,ytrain,xvalid,yvalid):
         
-        params = get_params(self)  
-            
-        model = CatBoostClassifier(**params, random_state=141)
+        params = self.get_params( trial,ytrain)  
+        model = self.get_model(params)
 
         model.fit(xtrain, ytrain)
 
-        valid_preds = model.predict_proba(xvalid)[:,1]
-        valid_preds = (valid_preds > 0.5).astype(int)
-        #test_preds = model.predict(xtest)
-        score = accuracy_score(yvalid, valid_preds)  # since it is a classification problem so we will use roc auc score
-
-
+        metrics_name = self.metrics_name
+        # Classification
+        cl = ClassificationMetrics()
+        if metrics_name == "auc":
+            valid_preds = model.predict_proba(xvalid)[:,1]
+            score = cl('auc', yvalid, valid_preds)
+        if metrics_name == "accuracy":
+            valid_preds = model.predict(xvalid)
+            score = cl('accuracy', yvalid, valid_preds)
+        if metrics_name == "f1":
+            valid_preds = model.predict(xvalid)
+            score = cl('f1', yvalid, valid_preds)
+        if metrics_name == "recall":
+            valid_preds = model.predict(xvalid)
+            score = cl('recall', yvalid, valid_preds)
+        if metrics_name == "precision":
+            valid_preds = model.predict(xvalid)
+            score = cl('precision', yvalid, valid_preds)
+        if metrics_name == "logloss":
+            valid_preds = model.predict_proba(xvalid)
+            score = cl('logloss', yvalid, valid_preds)
+        if metrics_name == "auc_tf":
+            valid_preds = model.predict_proba(xvalid)[:,1]
+            score = cl('auc_tf', yvalid, valid_preds)
+        
+        # Regression
+        rg = RegressionMetrics()
+        if metrics_name == "mae":
+            valid_preds = model.predict(xvalid)
+            score = rg('mae', yvalid, valid_preds)
+        if metrics_name == "mse":
+            valid_preds = model.predict(xvalid)
+            score = rg('mse', yvalid, valid_preds)
+        if metrics_name == "rmse":
+            valid_preds = model.predict(xvalid)
+            score = rg('rmse', yvalid, valid_preds)
+        if metrics_name == "msle":
+            valid_preds = model.predict(xvalid)
+            score = rg('msle', yvalid, valid_preds)
+        if metrics_name == "rmsle":
+            valid_preds = model.predict(xvalid)
+            score = rg('rmsle', yvalid, valid_preds)
+        if metrics_name == "r2":
+            valid_preds = model.predict(xvalid)
+            score = rg('r2', yvalid, valid_preds)
         return score
 
-    def run(self, my_folds, useful_features, optimize_on="--|--"):
+    def run(self, my_folds, useful_features, prep_set= "--|--", optimize_on="--|--"):
         if optimize_on != "--|--":
             self.optimize_on = optimize_on 
-
+        if prep_set != "--|--":
+            self.prep_set = prep_set
         my_folds1 = my_folds.copy()
         #test1  = test.copy()
 
         fold= self.optimize_on
-        xtrain = my_folds[my_folds1.fold != fold].reset_index(drop=True)
-        xvalid = my_folds[my_folds1.fold == fold].reset_index(drop=True)
+        xtrain = my_folds1[my_folds1.fold != fold].reset_index(drop=True)
+        xvalid = my_folds1[my_folds1.fold == fold].reset_index(drop=True)
         print(xtrain.shape, xvalid.shape)
         #xtest = test1.copy()
         #return 
@@ -236,34 +300,33 @@ class OptunaOptimizer:
         xtrain = xtrain[useful_features]
         xvalid = xvalid[useful_features]
 
-        ## preprocess
-        si = SimpleImputer(strategy='median')
-        xtrain = si.fit_transform(xtrain)
-        xvalid = si.transform(xvalid)
-        #xtest = si.transform(xtest)
+        prep_dict = {
+            "SiMe" : SimpleImputer(strategy="mean"),
+            "SiMd" : SimpleImputer(strategy="median"),
+            "SiMo" : SimpleImputer(strategy="mode"),
+            "Ro" : RobustScaler(),
+            "Sd" : StandardScaler()
+        }
+        for f in prep_set:
+            if f in list(prep_dict.keys()):
+                sc = prep_dict[f]
+                xtrain= sc.fit_transform(xtrain)
+                xvalid= sc.transform(xvalid)
+            elif f == "Lg":
+                xtrain = pd.DataFrame(xtrain, columns=useful_features)
+                xvalid = pd.DataFrame(xvalid, columns=useful_features)
+                #xtest = pd.DataFrame(xtest, columns=useful_features)
+                for col in useful_features:
+                    xtrain[col] = np.log1p(xtrain[col])
+                    xvalid[col] = np.log1p(xvalid[col])
+                    #xtest[col] = np.log1p(xtest[col])
+            else:
+                raise Exception(f"scaler {f} is invalid!")
 
-        # scale
-        ss = MinMaxScaler()
-        xtrain = ss.fit_transform(xtrain)
-        xvalid = ss.transform(xvalid)
-        #xtest = ss.transform(xtest)
-
-        xtrain = pd.DataFrame(xtrain, columns=useful_features)
-        xvalid = pd.DataFrame(xvalid, columns=useful_features)
-        #xtest = pd.DataFrame(xtest, columns=useful_features)
-        
-    #     for col in useful_features:
-    #         xtrain[col] = np.log1p(xtrain[col])
-    #         xvalid[col] = np.log1p(xvalid[col])
-    #         #xtest[col] = np.log1p(xtest[col])
             
         #create optuna study
-        study = optuna.create_study(
-            direction=self.aim,
-            study_name= self.model_name
-        )
-
-        study.optimize( lambda trial: obj(trial,xtrain,ytrain,xvalid,yvalid),n_trials= self.n_trials ) # it tries 50 different values to find optimal hyperparameter
+        study = optuna.create_study(direction=self._aim,study_name= self.model_name )
+        study.optimize( lambda trial: self.obj(trial,xtrain,ytrain,xvalid,yvalid),n_trials= self.n_trials ) # it tries 50 different values to find optimal hyperparameter
         
         return study
 
