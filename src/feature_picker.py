@@ -41,19 +41,27 @@ class Picker:
         if list_feat_title != "--|--":
             self.list_feat_title = list_feat_title
         all_keys = list(self.feat_dict.keys())
-        all_comb = []
-        for lev in self.list_levels:
-            for ft in self.list_features:
-                all_comb.append(f"l{lev}_f{ft}")
-        valid_keys = list(set(all_keys).intersection(set(all_comb)))
 
+        valid_keys1= list(self.feat_dict.keys())
+        valid_keys2 = list(self.feat_dict.keys())
+        valid_keys3 = list(self.feat_dict.keys())
+        if self.list_levels != []:
+            valid_keys1 = []
+            for key in list(self.feat_dict.keys()):
+                if str(key[1]) in str(self.list_levels):
+                    valid_keys1.append(key)
+        if self.list_features != []:
+            valid_keys2 = []
+            for key in list(self.feat_dict.keys()):
+                if str(key[4]) in str(self.list_features):
+                    valid_keys2.append(key)
         if self.list_feat_title != []:
-            # filter based on feat name also
-            second_filter = []
-            for fn in valid_keys:
-                if self.feat_dict[fn][2] in self.list_feat_title:
-                    second_filter.append(fn)
-            return second_filter
+            valid_keys3 = []
+            for key,val in list(self.feat_dict.items()):
+                if str(val[2]) in str(self.list_feat_title):
+                    valid_keys3.append(key)
+        valid_keys = set(valid_keys1).intersection(set(valid_keys2))
+        valid_keys = list(valid_keys.intersection(set(valid_keys3)))
         return valid_keys
 
     def find_features(
@@ -89,8 +97,9 @@ class Picker:
 
 if __name__ == "__main__":
     p = Picker()
+    p.list_levels = [ "1"]
     p.list_features = ["1", "2", "0"]
-    p.list_feat_title = ["base"]
+    #p.list_feat_title = ["base"]
     print(p.find_keys())
     print()
-    print(p.find_features())
+    #print(p.find_features())

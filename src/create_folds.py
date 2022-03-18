@@ -54,6 +54,7 @@ if __name__ == "__main__":
     current_dict["exp_no"] = 0
     current_dict["current_level"] = 1
     current_dict["current_feature_no"] = 0
+    current_dict["current_exp_no"] = 0
     with open(f"../models_{a['comp_name']}/current_dict.pkl", "wb") as f:
         pickle.dump(current_dict, f)
     # --------------------------------dump features_dict
@@ -61,3 +62,20 @@ if __name__ == "__main__":
     feat_dict["l1_f0"] = [useful_features, 0, "base"]
     with open(f"../models_{a['comp_name']}/features_dict.pkl", "wb") as f:
         pickle.dump(feat_dict, f)
+    # ---------------------------------dump Table 
+    Table = pd.DataFrame(columns=[
+            "exp_no",
+            "model_name",
+            "bv",
+            "bp",
+            "features_list",
+            "level_no"
+            "fold_no",
+            "no_iterations",
+            "prep_list"
+            "metrics_name"
+            "exp_log"           #it will be a table
+        ])
+    with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:
+        pickle.dump(Table, f)
+    #-------------------------------------------

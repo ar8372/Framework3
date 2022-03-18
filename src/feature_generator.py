@@ -56,8 +56,8 @@ class features:
         self.current_dict = self.load_pickle(
             f"../models_{self.locker['comp_name']}/current_dict.pkl"
         )
-        self.level_no = self.current_dict["current_level"]
-        self.current_feature_no = self.current_dict["current_feature_no"]
+        self.level_no = int(self.current_dict["current_level"])
+        self.current_feature_no = int(self.current_dict["current_feature_no"])
 
     def save_pickle(self, path, to_dump):
         with open(path, "wb") as f:
@@ -71,6 +71,7 @@ class features:
     def isRepetition(self, gen_features, old_features, feat_title):
         # self.curr
         for key, value in self.feat_dict.items():
+            f1,f2, ft = value
             if f2 == 0:
                 # from base
                 pass
@@ -229,4 +230,4 @@ if __name__ == "__main__":
     # ----------------------------------------------------------
     # -----------------------------------------------------------
     ft = features()
-    ft.create_statistical_features()  # ------------
+    ft.create_statistical_features(["Age","SibSp","Parch"])  # ------------

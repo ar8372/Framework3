@@ -87,7 +87,7 @@ warnings.filterwarnings("ignore")
 from metrics import ClassificationMetrics, RegressionMetrics
 
 class OptunaOptimizer:
-    def __init__(self, model_name= "lgr",comp_type="2class",metrics_name="accuracy", aim='maximize',n_trials=50,optimize_on=0,prep_set=[]):
+    def __init__(self, model_name= "lgr",comp_type="2class",metrics_name="accuracy", aim='maximize',n_trials=50,optimize_on=0,prep_list=[]):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
@@ -100,10 +100,10 @@ class OptunaOptimizer:
         self.metrics_list = ["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
         self.model_list = ["lgr","lir","xgbc","xgbr"]
         self._prep_list = ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"]
-        self.prep_set = prep_set
+        self.prep_list = prep_list
         self.comp_type = comp_type
         self.metrics_name = metrics_name
-        if self.metrics_name is in ["accuracy","f1","recall","precision","auc","auc_tf","r2"]:
+        if self.metrics_name in ["accuracy","f1","recall","precision","auc","auc_tf","r2"]:
             self._aim = 'maximize'
         else:
             self._aim = 'minimize'
@@ -133,8 +133,8 @@ class OptunaOptimizer:
             raise Exception( f"{self.model_name} not in the list {self.model_list}")
         if self.optimize_on >= self.locker['no_folds']:
             raise Exception( f"{self.optimize_on} out of range {self.locker['no_folds']}")
-        for p in self.prep_set:
-            if p not in list(self.prep_list):
+        for p in self.prep_list:
+            if p not in list(self._prep_list):
                 raise Exception(f"{p} is invalid preprocessing type!")
 
     def help(self):
@@ -209,6 +209,20 @@ class OptunaOptimizer:
                     "predictor": trial.suggest_categorical("predictor", ['gpu_predictor'])
                     }      
             return params
+        if model_name == "kearas": # demo 
+            self.Table = pd.DataFrame(columns=[ 'val_score',
+                                    'lr_modified',
+                                    'learning_rate',
+                                    'epochs','batch_size',
+                                    'no_hidden_layers', 
+                                    'dropout_placeholder', 
+                                    'units_placeholder',
+                                    'batch_norm_placeholder',
+                                    ' activation_placeholder'])
+        
+    def update_table(self):
+        self.Table.loc[Table.shape[0],:] = [0,10**(-1*learning_rate),learning_rate,epochs,batch_size,no_hidden_layers, dropout_placeholder, units_placeholder,batch_norm_placeholder, activation_placeholder]
+
 
     def get_model(self,params):
         #["lgr","lir","xgbc","xgbr"]
@@ -279,11 +293,11 @@ class OptunaOptimizer:
             score = rg('r2', yvalid, valid_preds)
         return score
 
-    def run(self, my_folds, useful_features, prep_set= "--|--", optimize_on="--|--"):
+    def run(self, my_folds, useful_features, prep_list= "--|--", optimize_on="--|--"):
         if optimize_on != "--|--":
             self.optimize_on = optimize_on 
-        if prep_set != "--|--":
-            self.prep_set = prep_set
+        if prep_list != "--|--":
+            self.prep_list = prep_list
         my_folds1 = my_folds.copy()
         #test1  = test.copy()
 
@@ -307,7 +321,7 @@ class OptunaOptimizer:
             "Ro" : RobustScaler(),
             "Sd" : StandardScaler()
         }
-        for f in prep_set:
+        for f in prep_list:
             if f in list(prep_dict.keys()):
                 sc = prep_dict[f]
                 xtrain= sc.fit_transform(xtrain)
@@ -328,7 +342,7 @@ class OptunaOptimizer:
         study = optuna.create_study(direction=self._aim,study_name= self.model_name )
         study.optimize( lambda trial: self.obj(trial,xtrain,ytrain,xvalid,yvalid),n_trials= self.n_trials ) # it tries 50 different values to find optimal hyperparameter
         
-        return study
+        return study, []
 
 if __name__ == "__main__":
     import optuna
