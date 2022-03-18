@@ -49,15 +49,15 @@ class Agent:
 
 
     def save_models(self,study,log_table):
-        Table = self.load_pickle(f"../models{a['comp_name']}/Table.pkl")
-
+        Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
+        Table = pd.DataFrame(Table)
         # what unifies it 
         self.get_exp_no()
         # ExpNo- self.current_exp_no 
         self.current_exp_no += 1 
-        self.Table.loc[Table.shape[0],:] = [self.current_exp_no, self.model_name, study.best_trial.value, study.best_trial.params, 
-                                            self.useful_features, self.current_dict["current_level"], self.optimize_on, self.n_trials, 
-                                            self.prep_list, self.metrics_name, log_table]
+        Table.loc[Table.shape[0],:] = [self.current_exp_no, self.model_name, study.best_trial.value, study.best_trial.params, 
+                                      self.useful_features, self.current_dict["current_level"], self.optimize_on, self.n_trials, 
+                                      self.prep_list, self.metrics_name, log_table]
 
 
         #--------------- dump experiment no 
@@ -66,15 +66,17 @@ class Agent:
             f"../models_{self.locker['comp_name']}/current_dict.pkl"
         )
         #---------------- dump table 
-        self.save_pickle(f"../models{a['comp_name']}/Table.pkl", Table)
+        self.save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", Table)
 
     def display(self,exp_list= [0]):
         """
         exp_no", "model_name", "bv", "bp", "features_list", "level_no", "fold_no", "no_iterations", "prep_list" "metrics_name" "exp_log"           
         exp_log: it will be a table
         """
-        Table_Temp = self.load_pickle(f"../models{a['comp_name']}/Table.pkl")
-        print(Table_Temp[Table_Temp.exp_no.isin(exp_list)])
+        Table_Temp = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
+        Table_Temp = pd.DataFrame(Table_Temp)
+        print(Table_Temp[Table_Temp['exp_no'].astype(str).isin([str(i) for i in exp_list])])
+ 
 
 if __name__ == "__main__":
     #==========================================================
@@ -84,6 +86,7 @@ if __name__ == "__main__":
     #---------------------------------------------------------
     p = Picker()
     useful_features = p.find_features(list_levels=list_levels, list_features=list_features, list_feat_title=list_feat_title)
+    useful_features = ["SibSp","Parch","Pclass"]
     #==========================================================
     model_name = "lgr"   #--------> ["lgr","lir","xgbc","xgbr"]
     comp_type = "2class" #-------->["regression", "2class","multi_class", "multi_label"]
@@ -97,11 +100,9 @@ if __name__ == "__main__":
     print("="*40)
     print("Useful_features:", useful_features)
     
-    
-    
-    e.run() 
+    #e.run() 
 
     #-------------------------------------------------------------
-    exp_list = [0] #----------------> [0,1,2]
-    #e.display(exp_list)
+    exp_list = ['1'] #----------------> [1,2,3,4]
+    e.display(exp_list)
     

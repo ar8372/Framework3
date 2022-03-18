@@ -195,7 +195,7 @@ class features:
 
         # -----------------------------dump data
         self.my_folds.to_csv(
-            f"../models_{self.locker['comp_name']}/train_folds.csv", index=False
+            f"../models_{self.locker['comp_name']}/my_folds.csv", index=False
         )
         self.test.to_csv(f"../models_{self.locker['comp_name']}/test.csv", index=False)
 
@@ -218,7 +218,8 @@ class features:
         self.save_pickle(
             f"../models_{self.locker['comp_name']}/features_dict.pkl", feat_dict
         )
-
+        print("New features create:- ")
+        print(new_features)
 
 if __name__ == "__main__":
     with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:

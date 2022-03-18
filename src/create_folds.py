@@ -69,11 +69,11 @@ if __name__ == "__main__":
             "bv",
             "bp",
             "features_list",
-            "level_no"
+            "level_no",
             "fold_no",
             "no_iterations",
-            "prep_list"
-            "metrics_name"
+            "prep_list",
+            "metrics_name",
             "exp_log"           #it will be a table
         ])
     with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:

@@ -188,7 +188,7 @@ class OptunaOptimizer:
         if model_name == "lgr":
             params = {
                         "class_weight": trial.suggest_categorical("class_weight", ['balanced',None,{1:1,0:(sum(list(ytrain==0))/sum(list(ytrain==1)))}]),
-                        "penalty": trial.suggest_categorical("penalty", ['l1','l2']),
+                        "penalty": trial.suggest_categorical("penalty", ['l2']),#['l1','l2']),
                         'C': trial.suggest_float('c',.01,1000)
                     } 
             return params 
@@ -321,7 +321,7 @@ class OptunaOptimizer:
             "Ro" : RobustScaler(),
             "Sd" : StandardScaler()
         }
-        for f in prep_list:
+        for f in self.prep_list:
             if f in list(prep_dict.keys()):
                 sc = prep_dict[f]
                 xtrain= sc.fit_transform(xtrain)
