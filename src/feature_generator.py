@@ -71,7 +71,7 @@ class features:
     def isRepetition(self, gen_features, old_features, feat_title):
         # self.curr
         for key, value in self.feat_dict.items():
-            f1,f2, ft = value
+            f1, f2, ft = value
             if f2 == 0:
                 # from base
                 pass
@@ -221,6 +221,7 @@ class features:
         print("New features create:- ")
         print(new_features)
 
+
 if __name__ == "__main__":
     with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
         for i in x:
@@ -231,4 +232,4 @@ if __name__ == "__main__":
     # ----------------------------------------------------------
     # -----------------------------------------------------------
     ft = features()
-    ft.create_statistical_features(["Age","SibSp","Parch"])  # ------------
+    ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------

@@ -62,8 +62,9 @@ if __name__ == "__main__":
     feat_dict["l1_f0"] = [useful_features, 0, "base"]
     with open(f"../models_{a['comp_name']}/features_dict.pkl", "wb") as f:
         pickle.dump(feat_dict, f)
-    # ---------------------------------dump Table 
-    Table = pd.DataFrame(columns=[
+    # ---------------------------------dump Table
+    Table = pd.DataFrame(
+        columns=[
             "exp_no",
             "model_name",
             "bv",
@@ -74,8 +75,9 @@ if __name__ == "__main__":
             "no_iterations",
             "prep_list",
             "metrics_name",
-            "exp_log"           #it will be a table
-        ])
+            "exp_log",  # it will be a table
+        ]
+    )
     with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:
         pickle.dump(Table, f)
-    #-------------------------------------------
+    # -------------------------------------------

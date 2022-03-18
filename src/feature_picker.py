@@ -42,7 +42,7 @@ class Picker:
             self.list_feat_title = list_feat_title
         all_keys = list(self.feat_dict.keys())
 
-        valid_keys1= list(self.feat_dict.keys())
+        valid_keys1 = list(self.feat_dict.keys())
         valid_keys2 = list(self.feat_dict.keys())
         valid_keys3 = list(self.feat_dict.keys())
         if self.list_levels != []:
@@ -57,7 +57,7 @@ class Picker:
                     valid_keys2.append(key)
         if self.list_feat_title != []:
             valid_keys3 = []
-            for key,val in list(self.feat_dict.items()):
+            for key, val in list(self.feat_dict.items()):
                 if str(val[2]) in str(self.list_feat_title):
                     valid_keys3.append(key)
         valid_keys = set(valid_keys1).intersection(set(valid_keys2))
@@ -97,9 +97,9 @@ class Picker:
 
 if __name__ == "__main__":
     p = Picker()
-    p.list_levels = [ "1"]
+    p.list_levels = ["1"]
     p.list_features = ["1", "2", "0"]
-    #p.list_feat_title = ["base"]
+    # p.list_feat_title = ["base"]
     print(p.find_keys())
     print()
-    #print(p.find_features())
+    # print(p.find_features())
