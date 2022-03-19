@@ -130,6 +130,8 @@ class OptunaOptimizer:
         self.locker = self.load_pickle(f"../models_{comp_name}/locker.pkl")
         self.current_dict = self.load_pickle(f"../models_{comp_name}/current_dict.pkl")
         self.save_models = save_models
+        self._trial_score= None
+        self._history = None
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.metrics_list = [
             "accuracy",
@@ -164,6 +166,8 @@ class OptunaOptimizer:
             "lgbmr",
             "rfc",
             "k1",
+            "k2",
+            "k3",
         ]
         self._prep_list = ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"]
         self.prep_list = prep_list
@@ -621,6 +625,42 @@ class OptunaOptimizer:
                 "o": trial.suggest_categorical("o", [True, False]),
             }
             return params
+
+
+        if model_name == "k2":
+            params = {
+                "epochs": trial.suggest_int("epochs", 5, 55, step=5, log=False),  # 5,55
+                "batchsize": trial.suggest_int("batchsize", 8, 40, step=16, log=False),
+                "learning_rate": trial.suggest_uniform("learning_rate", 0.002, 1),
+                "prime": trial.suggest_categorical("prime",[2,3,5,7,11,13,17,19,23,29,31]),
+                "drop_val": trial.suggest_uniform('drop',0.01,0.9),
+                "o": trial.suggest_categorical("o", [True, False]),
+            }
+            return params
+
+        if model_name == "k3":
+            no_hidden_layers = trial.suggest_int("no_hidden_layers",1,30, step=1)
+            dropout_placeholder  = [trial.suggest_uniform(f"drop_rate_{i+1}", 0,0.99) for i in range(no_hidden_layers)]
+            units_placeholder = [trial.suggest_int(f"units_val_{j+1}", int((self.xtrain.shape[1]+1)**(1/3)), int((self.xtrain.shape[1]+1)**3),step=1,log=False) for j in range(no_hidden_layers) ]
+            batch_norm_placeholder = [trial.suggest_categorical(f"batch_norm_val_{i+1}", [0,1]) for i in range(no_hidden_layers)]
+            activation_placeholder = [trial.suggest_categorical(f"activation_string_{i+1}", ['relu','sigmoid','tanh']) for i in range(no_hidden_layers)]
+            epochs = trial.suggest_int("epochs", 5, 100, step=5, log=False)  # 5,55
+            batchsize = trial.suggest_int("batchsize", 8, 40, step=16, log=False)
+            learning_rate =  trial.suggest_uniform("learning_rate", 0, 3)
+            o = trial.suggest_categorical("o", [True, False])
+            params = {
+                "no_hidden_layers" : no_hidden_layers,
+                "dropout_placeholder" : dropout_placeholder,
+                "units_placeholder" : units_placeholder,
+                "batch_norm_placeholder" : batch_norm_placeholder,
+                "activation_placeholder" : activation_placeholder,
+                "epochs" : epochs,
+                "batchsize" : batchsize,
+                "learning_rate" : learning_rate,
+                "o" : o,
+            }
+            return params
+
         if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
                 columns=[
@@ -637,20 +677,6 @@ class OptunaOptimizer:
                 ]
             )
             return params
-
-    # def update_table(self):
-    #     self.Table.loc[Table.shape[0], :] = [
-    #         0,
-    #         10 ** (-1 * learning_rate),
-    #         learning_rate,
-    #         epochs,
-    #         batch_size,
-    #         no_hidden_layers,
-    #         dropout_placeholder,
-    #         units_placeholder,
-    #         batch_norm_placeholder,
-    #         activation_placeholder,
-    #     ]
 
     def get_model(self, params):
 
@@ -689,6 +715,10 @@ class OptunaOptimizer:
             return RandomForestClassifier(**params, random_state=self._random_state)
         if model_name == "k1":
             return self._k1(params)
+        if model_name == "k2":
+            return self._k2(params)
+        if model_name == "k3":
+            return self._k3(params)
         else:
             raise Exception(f"{model_name} is invalid!")
 
@@ -774,17 +804,186 @@ class OptunaOptimizer:
 
         return model
 
+    def _k2(self, params):
+        # cone model
+        model = Sequential()
+        model.add(BatchNormalization())
+        no_cols = self.xtrain.shape[1]
+        model.add(Dense(2*no_cols, activation = 'relu'))
+
+        while no_cols > 2*10:
+            model.add(Dropout(params['drop_val']))
+            model.add(Dense(no_cols, activation='relu'))
+            model.add(Dense(no_cols, activation='relu'))
+            model.add(BatchNormalization())
+            no_cols = int(no_cols// params['prime'])
+
+        adam = tf.keras.optimizers.Adam(learning_rate=params["learning_rate"])
+        # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
+        # For #class more than 2 output label has multiple node:
+        # confusion remains with 2class problem as it can have both one node or 2 node in end
+        if self.comp_type == "regression":
+            model.add(Dense(1, activation="relu"))  # /None  linear tanh
+            model.compile(
+                loss=self.metrics_name,
+                optimizer=adam,
+                metrics=[tf.keras.metrics.MeanSquaredError()],
+            )
+        elif self.comp_type == "2class":
+            if len(self.ytrain.shape) == 1:
+                model.add(Dense(1, activation="sigmoid"))  #: binary_crossentropy
+                model.compile(
+                    loss="binary_crossentropy", optimizer=adam, metrics=["accuracy"]
+                )
+            else:
+                # binary with one hot y no more binary problem so it is like multi class := don't use this case use above one instead
+                model.add(Dense(self.ytrain.shape[1], activation="softmax"))
+                model.compile(
+                    loss="categorical_crossentropy",
+                    optimizer=adam,
+                    metrics=["accuracy"],
+                )
+        elif self.comp_type == "multi_class":
+            # https://medium.com/deep-learning-with-keras/which-activation-loss-functions-in-multi-class-clasification-4cd599e4e61f
+            if len(self.ytrain.shape) == 1:  # sparse  since true prediction is 1D
+                # op1>
+                # act:None
+                # loss:keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+                # metrics:metrics=[keras.metrics.SparseCategoricalAccuracy()]
+                # op2>
+                # act: softmax
+                # loss: sparse_categorical_crossentropy
+                # metrics: keras.metrics.SparseCategoricalAccuracy()
+                if params["o"]:
+                    loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+                    metrics = [keras.metrics.SparseCategoricalAccuracy()]
+                    act = None
+                else:
+                    loss = keras.losses.SparseCategoricalCrossentropy()
+                    metrics = [keras.metrics.SparseCategoricalAccuracy()]
+                    act = "softmax"
+                model.add(Dense(self.ytrain.shape[1], activation=act))
+                model.compile(loss=loss, optimizer=adam, metrics=metrics)
+            else:  # ytrain is not 1D
+                # op1>
+                # act:None
+                # loss:keras.losses.CategoricalCrossentropy(from_logits=True)
+                # metrics:metrics=[keras.metrics.CategoricalAccuracy()]
+                # op2>
+                # act: softmax
+                # loss: categorical_crossentropy
+                # metrics: keras.metrics.CategoricalAccuracy()
+                if params["o"]:
+                    loss = keras.losses.CategoricalCrossentropy(from_logits=True)
+                    metrics = [keras.metrics.CategoricalAccuracy()]
+                    act = None
+                else:
+                    loss = keras.losses.CategoricalCrossentropy()
+                    metrics = [keras.metrics.CategoricalAccuracy()]
+                    act = "softmax"
+                model.add(Dense(self.ytrain.shape[1], activation="softmax"))
+                model.compile(loss=loss, optimizer=adam, metrics=metrics)
+        elif self.comp_type == "multi_label":
+            model.add(Dense(self.ytrain.shape[1], activation="sigmoid"))
+            model.compile(
+                loss="categorical_crossentropy", optimizer=adam, metrics=["accuracy"]
+            )
+
+        return model
+
+    def _k3(self, params):
+        # cone model
+        model = Sequential()
+        model.add(BatchNormalization())
+
+        for i in range(params['no_hidden_layers']):
+            if params['batch_norm_placeholder'][i] == 1:
+                model.add(BatchNormalization())
+            model.add(Dense(units= params['units_placeholder'][i], activation= params['activation_placeholder'][i]))
+            model.add(Dropout(params['dropout_placeholder'][i]))
+
+        adam = tf.keras.optimizers.Adam(learning_rate=params["learning_rate"])
+        # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
+        # For #class more than 2 output label has multiple node:
+        # confusion remains with 2class problem as it can have both one node or 2 node in end
+        if self.comp_type == "regression":
+            model.add(Dense(1, activation="relu"))  # /None  linear tanh
+            model.compile(
+                loss=self.metrics_name,
+                optimizer=adam,
+                metrics=[tf.keras.metrics.MeanSquaredError()],
+            )
+        elif self.comp_type == "2class":
+            if len(self.ytrain.shape) == 1:
+                model.add(Dense(1, activation="sigmoid"))  #: binary_crossentropy
+                model.compile(
+                    loss="binary_crossentropy", optimizer=adam, metrics=["accuracy"]
+                )
+            else:
+                # binary with one hot y no more binary problem so it is like multi class := don't use this case use above one instead
+                model.add(Dense(self.ytrain.shape[1], activation="softmax"))
+                model.compile(
+                    loss="categorical_crossentropy",
+                    optimizer=adam,
+                    metrics=["accuracy"],
+                )
+        elif self.comp_type == "multi_class":
+            # https://medium.com/deep-learning-with-keras/which-activation-loss-functions-in-multi-class-clasification-4cd599e4e61f
+            if len(self.ytrain.shape) == 1:  # sparse  since true prediction is 1D
+                # op1>
+                # act:None
+                # loss:keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+                # metrics:metrics=[keras.metrics.SparseCategoricalAccuracy()]
+                # op2>
+                # act: softmax
+                # loss: sparse_categorical_crossentropy
+                # metrics: keras.metrics.SparseCategoricalAccuracy()
+                if params["o"]:
+                    loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+                    metrics = [keras.metrics.SparseCategoricalAccuracy()]
+                    act = None
+                else:
+                    loss = keras.losses.SparseCategoricalCrossentropy()
+                    metrics = [keras.metrics.SparseCategoricalAccuracy()]
+                    act = "softmax"
+                model.add(Dense(self.ytrain.shape[1], activation=act))
+                model.compile(loss=loss, optimizer=adam, metrics=metrics)
+            else:  # ytrain is not 1D
+                # op1>
+                # act:None
+                # loss:keras.losses.CategoricalCrossentropy(from_logits=True)
+                # metrics:metrics=[keras.metrics.CategoricalAccuracy()]
+                # op2>
+                # act: softmax
+                # loss: categorical_crossentropy
+                # metrics: keras.metrics.CategoricalAccuracy()
+                if params["o"]:
+                    loss = keras.losses.CategoricalCrossentropy(from_logits=True)
+                    metrics = [keras.metrics.CategoricalAccuracy()]
+                    act = None
+                else:
+                    loss = keras.losses.CategoricalCrossentropy()
+                    metrics = [keras.metrics.CategoricalAccuracy()]
+                    act = "softmax"
+                model.add(Dense(self.ytrain.shape[1], activation="softmax"))
+                model.compile(loss=loss, optimizer=adam, metrics=metrics)
+        elif self.comp_type == "multi_label":
+            model.add(Dense(self.ytrain.shape[1], activation="sigmoid"))
+            model.compile(
+                loss="categorical_crossentropy", optimizer=adam, metrics=["accuracy"]
+            )
+
+        return model
+
     def save_logs(self, params):
         if self._log_table is None:
             # not initialized
-            self._log_table = pd.DataFrame(columns=list(params.keys()))
-        self._log_table.loc[self._log_table.shape[0], :] = list(params.values())
+            self._log_table = pd.DataFrame(columns=["trial_score"]+list(params.keys())+ ["keras_history"])
+        self._log_table.loc[self._log_table.shape[0], :] = [self._trial_score] +  list(params.values()) + [self._history]
 
     def obj(self, trial):
 
         params = self.get_params(trial)
-        # Let's save these values
-        self.save_logs(params)
         model = self.get_model(params)
 
         if self.model_name == "lgbmr":
@@ -797,18 +996,18 @@ class OptunaOptimizer:
                 callbacks=[LightGBMPruningCallback(trial, "auc")],
                 verbose=0,
             )
-        if self.model_name == "k1":
-            stop = EarlyStopping(monitor="auc", mode="max", patience=50, verbose=1)
+        if self.model_name in ["k1","k2", "k3"]:
+            stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
             checkpoint = ModelCheckpoint(
                 filepath="./",
                 save_weights_only=True,
-                monitor="val_auc",
+                monitor="val_accuracy",
                 mode="max",
                 save_best_only=True,
             )
 
             reduce_lr = ReduceLROnPlateau(
-                monitor="val_auc", factor=0.5, patience=5, min_lr=0.00001, verbose=1
+                monitor="val_accuracy", factor=0.5, patience=5, min_lr=0.00001, verbose=1
             )
             history = model.fit(
                 x=self.xtrain,
@@ -819,6 +1018,7 @@ class OptunaOptimizer:
                 validation_split=0.15,
                 callbacks=[stop, checkpoint, reduce_lr],
             )
+            self._history = history.history
         else:
             model.fit(self.xtrain, self.ytrain)
 
@@ -876,6 +1076,11 @@ class OptunaOptimizer:
         if metrics_name == "r2":
             valid_preds = model.predict(self.xvalid)
             score = rg("r2", self.yvalid, valid_preds)
+
+        # Let's save these values
+        self._trial_score = score # save it to save in log_table
+        self.save_logs(params)
+        
         return score
 
     def run(
@@ -962,3 +1167,18 @@ if __name__ == "__main__":
     import optuna
 
     a = OptunaOptimizer()
+
+
+    # def update_table(self):
+    #     self.Table.loc[Table.shape[0], :] = [
+    #         0,
+    #         10 ** (-1 * learning_rate),
+    #         learning_rate,
+    #         epochs,
+    #         batch_size,
+    #         no_hidden_layers,
+    #         dropout_placeholder,
+    #         units_placeholder,
+    #         batch_norm_placeholder,
+    #         activation_placeholder,
+    #     ]
