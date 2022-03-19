@@ -238,7 +238,9 @@ if __name__ == "__main__":
     # ----------------------------------------------------------
     # -----------------------------------------------------------
     ft = features()
-    # ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------
-    ft.display_features_generated()
-    print("===================")
-    ft.show_variables()
+    ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------
+
+    
+    #ft.display_features_generated()
+    #print("===================")
+    #ft.show_variables()

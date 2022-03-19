@@ -241,7 +241,7 @@ class OptunaOptimizer:
         # level_on
         #
         seed = comp_random_state + total_no_folds * 2 + fold_on * 3 + metric_no * 4
-        seed += (
+        seed += int(
             comp_type_no * 5 + model_no * 6 + prep_no * 7
         )  # + round_on * 4 + level_on * 5
         seed = int(seed)
@@ -325,15 +325,15 @@ class OptunaOptimizer:
     def get_model(self, params):
         # ["lgr","lir","xgbc","xgbr"]
         model_name = self.model_name
-        random_state = self.generate_random_no()
+        self._random_state = self.generate_random_no()
         if model_name == "lgr":
-            return LogisticRegression(**params, random_state=random_state)
+            return LogisticRegression(**params, random_state=self._random_state)
         if model_name == "lir":
-            return LinearRegression(**params, random_state=random_state)
+            return LinearRegression(**params, random_state=self._random_state)
         if model_name == "xgbc":
-            return XGBClassifier(**params, random_state=random_state)
+            return XGBClassifier(**params, random_state=self._random_state)
         if model_name == "xgbr":
-            return XGBRegressor(**params, random_state=random_state)
+            return XGBRegressor(**params, random_state=self._random_state)
         else:
             raise Exception(f"{model_name} is invalid!")
 
@@ -442,7 +442,7 @@ class OptunaOptimizer:
             n_trials=self.n_trials,
         )  # it tries 50 different values to find optimal hyperparameter
 
-        return study, []
+        return study, self._random_state, []
 
 
 if __name__ == "__main__":

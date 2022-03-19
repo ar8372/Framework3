@@ -95,9 +95,9 @@ class Agent:
             prep_list=self.prep_list,
             optimize_on=self.optimize_on,
         )
-        study, log_table = opt.run(my_folds, self.useful_features)
+        study, random_state, log_table = opt.run(my_folds, self.useful_features)
         if self.save_models == True:
-            self._save_models(study, log_table)
+            self._save_models(study, random_state, log_table)
 
     def get_exp_no(self):
         # exp_no, current_level
@@ -106,7 +106,7 @@ class Agent:
         )
         self.current_exp_no = int(self.current_dict["current_exp_no"])
 
-    def _save_models(self, study, log_table):
+    def _save_models(self, study,random_state, log_table):
         Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
         Table = pd.DataFrame(Table)
         # what unifies it
@@ -118,6 +118,7 @@ class Agent:
             self.model_name,
             study.best_trial.value,
             study.best_trial.params,
+            random_state,
             self.useful_features,
             self.current_dict["current_level"],
             self.optimize_on,

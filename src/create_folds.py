@@ -68,6 +68,7 @@ if __name__ == "__main__":
             "model_name",
             "bv",
             "bp",
+            "random_state",
             "features_list",
             "level_no",
             "fold_no",
