@@ -51,7 +51,6 @@ if __name__ == "__main__":
 
     # --------------------------------dump current
     current_dict = defaultdict()
-    current_dict["exp_no"] = 0
     current_dict["current_level"] = 1
     current_dict["current_feature_no"] = 0
     current_dict["current_exp_no"] = 0

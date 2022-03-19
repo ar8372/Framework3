@@ -121,6 +121,12 @@ class KeyMaker:
             a = pickle.load(f)
         for k, v in a.items():
             print(f"{k}:", v)
+            
+    def show_variables(self):
+        print()
+        for i,(k,v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>",v)
+        print()
 
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@ class features:
         with open(f"../models_{self.locker['comp_name']}/current_dict.pkl", "wb") as f:
             pickle.dump(self.current_dict, f)
 
-    def display(self):
+    def display_features_generated(self):
         # display all the feature engineering done so far
         # Key:- f"l{self.level_no}_f{feat_no}"
         # value:- [created, from , info]
@@ -50,6 +50,12 @@ class features:
             print("from:")
             print(value[1])
             print()
+
+    def show_variables(self):
+        print()
+        for i,(k,v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>",v)
+        print()
 
     def get_feat_no(self):
         # exp_no, current_level, current_feature_no
@@ -232,4 +238,7 @@ if __name__ == "__main__":
     # ----------------------------------------------------------
     # -----------------------------------------------------------
     ft = features()
-    ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------
+    #ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------
+    ft.display_features_generated()
+    print("===================")
+    ft.show_variables()

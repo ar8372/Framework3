@@ -21,6 +21,12 @@ class Picker:
             f"../models_{self.locker['comp_name']}/features_dict.pkl"
         )
 
+    def show_variables(self):
+        print()
+        for i,(k,v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>",v)
+        print()
+        
     def save_pickle(self, path, to_dump):
         with open(path, "wb") as f:
             pickle.dump(to_dump, f)

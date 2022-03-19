@@ -166,15 +166,11 @@ class OptunaOptimizer:
         self.optimize_on = optimize_on
         self.sanity_check()
 
-    def show(self):
-        print(f"comp_type: {self.comp_type}")
-        print(f"metrics_name: {self.metrics_name}")
-        print(f"_aim: {self._aim}")
-        print(f"n_trials: {self.n_trials}")
-        print(f"best_params: {self.best_params}")
-        print(f"best_params: {self.best_params}")
-        print(f"model_name: {self.model_name}")
-        print(f"optimize_on: {self.optimize_on}")
+    def show_variables(self):
+        print()
+        for i,(k,v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>",v)
+        print()
 
     def sanity_check(self):
         if self.comp_type not in self.comp_list:

@@ -10,13 +10,14 @@ import pandas as pd
 class Agent:
     def __init__(
         self,
-        useful_features,
-        model_name,
-        comp_type,
-        metrics_name,
-        n_trials,
-        prep_list,
-        optimize_on,
+        useful_features=[],
+        model_name="",
+        comp_type="2class",
+        metrics_name="accuracy",
+        n_trials=5,
+        prep_list=[],
+        optimize_on=0,
+        save_models = True
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -32,7 +33,8 @@ class Agent:
         self.n_trials = n_trials
         self.prep_list = prep_list
         self.optimize_on = optimize_on
-        print(self.locker)
+        self.save_models=True
+
 
     def save_pickle(self, path, to_dump):
         with open(path, "wb") as f:
@@ -42,8 +44,37 @@ class Agent:
         with open(path, "rb") as f:
             o = pickle.load(f)
         return o
+    def sanity_check(self):
+        if "--|--" in [self.useful_features, self.model_name, self.comp_type,
+                      self.metrics_name, self.n_trials, self.prep_list, self.optimize_on, self.save_models]:
+            raise Exception("Found --|--- while sanity check!")
+    def run(self, 
+            useful_features = "--|--",
+            model_name = "--|--",
+            comp_type= "--|--",
+            metrics_name= "--|--",
+            n_trials= "--|--",
+            prep_list= "--|--",
+            optimize_on= "--|--",
+            save_models= "--|--"):
+        if useful_features != "--|--":
+            self.useful_features = useful_features
+        if model_name != "--|--":
+            self.model_name = model_name
+        if comp_type != "--|--":
+            self.comp_type = comp_type
+        if metrics_name != "--|--":
+            self.metrics_name = metrics_name
+        if n_trials != "--|--":
+            self.n_trials = n_trials
+        if prep_list != "--|--":
+            self.prep_list = prep_list
+        if optimize_on != "--|--":
+            self.optimize_on = optimize_on
+        if save_models != "--|--":
+            self.save_models = save_models 
 
-    def run(self):
+        self.sanity_check()
         my_folds = pd.read_csv(f"../models_{self.locker['comp_name']}/my_folds.csv")
         opt = OptunaOptimizer(
             model_name=self.model_name,
@@ -54,16 +85,17 @@ class Agent:
             optimize_on=self.optimize_on,
         )
         study, log_table = opt.run(my_folds, self.useful_features)
-        self.save_models(study, log_table)
+        if self.save_models == True:
+            self._save_models(study, log_table)
 
     def get_exp_no(self):
-        # exp_no, current_level, current_feature_no
+        # exp_no, current_level
         self.current_dict = self.load_pickle(
             f"../models_{self.locker['comp_name']}/current_dict.pkl"
         )
         self.current_exp_no = int(self.current_dict["current_exp_no"])
 
-    def save_models(self, study, log_table):
+    def _save_models(self, study, log_table):
         Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
         Table = pd.DataFrame(Table)
         # what unifies it
@@ -86,25 +118,15 @@ class Agent:
 
         # --------------- dump experiment no
         self.current_dict["current_exp_no"] = self.current_exp_no
-        self.current_dict = self.load_pickle(
-            f"../models_{self.locker['comp_name']}/current_dict.pkl"
-        )
+        self.save_pickle(f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict)
         # ---------------- dump table
         self.save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", Table)
 
-    def display(self, exp_list=[0]):
-        """
-        exp_no", "model_name", "bv", "bp", "features_list", "level_no", "fold_no", "no_iterations", "prep_list" "metrics_name" "exp_log"
-        exp_log: it will be a table
-        """
-        Table_Temp = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
-        Table_Temp = pd.DataFrame(Table_Temp)
-        print(
-            Table_Temp[
-                Table_Temp["exp_no"].astype(str).isin([str(i) for i in exp_list])
-            ]
-        )
-
+    def show_variables(self):
+        print()
+        for i,(k,v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>",v)
+        print()
 
 if __name__ == "__main__":
     # ==========================================================
@@ -146,8 +168,8 @@ if __name__ == "__main__":
     print("=" * 40)
     print("Useful_features:", useful_features)
 
-    # e.run()
+    e.run()
 
     # -------------------------------------------------------------
-    exp_list = ["1"]  # ----------------> [1,2,3,4]
-    e.display(exp_list)
+    #exp_list = ["1"]  # ----------------> [1,2,3,4]
+    #e.show(exp_list)
