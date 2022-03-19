@@ -130,7 +130,7 @@ class OptunaOptimizer:
         self.locker = self.load_pickle(f"../models_{comp_name}/locker.pkl")
         self.current_dict = self.load_pickle(f"../models_{comp_name}/current_dict.pkl")
         self.save_models = save_models
-        self._trial_score= None
+        self._trial_score = None
         self._history = None
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.metrics_list = [
@@ -626,38 +626,59 @@ class OptunaOptimizer:
             }
             return params
 
-
         if model_name == "k2":
             params = {
                 "epochs": trial.suggest_int("epochs", 5, 55, step=5, log=False),  # 5,55
                 "batchsize": trial.suggest_int("batchsize", 8, 40, step=16, log=False),
                 "learning_rate": trial.suggest_uniform("learning_rate", 0.002, 1),
-                "prime": trial.suggest_categorical("prime",[2,3,5,7,11,13,17,19,23,29,31]),
-                "drop_val": trial.suggest_uniform('drop',0.01,0.9),
+                "prime": trial.suggest_categorical(
+                    "prime", [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
+                ),
+                "drop_val": trial.suggest_uniform("drop", 0.01, 0.9),
                 "o": trial.suggest_categorical("o", [True, False]),
             }
             return params
 
         if model_name == "k3":
-            no_hidden_layers = trial.suggest_int("no_hidden_layers",1,30, step=1)
-            dropout_placeholder  = [trial.suggest_uniform(f"drop_rate_{i+1}", 0,0.99) for i in range(no_hidden_layers)]
-            units_placeholder = [trial.suggest_int(f"units_val_{j+1}", int((self.xtrain.shape[1]+1)**(1/3)), int((self.xtrain.shape[1]+1)**3),step=1,log=False) for j in range(no_hidden_layers) ]
-            batch_norm_placeholder = [trial.suggest_categorical(f"batch_norm_val_{i+1}", [0,1]) for i in range(no_hidden_layers)]
-            activation_placeholder = [trial.suggest_categorical(f"activation_string_{i+1}", ['relu','sigmoid','tanh']) for i in range(no_hidden_layers)]
+            no_hidden_layers = trial.suggest_int("no_hidden_layers", 1, 30, step=1)
+            dropout_placeholder = [
+                trial.suggest_uniform(f"drop_rate_{i+1}", 0, 0.99)
+                for i in range(no_hidden_layers)
+            ]
+            units_placeholder = [
+                trial.suggest_int(
+                    f"units_val_{j+1}",
+                    int((self.xtrain.shape[1] + 1) ** (1 / 3)),
+                    int((self.xtrain.shape[1] + 1) ** 3),
+                    step=1,
+                    log=False,
+                )
+                for j in range(no_hidden_layers)
+            ]
+            batch_norm_placeholder = [
+                trial.suggest_categorical(f"batch_norm_val_{i+1}", [0, 1])
+                for i in range(no_hidden_layers)
+            ]
+            activation_placeholder = [
+                trial.suggest_categorical(
+                    f"activation_string_{i+1}", ["relu", "sigmoid", "tanh"]
+                )
+                for i in range(no_hidden_layers)
+            ]
             epochs = trial.suggest_int("epochs", 5, 100, step=5, log=False)  # 5,55
             batchsize = trial.suggest_int("batchsize", 8, 40, step=16, log=False)
-            learning_rate =  trial.suggest_uniform("learning_rate", 0, 3)
+            learning_rate = trial.suggest_uniform("learning_rate", 0, 3)
             o = trial.suggest_categorical("o", [True, False])
             params = {
-                "no_hidden_layers" : no_hidden_layers,
-                "dropout_placeholder" : dropout_placeholder,
-                "units_placeholder" : units_placeholder,
-                "batch_norm_placeholder" : batch_norm_placeholder,
-                "activation_placeholder" : activation_placeholder,
-                "epochs" : epochs,
-                "batchsize" : batchsize,
-                "learning_rate" : learning_rate,
-                "o" : o,
+                "no_hidden_layers": no_hidden_layers,
+                "dropout_placeholder": dropout_placeholder,
+                "units_placeholder": units_placeholder,
+                "batch_norm_placeholder": batch_norm_placeholder,
+                "activation_placeholder": activation_placeholder,
+                "epochs": epochs,
+                "batchsize": batchsize,
+                "learning_rate": learning_rate,
+                "o": o,
             }
             return params
 
@@ -809,14 +830,14 @@ class OptunaOptimizer:
         model = Sequential()
         model.add(BatchNormalization())
         no_cols = self.xtrain.shape[1]
-        model.add(Dense(2*no_cols, activation = 'relu'))
+        model.add(Dense(2 * no_cols, activation="relu"))
 
-        while no_cols > 2*10:
-            model.add(Dropout(params['drop_val']))
-            model.add(Dense(no_cols, activation='relu'))
-            model.add(Dense(no_cols, activation='relu'))
+        while no_cols > 2 * 10:
+            model.add(Dropout(params["drop_val"]))
+            model.add(Dense(no_cols, activation="relu"))
+            model.add(Dense(no_cols, activation="relu"))
             model.add(BatchNormalization())
-            no_cols = int(no_cols// params['prime'])
+            no_cols = int(no_cols // params["prime"])
 
         adam = tf.keras.optimizers.Adam(learning_rate=params["learning_rate"])
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
@@ -896,11 +917,16 @@ class OptunaOptimizer:
         model = Sequential()
         model.add(BatchNormalization())
 
-        for i in range(params['no_hidden_layers']):
-            if params['batch_norm_placeholder'][i] == 1:
+        for i in range(params["no_hidden_layers"]):
+            if params["batch_norm_placeholder"][i] == 1:
                 model.add(BatchNormalization())
-            model.add(Dense(units= params['units_placeholder'][i], activation= params['activation_placeholder'][i]))
-            model.add(Dropout(params['dropout_placeholder'][i]))
+            model.add(
+                Dense(
+                    units=params["units_placeholder"][i],
+                    activation=params["activation_placeholder"][i],
+                )
+            )
+            model.add(Dropout(params["dropout_placeholder"][i]))
 
         adam = tf.keras.optimizers.Adam(learning_rate=params["learning_rate"])
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
@@ -978,8 +1004,12 @@ class OptunaOptimizer:
     def save_logs(self, params):
         if self._log_table is None:
             # not initialized
-            self._log_table = pd.DataFrame(columns=["trial_score"]+list(params.keys())+ ["keras_history"])
-        self._log_table.loc[self._log_table.shape[0], :] = [self._trial_score] +  list(params.values()) + [self._history]
+            self._log_table = pd.DataFrame(
+                columns=["trial_score"] + list(params.keys()) + ["keras_history"]
+            )
+        self._log_table.loc[self._log_table.shape[0], :] = (
+            [self._trial_score] + list(params.values()) + [self._history]
+        )
 
     def obj(self, trial):
 
@@ -996,7 +1026,7 @@ class OptunaOptimizer:
                 callbacks=[LightGBMPruningCallback(trial, "auc")],
                 verbose=0,
             )
-        if self.model_name in ["k1","k2", "k3"]:
+        if self.model_name in ["k1", "k2", "k3"]:
             stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
             checkpoint = ModelCheckpoint(
                 filepath="./",
@@ -1007,7 +1037,11 @@ class OptunaOptimizer:
             )
 
             reduce_lr = ReduceLROnPlateau(
-                monitor="val_accuracy", factor=0.5, patience=5, min_lr=0.00001, verbose=1
+                monitor="val_accuracy",
+                factor=0.5,
+                patience=5,
+                min_lr=0.00001,
+                verbose=1,
             )
             history = model.fit(
                 x=self.xtrain,
@@ -1078,9 +1112,9 @@ class OptunaOptimizer:
             score = rg("r2", self.yvalid, valid_preds)
 
         # Let's save these values
-        self._trial_score = score # save it to save in log_table
+        self._trial_score = score  # save it to save in log_table
         self.save_logs(params)
-        
+
         return score
 
     def run(
@@ -1167,7 +1201,6 @@ if __name__ == "__main__":
     import optuna
 
     a = OptunaOptimizer()
-
 
     # def update_table(self):
     #     self.Table.loc[Table.shape[0], :] = [
