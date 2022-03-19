@@ -121,15 +121,15 @@ class OptunaOptimizer:
         optimize_on=0,
         prep_list=[],
         with_gpu=False,
+        save_models= True,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
         x.close()
-        with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
-            a = pickle.load(f)
-        self.locker = a
-
+        self.locker = self.load_pickle(f"../models_{comp_name}/locker.pkl")
+        self.current_dict = self.load_pickle(f"../models_{comp_name}/current_dict.pkl")
+        self.save_models = save_models
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.metrics_list = [
             "accuracy",
@@ -170,6 +170,7 @@ class OptunaOptimizer:
         self.comp_type = comp_type
         self.metrics_name = metrics_name
         self.with_gpu = with_gpu
+        self._log_table = None # will track experiments
         if self.metrics_name in [
             "accuracy",
             "f1",
@@ -188,6 +189,15 @@ class OptunaOptimizer:
         self.model_name = model_name
         self.optimize_on = optimize_on
         self.sanity_check()
+
+    def save_pickle(self, path, to_dump):
+        with open(path, "wb") as f:
+            pickle.dump(to_dump, f)
+
+    def load_pickle(self, path):
+        with open(path, "rb") as f:
+            o = pickle.load(f)
+        return o
 
     def show_variables(self):
         print()
@@ -628,19 +638,19 @@ class OptunaOptimizer:
             )
             return params
 
-    def update_table(self):
-        self.Table.loc[Table.shape[0], :] = [
-            0,
-            10 ** (-1 * learning_rate),
-            learning_rate,
-            epochs,
-            batch_size,
-            no_hidden_layers,
-            dropout_placeholder,
-            units_placeholder,
-            batch_norm_placeholder,
-            activation_placeholder,
-        ]
+    # def update_table(self):
+    #     self.Table.loc[Table.shape[0], :] = [
+    #         0,
+    #         10 ** (-1 * learning_rate),
+    #         learning_rate,
+    #         epochs,
+    #         batch_size,
+    #         no_hidden_layers,
+    #         dropout_placeholder,
+    #         units_placeholder,
+    #         batch_norm_placeholder,
+    #         activation_placeholder,
+    #     ]
 
     def get_model(self, params):
 
@@ -703,7 +713,6 @@ class OptunaOptimizer:
                 metrics=[tf.keras.metrics.MeanSquaredError()],
             )
         elif self.comp_type == "2class":
-            print("this is shape of ytrain", self.ytrain.shape)
             if len(self.ytrain.shape) == 1:
                 model.add(Dense(1, activation="sigmoid"))  #: binary_crossentropy
                 model.compile(
@@ -765,9 +774,18 @@ class OptunaOptimizer:
 
         return model
 
+    def save_logs(self, params):
+        if self._log_table is None:
+            # not initialized
+            self._log_table = pd.DataFrame(columns=list(params.keys()))
+        self._log_table.loc[self._log_table.shape[0],:] = list(params.values())
+
+
     def obj(self, trial):
 
         params = self.get_params(trial)
+        # Let's save these values 
+        self.save_logs(params)
         model = self.get_model(params)
 
         if self.model_name == "lgbmr":
@@ -881,7 +899,6 @@ class OptunaOptimizer:
         fold = self.optimize_on
         xtrain = my_folds1[my_folds1.fold != fold].reset_index(drop=True)
         xvalid = my_folds1[my_folds1.fold == fold].reset_index(drop=True)
-        print(xtrain.shape, xvalid.shape)
         # xtest = test1.copy()
         # return
         target_name = self.locker["target_name"]
@@ -930,7 +947,11 @@ class OptunaOptimizer:
             n_trials=self.n_trials,
         )  # it tries 50 different values to find optimal hyperparameter
 
-        return study, self._random_state, []
+        if self.save_models == True:
+            # let's save logs
+            c =  self.current_dict['current_exp_no'] # optuna is called once in each exp so c+1 will be correct
+            self.save_pickle(f"../models_{self.locker['comp_name']}/log_exp_{c+1}.pkl", self._log_table)
+        return study, self._random_state
 
 
 if __name__ == "__main__":

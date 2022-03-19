@@ -100,10 +100,11 @@ class Agent:
             prep_list=self.prep_list,
             optimize_on=self.optimize_on,
             with_gpu=self.with_gpu,
+            save_models = self.save_models,
         )
-        study, random_state, log_table = opt.run(my_folds, self.useful_features)
+        study, random_state = opt.run(my_folds, self.useful_features)
         if self.save_models == True:
-            self._save_models(study, random_state, log_table)
+            self._save_models(study, random_state)
 
     def get_exp_no(self):
         # exp_no, current_level
@@ -112,7 +113,7 @@ class Agent:
         )
         self.current_exp_no = int(self.current_dict["current_exp_no"])
 
-    def _save_models(self, study, random_state, log_table):
+    def _save_models(self, study, random_state):
         Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
         Table = pd.DataFrame(Table)
         # what unifies it
@@ -132,7 +133,6 @@ class Agent:
             self.n_trials,
             self.prep_list,
             self.metrics_name,
-            log_table,
         ]
 
         # --------------- dump experiment no
@@ -173,9 +173,9 @@ if __name__ == "__main__":
     metrics_name = "rmse"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
     n_trials = 5  # ------------> no of times to run optuna
     prep_list = [
-        "Sd"
+        "Sd",
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list
-    optimize_on = 0  # fold on which optimize
+    optimize_on = 1  # fold on which optimize
     with_gpu = True
     # -----------------------------------------------------------
 
