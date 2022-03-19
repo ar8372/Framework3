@@ -1,7 +1,19 @@
 from sklearn import metrics as skmetrics
 import tensorflow as tf
 import numpy as np
-
+"""
+Regression:=> use .predict()
+Classification:=> use.predict() except auc/log_loss
+auc/log_loss:= 
+binary problem: (n_samples,)   .predict_proba()[:,1]
+multiclass problem: (n_samples, n_classes)  .predict_proba()
+true: [0,2,1,4,2] 1D array 
+pred: [
+    [0.1, 0.7, 0.2],
+    [0.2, 0.3, 0.5],
+    ...
+]
+    """
 
 class RegressionMetrics:
     def __init__(self):
@@ -60,7 +72,7 @@ class ClassificationMetrics:
             "f1": self._f1,
             "recall": self._recall,
             "precision": self._precision,
-            "auc": self._auc,
+            "auc": self._auc, 
             "logloss": self._logloss,
             "auc_tf": self._auc_tf,
         }

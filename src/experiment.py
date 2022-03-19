@@ -166,16 +166,17 @@ if __name__ == "__main__":
     )
     useful_features = ["SibSp", "Parch", "Pclass"]
     # ==========================================================
-    model_name = "lgr"  # --------> ["lgr","lir","xgbc","xgbr"]
+    model_name = "k1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1" ]
     comp_type = (
         "2class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
-    metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
+    metrics_name = "rmse"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
     n_trials = 5  # ------------> no of times to run optuna
     prep_list = [
         "Sd"
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list
     optimize_on = 0  # fold on which optimize
+    with_gpu = True
     # -----------------------------------------------------------
 
     e = Agent(
@@ -186,6 +187,7 @@ if __name__ == "__main__":
         n_trials=n_trials,
         prep_list=prep_list,
         optimize_on=optimize_on,
+        with_gpu = with_gpu,
     )
     print("=" * 40)
     print("Useful_features:", useful_features)
