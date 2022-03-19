@@ -1,6 +1,7 @@
 from sklearn import metrics as skmetrics
 import tensorflow as tf
 import numpy as np
+
 """
 Regression:=> use .predict()
 Classification:=> use.predict() except auc/log_loss
@@ -14,6 +15,7 @@ pred: [
     ...
 ]
     """
+
 
 class RegressionMetrics:
     def __init__(self):
@@ -72,7 +74,7 @@ class ClassificationMetrics:
             "f1": self._f1,
             "recall": self._recall,
             "precision": self._precision,
-            "auc": self._auc, 
+            "auc": self._auc,
             "logloss": self._logloss,
             "auc_tf": self._auc_tf,
         }
