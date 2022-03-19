@@ -121,7 +121,7 @@ class OptunaOptimizer:
         optimize_on=0,
         prep_list=[],
         with_gpu=False,
-        save_models= True,
+        save_models=True,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -170,7 +170,7 @@ class OptunaOptimizer:
         self.comp_type = comp_type
         self.metrics_name = metrics_name
         self.with_gpu = with_gpu
-        self._log_table = None # will track experiments
+        self._log_table = None  # will track experiments
         if self.metrics_name in [
             "accuracy",
             "f1",
@@ -778,13 +778,12 @@ class OptunaOptimizer:
         if self._log_table is None:
             # not initialized
             self._log_table = pd.DataFrame(columns=list(params.keys()))
-        self._log_table.loc[self._log_table.shape[0],:] = list(params.values())
-
+        self._log_table.loc[self._log_table.shape[0], :] = list(params.values())
 
     def obj(self, trial):
 
         params = self.get_params(trial)
-        # Let's save these values 
+        # Let's save these values
         self.save_logs(params)
         model = self.get_model(params)
 
@@ -949,8 +948,13 @@ class OptunaOptimizer:
 
         if self.save_models == True:
             # let's save logs
-            c =  self.current_dict['current_exp_no'] # optuna is called once in each exp so c+1 will be correct
-            self.save_pickle(f"../models_{self.locker['comp_name']}/log_exp_{c+1}.pkl", self._log_table)
+            c = self.current_dict[
+                "current_exp_no"
+            ]  # optuna is called once in each exp so c+1 will be correct
+            self.save_pickle(
+                f"../models_{self.locker['comp_name']}/log_exp_{c+1}.pkl",
+                self._log_table,
+            )
         return study, self._random_state
 
 

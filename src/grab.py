@@ -74,16 +74,18 @@ class Storage:
         else:
             raise Exception(f"{key_no} is not a valid key!")
 
-    def get_log_table(self,exp_no):
-        #-------------------------------log table 
-        log_table= self.load_pickle(f"../models_{self.locker['comp_name']}/log_exp_{exp_no}.pkl")
+    def get_log_table(self, exp_no):
+        # -------------------------------log table
+        log_table = self.load_pickle(
+            f"../models_{self.locker['comp_name']}/log_exp_{exp_no}.pkl"
+        )
         return log_table
 
     def show_log_table(self, exp_no):
         print(self.get_log_table(exp_no))
 
     def help(self):
-        print('functions: show() get() show_log_table() get_log_table()')
+        print("functions: show() get() show_log_table() get_log_table()")
         print()
         for i, n in enumerate(self.names):
             print(f"{i} :=======>", n)

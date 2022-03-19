@@ -100,7 +100,7 @@ class Agent:
             prep_list=self.prep_list,
             optimize_on=self.optimize_on,
             with_gpu=self.with_gpu,
-            save_models = self.save_models,
+            save_models=self.save_models,
         )
         study, random_state = opt.run(my_folds, self.useful_features)
         if self.save_models == True:
