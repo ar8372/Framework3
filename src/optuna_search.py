@@ -117,6 +117,7 @@ class OptunaOptimizer:
         n_trials=50,
         optimize_on=0,
         prep_list=[],
+        with_gpu= False,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -147,6 +148,7 @@ class OptunaOptimizer:
         self.prep_list = prep_list
         self.comp_type = comp_type
         self.metrics_name = metrics_name
+        self.with_gpu = with_gpu
         if self.metrics_name in [
             "accuracy",
             "f1",
@@ -270,7 +272,17 @@ class OptunaOptimizer:
             }
             return params
         if model_name == "lir":
-            return {}
+            params =  {
+                    'max_depth': trial.suggest_int('max_depth', 2, 15),
+                    'subsample': trial.suggest_discrete_uniform('subsample', 0.6, 1.0, 0.05),
+                    'n_estimators': trial.suggest_int('n_estimators', 1000, 10000, 100),
+                    'eta': trial.suggest_discrete_uniform('eta', 0.01, 0.1, 0.01),
+                    'reg_alpha': trial.suggest_int('reg_alpha', 1, 50),
+                    'reg_lambda': trial.suggest_int('reg_lambda', 5, 100),
+                    'min_child_weight': trial.suggest_int('min_child_weight', 2, 20),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.1, 1.0),
+                }
+            return params
         if model_name == "xgbc":
             return {}
         if model_name == "xgbr":
@@ -292,7 +304,7 @@ class OptunaOptimizer:
                 "predictor": trial.suggest_categorical("predictor", ["gpu_predictor"]),
             }
             return params
-        if model_name == "kearas":  # demo
+        if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
                 columns=[
                     "val_score",
@@ -391,7 +403,9 @@ class OptunaOptimizer:
             score = rg("r2", yvalid, valid_preds)
         return score
 
-    def run(self, my_folds, useful_features, prep_list="--|--", optimize_on="--|--"):
+    def run(self, my_folds, useful_features, with_gpu= "--|--",prep_list="--|--", optimize_on="--|--"):
+        if with_gpu != "--|--":
+            self.with_gpu = with_gpu
         if optimize_on != "--|--":
             self.optimize_on = optimize_on
         if prep_list != "--|--":

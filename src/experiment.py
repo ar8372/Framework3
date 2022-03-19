@@ -18,6 +18,7 @@ class Agent:
         prep_list=[],
         optimize_on=0,
         save_models=True,
+        with_gpu= False,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -34,6 +35,7 @@ class Agent:
         self.prep_list = prep_list
         self.optimize_on = optimize_on
         self.save_models = True
+        self.with_gpu = True
 
     def save_pickle(self, path, to_dump):
         with open(path, "wb") as f:
@@ -67,6 +69,7 @@ class Agent:
         prep_list="--|--",
         optimize_on="--|--",
         save_models="--|--",
+        with_gpu = "--|--",
     ):
         if useful_features != "--|--":
             self.useful_features = useful_features
@@ -84,6 +87,8 @@ class Agent:
             self.optimize_on = optimize_on
         if save_models != "--|--":
             self.save_models = save_models
+        if with_gpu != "--|--":
+            self.with_gpu = with_gpu
 
         self.sanity_check()
         my_folds = pd.read_csv(f"../models_{self.locker['comp_name']}/my_folds.csv")
@@ -94,6 +99,7 @@ class Agent:
             n_trials=self.n_trials,
             prep_list=self.prep_list,
             optimize_on=self.optimize_on,
+            with_gpu= self.with_gpu,
         )
         study, random_state, log_table = opt.run(my_folds, self.useful_features)
         if self.save_models == True:
@@ -119,6 +125,7 @@ class Agent:
             study.best_trial.value,
             study.best_trial.params,
             random_state,
+            self.with_gpu,
             self.useful_features,
             self.current_dict["current_level"],
             self.optimize_on,

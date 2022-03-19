@@ -69,6 +69,7 @@ if __name__ == "__main__":
             "bv",
             "bp",
             "random_state",
+            "with_gpu",
             "features_list",
             "level_no",
             "fold_no",
