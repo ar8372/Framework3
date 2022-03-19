@@ -17,7 +17,7 @@ class Agent:
         n_trials=5,
         prep_list=[],
         optimize_on=0,
-        save_models = True
+        save_models=True,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -33,8 +33,7 @@ class Agent:
         self.n_trials = n_trials
         self.prep_list = prep_list
         self.optimize_on = optimize_on
-        self.save_models=True
-
+        self.save_models = True
 
     def save_pickle(self, path, to_dump):
         with open(path, "wb") as f:
@@ -44,19 +43,31 @@ class Agent:
         with open(path, "rb") as f:
             o = pickle.load(f)
         return o
+
     def sanity_check(self):
-        if "--|--" in [self.useful_features, self.model_name, self.comp_type,
-                      self.metrics_name, self.n_trials, self.prep_list, self.optimize_on, self.save_models]:
+        if "--|--" in [
+            self.useful_features,
+            self.model_name,
+            self.comp_type,
+            self.metrics_name,
+            self.n_trials,
+            self.prep_list,
+            self.optimize_on,
+            self.save_models,
+        ]:
             raise Exception("Found --|--- while sanity check!")
-    def run(self, 
-            useful_features = "--|--",
-            model_name = "--|--",
-            comp_type= "--|--",
-            metrics_name= "--|--",
-            n_trials= "--|--",
-            prep_list= "--|--",
-            optimize_on= "--|--",
-            save_models= "--|--"):
+
+    def run(
+        self,
+        useful_features="--|--",
+        model_name="--|--",
+        comp_type="--|--",
+        metrics_name="--|--",
+        n_trials="--|--",
+        prep_list="--|--",
+        optimize_on="--|--",
+        save_models="--|--",
+    ):
         if useful_features != "--|--":
             self.useful_features = useful_features
         if model_name != "--|--":
@@ -72,7 +83,7 @@ class Agent:
         if optimize_on != "--|--":
             self.optimize_on = optimize_on
         if save_models != "--|--":
-            self.save_models = save_models 
+            self.save_models = save_models
 
         self.sanity_check()
         my_folds = pd.read_csv(f"../models_{self.locker['comp_name']}/my_folds.csv")
@@ -118,15 +129,18 @@ class Agent:
 
         # --------------- dump experiment no
         self.current_dict["current_exp_no"] = self.current_exp_no
-        self.save_pickle(f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict)
+        self.save_pickle(
+            f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict
+        )
         # ---------------- dump table
         self.save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", Table)
 
     def show_variables(self):
         print()
-        for i,(k,v) in enumerate(self.__dict__.items()):
-            print(f"{i}. {k} :=======>",v)
+        for i, (k, v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>", v)
         print()
+
 
 if __name__ == "__main__":
     # ==========================================================
@@ -171,5 +185,5 @@ if __name__ == "__main__":
     e.run()
 
     # -------------------------------------------------------------
-    #exp_list = ["1"]  # ----------------> [1,2,3,4]
-    #e.show(exp_list)
+    # exp_list = ["1"]  # ----------------> [1,2,3,4]
+    # e.show(exp_list)

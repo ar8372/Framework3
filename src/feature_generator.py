@@ -53,8 +53,8 @@ class features:
 
     def show_variables(self):
         print()
-        for i,(k,v) in enumerate(self.__dict__.items()):
-            print(f"{i}. {k} :=======>",v)
+        for i, (k, v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>", v)
         print()
 
     def get_feat_no(self):
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     # ----------------------------------------------------------
     # -----------------------------------------------------------
     ft = features()
-    #ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------
+    # ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------
     ft.display_features_generated()
     print("===================")
     ft.show_variables()

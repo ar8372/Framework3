@@ -168,8 +168,8 @@ class OptunaOptimizer:
 
     def show_variables(self):
         print()
-        for i,(k,v) in enumerate(self.__dict__.items()):
-            print(f"{i}. {k} :=======>",v)
+        for i, (k, v) in enumerate(self.__dict__.items()):
+            print(f"{i}. {k} :=======>", v)
         print()
 
     def sanity_check(self):
