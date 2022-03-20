@@ -164,10 +164,10 @@ if __name__ == "__main__":
         list_features=list_features,
         list_feat_title=list_feat_title,
     )
-    useful_features = ['image_id'] #["SibSp", "Parch", "Pclass"]
+    useful_features = ["image_id"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
     model_name = "tez1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3" ]
-    #--------------->["tez1"]
+    # --------------->["tez1"]
     comp_type = (
         "2class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )

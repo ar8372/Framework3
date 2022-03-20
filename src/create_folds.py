@@ -41,12 +41,12 @@ if __name__ == "__main__":
 
         df.loc[val_idx, "fold"] = fold
 
-    if a['data_type'] == "image":
+    if a["data_type"] == "image":
         df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
         useful_features = [a["id_name"]]
         with open(f"../models_{a['comp_name']}/useful_features_l1.pkl", "wb") as f:
             pickle.dump(useful_features, f)
-    elif a['data_type'] == "tabular":
+    elif a["data_type"] == "tabular":
         df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
         test = pd.read_csv(f"../input_{comp_name}/test.csv")
         test.to_csv(f"../models_{comp_name}/test.csv", index=False)

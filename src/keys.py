@@ -13,7 +13,7 @@ class KeyMaker:
         comp_type="2class",
         metrics_name="accuracy",
         no_folds=5,
-        data_type = "image",   #["image", "tabular", "text"]
+        data_type="image",  # ["image", "tabular", "text"]
     ):
         #
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
@@ -70,7 +70,7 @@ class KeyMaker:
         comp_type="--|--",
         metrics_name="--|--",
         no_folds="--|--",
-        data_type = "--|--",
+        data_type="--|--",
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -85,7 +85,6 @@ class KeyMaker:
         self.metrics_name = a["metrics_name"]
         self.no_folds = a["no_folds"]
         self.data_type = a["data_type"]
-
 
         if random_state != "--|--":
             # updated

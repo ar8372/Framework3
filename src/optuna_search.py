@@ -131,13 +131,16 @@ from sklearn.model_selection import KFold
 
 # ignoring warnings
 import warnings
+
 warnings.simplefilter("ignore")
 
 import os, cv2, json
 from PIL import Image
 
 import random
-#------------------------------
+
+# ------------------------------
+
 
 class OptunaOptimizer:
     def __init__(
@@ -717,26 +720,29 @@ class OptunaOptimizer:
             return params
 
         if model_name == "tez1":
-            #-batch_size = 16 
-            #-epochs = 5 
-            #=====seed = 42 
-            #===target_size = 28 
-            #-learning_rate = 0.002 
+            # -batch_size = 16
+            # -epochs = 5
+            # =====seed = 42
+            # ===target_size = 28
+            # -learning_rate = 0.002
 
             params = {
-                "batch_size": trial.suggest_categorical("n_estimators", [16  ]), #,32,64, 128,256, 512]),
-                "epochs" : trial.suggest_int("epochs", 5, 6, step= 1, log=False), # 55, step=5, log=False),  # 5,55
-                "learning_rate" : trial.suggest_uniform('learning_rate',0,3),
-                "patience" : trial.suggest_categorical("patience", [3, 4, 5]),
+                "batch_size": trial.suggest_categorical(
+                    "n_estimators", [16]
+                ),  # ,32,64, 128,256, 512]),
+                "epochs": trial.suggest_int(
+                    "epochs", 5, 6, step=1, log=False
+                ),  # 55, step=5, log=False),  # 5,55
+                "learning_rate": trial.suggest_uniform("learning_rate", 0, 3),
+                "patience": trial.suggest_categorical("patience", [3, 4, 5]),
             }
             params = {
-                "batch_size" : 16,
-                "epochs" : 5,
-                "learning_rate" : 0.002,
-                "patience" : 4
+                "batch_size": 16,
+                "epochs": 5,
+                "learning_rate": 0.002,
+                "patience": 4,
             }
             return params
-
 
         if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
@@ -791,13 +797,13 @@ class OptunaOptimizer:
         if model_name == "rfc":
             return RandomForestClassifier(**params, random_state=self._random_state)
         if model_name == "k1":
-            return self._k1(params, random_state = self._random_state)
+            return self._k1(params, random_state=self._random_state)
         if model_name == "k2":
-            return self._k2(params, random_state= self._random_state)
+            return self._k2(params, random_state=self._random_state)
         if model_name == "k3":
-            return self._k3(params, random_state = self._random_state)
+            return self._k3(params, random_state=self._random_state)
         if model_name == "tez1":
-            return self._tez1(params, random_state = self._random_state)
+            return self._tez1(params, random_state=self._random_state)
         else:
             raise Exception(f"{model_name} is invalid!")
 
@@ -805,24 +811,28 @@ class OptunaOptimizer:
         """
         self.train_image_paths
         self.valid_image_paths
-        self.train_dataset 
+        self.train_dataset
         selt.valid_dataset
         """
         print("params of tez1")
         print(params)
-        print("="*40)
-        batch_size = params["batch_size"] 
+        print("=" * 40)
+        batch_size = params["batch_size"]
         epochs = params["epochs"]
-        learning_rate = params["learning_rate"] #10**(-1*params["learning_rate"])
+        learning_rate = params["learning_rate"]  # 10**(-1*params["learning_rate"])
 
-        img_size = 256 #nothing to do with model used for naming output files
+        img_size = 256  # nothing to do with model used for naming output files
         model_name = "resnet50"
         seed = random_state
         target_size = len(set(self.ytrain))
-        n_train_steps =  int(len(self.train_image_paths) / batch_size * epochs)
+        n_train_steps = int(len(self.train_image_paths) / batch_size * epochs)
 
-        model= UModel(model_name = model_name, num_classes = target_size,
-                  learning_rate = learning_rate, n_train_steps = n_train_steps) 
+        model = UModel(
+            model_name=model_name,
+            num_classes=target_size,
+            learning_rate=learning_rate,
+            n_train_steps=n_train_steps,
+        )
 
         return model
 
@@ -835,7 +845,9 @@ class OptunaOptimizer:
         model.add(BatchNormalization())
         model.add(Dense(16, activation="relu"))
         model.add(BatchNormalization())
-        adam = tf.keras.optimizers.Adam(learning_rate= 10**(-1*params["learning_rate"]) )
+        adam = tf.keras.optimizers.Adam(
+            learning_rate=10 ** (-1 * params["learning_rate"])
+        )
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
         # For #class more than 2 output label has multiple node:
         # confusion remains with 2class problem as it can have both one node or 2 node in end
@@ -922,7 +934,9 @@ class OptunaOptimizer:
             model.add(BatchNormalization())
             no_cols = int(no_cols // params["prime"])
 
-        adam = tf.keras.optimizers.Adam(learning_rate= 10**(-1*params["learning_rate"]))
+        adam = tf.keras.optimizers.Adam(
+            learning_rate=10 ** (-1 * params["learning_rate"])
+        )
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
         # For #class more than 2 output label has multiple node:
         # confusion remains with 2class problem as it can have both one node or 2 node in end
@@ -1011,7 +1025,9 @@ class OptunaOptimizer:
             )
             model.add(Dropout(params["dropout_placeholder"][i]))
 
-        adam = tf.keras.optimizers.Adam(learning_rate= 10**(-1*params["learning_rate"]))
+        adam = tf.keras.optimizers.Adam(
+            learning_rate=10 ** (-1 * params["learning_rate"])
+        )
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
         # For #class more than 2 output label has multiple node:
         # confusion remains with 2class problem as it can have both one node or 2 node in end
@@ -1137,21 +1153,25 @@ class OptunaOptimizer:
             )
             self._history = history.history
         if self.model_name == "tez1":
-            stop = EarlyStopping( monitor="valid_loss", 
-                model_path =  f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin",  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin', 
-                    patience = params["patience"], mode="min")
+            stop = EarlyStopping(
+                monitor="valid_loss",
+                model_path=f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin",  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
+                patience=params["patience"],
+                mode="min",
+            )
             model.fit(
                 self.train_dataset,
                 valid_dataset=self.valid_dataset,
-                train_bs= params["batch_size"],
-                valid_bs = 16,
+                train_bs=params["batch_size"],
+                valid_bs=16,
                 device="cuda",
-                epochs = params["epochs"] ,
+                epochs=params["epochs"],
                 callbacks=[stop],
                 fp16=True,
-                )
-            model.save(f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin",)
-
+            )
+            model.save(
+                f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin",
+            )
 
         else:
             model.fit(self.xtrain, self.ytrain)
@@ -1243,27 +1263,40 @@ class OptunaOptimizer:
         self.ytrain = xtrain[target_name].values
         self.yvalid = xvalid[target_name].values
 
- 
         if self.locker["data_type"] == "image":
-            image_path = f'../input_{self.locker["comp_name"]}/' + 'train_img/'
-            self.train_image_paths = [os.path.join(image_path, x) for x in xtrain[self.locker["id_name"]].values]
-            self.valid_image_paths = [os.path.join(image_path, x) for x in xvalid[self.locker["id_name"]].values]
+            image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
+            self.train_image_paths = [
+                os.path.join(image_path, x)
+                for x in xtrain[self.locker["id_name"]].values
+            ]
+            self.valid_image_paths = [
+                os.path.join(image_path, x)
+                for x in xvalid[self.locker["id_name"]].values
+            ]
 
-            aug = A.Compose([
-                            A.Normalize(
-                                mean=[0.5, 0.5, 0.5],
-                                std=[0.5, 0.5, 0.5],
-                                max_pixel_value=255.0, 
-                                p=1.0
-                            ) ], p=1.)
+            aug = A.Compose(
+                [
+                    A.Normalize(
+                        mean=[0.5, 0.5, 0.5],
+                        std=[0.5, 0.5, 0.5],
+                        max_pixel_value=255.0,
+                        p=1.0,
+                    )
+                ],
+                p=1.0,
+            )
 
             self.train_dataset = ImageDataset(
-            image_paths=self.train_image_paths, targets=self.ytrain, 
-            augmentations=aug)
+                image_paths=self.train_image_paths,
+                targets=self.ytrain,
+                augmentations=aug,
+            )
 
             self.valid_dataset = ImageDataset(
-            image_paths=self.valid_image_paths, targets=self.yvalid,
-            augmentations=aug)
+                image_paths=self.valid_image_paths,
+                targets=self.yvalid,
+                augmentations=aug,
+            )
 
         elif self.locker["data_type"] == "tabular":
             xtrain = xtrain[useful_features]
@@ -1301,7 +1334,7 @@ class OptunaOptimizer:
             self.ytrain = ytrain
             self.xvalid = xvalid
             self.yvalid = yvalid
-        
+
         # create optuna study
         study = optuna.create_study(direction=self._aim, study_name=self.model_name)
         study.optimize(
@@ -1320,18 +1353,26 @@ class OptunaOptimizer:
             )
         return study, self._random_state
 
+
 class UModel(tez.Model):
-    def __init__(self, model_name, num_classes, learning_rate, n_train_steps
-#                 , warmup_ratio
-                ):
+    def __init__(
+        self,
+        model_name,
+        num_classes,
+        learning_rate,
+        n_train_steps
+        #                 , warmup_ratio
+    ):
         super().__init__()
 
         self.learning_rate = learning_rate
         self.n_train_steps = n_train_steps
-#        self.warmup_ratio = warmup_ratio
-        self.model = timm.create_model(model_name, pretrained=True, in_chans=3, num_classes=num_classes)
+        #        self.warmup_ratio = warmup_ratio
+        self.model = timm.create_model(
+            model_name, pretrained=True, in_chans=3, num_classes=num_classes
+        )
         self.step_scheduler_after = "batch"
-    
+
     def monitor_metrics(self, outputs, targets):
         if targets is None:
             return {}
@@ -1339,12 +1380,11 @@ class UModel(tez.Model):
         targets = targets.cpu().detach().numpy()
         accuracy = metrics.accuracy_score(targets, outputs)
         return {"accuracy": accuracy}
-    
-    
+
     def fetch_optimizer(self):
         opt = torch.optim.Adam(self.parameters(), lr=3e-4)
         return opt
-    
+
     def fetch_scheduler(self):
         sch = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             self.optimizer, T_0=10, T_mult=1, eta_min=1e-6, last_epoch=-1
@@ -1358,6 +1398,7 @@ class UModel(tez.Model):
             metrics = self.monitor_metrics(x, targets)
             return x, loss, metrics
         return x, 0, {}
+
 
 if __name__ == "__main__":
     import optuna
