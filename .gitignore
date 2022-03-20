@@ -152,6 +152,7 @@ cython_debug/
 #.idea/
 
 # input data and models 
+scratch_pad.txt
 input/
 models/
 notebooks/
