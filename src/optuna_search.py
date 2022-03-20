@@ -738,7 +738,7 @@ class OptunaOptimizer:
             }
             params = {
                 "batch_size": 16,
-                "epochs": 5,
+                "epochs": 1,  #5
                 "learning_rate": 0.002,
                 "patience": 4,
             }
@@ -1160,8 +1160,8 @@ class OptunaOptimizer:
                 mode="min",
             )
             model.fit(
-                self.train_dataset,
-                valid_dataset=self.valid_dataset,
+                self.xtrain,   #self.train_dataset
+                valid_dataset=self.xvalid,  #self.valid_dataset
                 train_bs=params["batch_size"],
                 valid_bs=16,
                 device="cuda",
@@ -1177,59 +1177,51 @@ class OptunaOptimizer:
             model.fit(self.xtrain, self.ytrain)
 
         metrics_name = self.metrics_name
-        # Classification
-        cl = ClassificationMetrics()
-        if metrics_name == "auc":
-            if self.comp_type == "2class":
-                valid_preds = model.predict_proba(self.xvalid)[:, 1]
-            else:
-                valid_preds = model.predict_proba(self.xvalid)
-            score = cl("auc", self.yvalid, valid_preds)
-        if metrics_name == "accuracy":
-            valid_preds = model.predict(self.xvalid)
-            score = cl("accuracy", self.yvalid, valid_preds)
-        if metrics_name == "f1":
-            valid_preds = model.predict(self.xvalid)
-            score = cl("f1", self.yvalid, valid_preds)
-        if metrics_name == "recall":
-            valid_preds = model.predict(self.xvalid)
-            score = cl("recall", self.yvalid, valid_preds)
-        if metrics_name == "precision":
-            valid_preds = model.predict(self.xvalid)
-            score = cl("precision", self.yvalid, valid_preds)
-        if metrics_name == "logloss":
-            if self.comp_type == "2class":
-                valid_preds = model.predict_proba(self.xvalid)[:, 1]
-            else:
-                valid_preds = model.predict_proba(self.xvalid)
-            score = cl("logloss", self.yvalid, valid_preds)
-        if metrics_name == "auc_tf":
-            if self.comp_type == "2class":
-                valid_preds = model.predict_proba(self.xvalid)[:, 1]
-            else:
-                valid_preds = model.predict_proba(self.xvalid)
-            score = cl("auc_tf", self.yvalid, valid_preds)
+        if self.locker["data_type"] == "image":
+            # storage for oof and submission
+            
+            
+            # produce predictions - oof 
+            prval = np.zeros(( len(self.valid_image_paths), 28)) #dfx.shape[0]
+            preds = model.predict(self.xvalid, batch_size=16, n_jobs=-1)
+            temp_preds = None
+            for p in preds:
+                if temp_preds is None:
+                    temp_preds = p
+                else:
+                    temp_preds = np.vstack((temp_preds, p))   
+            valid_preds= np.argmax(temp_preds, axis=1)   
+            #prval[val_idx,:] = temp_preds  #to make OOF
 
-        # Regression
-        rg = RegressionMetrics()
-        if metrics_name == "mae":
-            valid_preds = model.predict(self.xvalid)
-            score = rg("mae", self.yvalid, valid_preds)
-        if metrics_name == "mse":
-            valid_preds = model.predict(self.xvalid)
-            score = rg("mse", self.yvalid, valid_preds)
-        if metrics_name == "rmse":
-            valid_preds = model.predict(self.xvalid)
-            score = rg("rmse", self.yvalid, valid_preds)
-        if metrics_name == "msle":
-            valid_preds = model.predict(self.xvalid)
-            score = rg("msle", self.yvalid, valid_preds)
-        if metrics_name == "rmsle":
-            valid_preds = model.predict(self.xvalid)
-            score = rg("rmsle", self.yvalid, valid_preds)
-        if metrics_name == "r2":
-            valid_preds = model.predict(self.xvalid)
-            score = rg("r2", self.yvalid, valid_preds)
+            # produce predictions - test data
+            #prfull = np.zeros(( len(test_image_paths), 28))
+            # preds = model.predict(test_dataset, batch_size= 128, n_jobs=-1) 
+            # temp_preds = None
+            # for p in preds:
+            #     if temp_preds is None:
+            #         temp_preds = p
+            #     else:
+            #         temp_preds = np.vstack((temp_preds, p)) 
+        elif self.locker["data_type"] == "tabular":
+            if metrics_name in ["auc", "loglos", "auc_tf",]:
+                # special case 
+                if self.comp_type == "2class":
+                    valid_preds = model.predict_proba(self.xvalid)[:,1]
+                else:
+                    valid_preds = model.predict(self.xvalid)
+            else:
+                valid_preds = model.predict(self.xvalid)
+        else:
+            raise Exception(f"metrics not set yet of type {self.data_type}")
+        
+        if self.metrics_name in ["auc", "accuracy", "f1", "recall", "precision", "logloss", "auc_tf"]:
+            # Classification
+            cl = ClassificationMetrics()
+            score = cl( self.metrics_name, self.yvalid, valid_preds)
+        elif self.metrics_name in ["mae", "mse", "rmse", "msle", "rmsle", "r2"]:
+            # Regression
+            rg = RegressionMetrics()
+            score = rg(self.metrics_name , self.yvalid, valid_preds)
 
         # Let's save these values
         self._trial_score = score  # save it to save in log_table
@@ -1286,13 +1278,13 @@ class OptunaOptimizer:
                 p=1.0,
             )
 
-            self.train_dataset = ImageDataset(
+            self.xtrain = ImageDataset(  #train_dataset
                 image_paths=self.train_image_paths,
                 targets=self.ytrain,
                 augmentations=aug,
             )
 
-            self.valid_dataset = ImageDataset(
+            self.xvalid = ImageDataset(  #valid_dataset
                 image_paths=self.valid_image_paths,
                 targets=self.yvalid,
                 augmentations=aug,
