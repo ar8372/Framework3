@@ -13,6 +13,7 @@ class KeyMaker:
         comp_type="2class",
         metrics_name="accuracy",
         no_folds=5,
+        data_type = "image",   #["image", "tabular", "text"]
     ):
         #
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
@@ -20,7 +21,7 @@ class KeyMaker:
                 comp_name = i
         x.close()
         self._comp_name = comp_name
-
+        self.data_type = data_type
         self.metrics_list = [
             "accuracy",
             "f1",
@@ -36,6 +37,7 @@ class KeyMaker:
             "rmsle",
             "r2",
         ]
+        self.data_list = ["tabular", "image", "text"]
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.random_state = random_state
         self.target_name = target_name
@@ -53,6 +55,8 @@ class KeyMaker:
             raise Exception(f"{self.comp_type} not in the list {self.comp_list}")
         if self.metrics_name not in self.metrics_list:
             raise Exception(f"{self.metrics_name} not in the list {self.metrics_name}")
+        if self.data_type not in self.data_list:
+            raise Exception(f"{self.data_type} not in the list {self.data_type}")
 
     def help(self):
         print("comp_type:=> ", [comp for i, comp in enumerate(self.comp_list)])
@@ -66,6 +70,7 @@ class KeyMaker:
         comp_type="--|--",
         metrics_name="--|--",
         no_folds="--|--",
+        data_type = "--|--",
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -79,6 +84,8 @@ class KeyMaker:
         self.comp_type = a["comp_type"]
         self.metrics_name = a["metrics_name"]
         self.no_folds = a["no_folds"]
+        self.data_type = a["data_type"]
+
 
         if random_state != "--|--":
             # updated
@@ -95,6 +102,8 @@ class KeyMaker:
             self.metrics_name = metrics_name
         if no_folds != "--|--":
             self.no_folds = no_folds
+        if data_type != "--|--":
+            self.data_type = data_type
 
         self.sanity_check()
         self.update()  # dump files to pickel
@@ -108,11 +117,12 @@ class KeyMaker:
         self.locker["id_name"] = self.id_name
         self.locker["comp_type"] = self.comp_type
         self.locker["no_folds"] = self.no_folds
+        self.locker["data_type"] = self.data_type
 
         with open(f"../models_{a['comp_name']}/locker.pkl", "wb") as f:
             pickle.dump(self.locker, f)
 
-    def show_keys(self):
+    def show_stored_keys(self):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i

@@ -33,7 +33,9 @@ class Storage:
             f"../models_{self.locker['comp_name']}/my_folds.csv"
         )
         # ------------------------------ test
-        self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/test.csv")
+        self.test = None
+        if self.locker["data_type"] == "tabular":
+            self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/test.csv")
         # ---------------------------------container
         self.names = [
             "locker",

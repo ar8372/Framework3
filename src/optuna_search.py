@@ -109,6 +109,35 @@ warnings.filterwarnings("ignore")
 
 from metrics import ClassificationMetrics, RegressionMetrics
 
+# tez ----------------------------
+import os
+import albumentations as A
+import pandas as pd
+import numpy as np
+
+
+import tez
+from tez.datasets import ImageDataset
+from tez.callbacks import EarlyStopping
+
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+from sklearn import metrics, model_selection, preprocessing
+import timm
+
+from sklearn.model_selection import KFold
+
+# ignoring warnings
+import warnings
+warnings.simplefilter("ignore")
+
+import os, cv2, json
+from PIL import Image
+
+import random
+#------------------------------
 
 class OptunaOptimizer:
     def __init__(
@@ -168,6 +197,7 @@ class OptunaOptimizer:
             "k1",
             "k2",
             "k3",
+            "tez1",
         ]
         self._prep_list = ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"]
         self.prep_list = prep_list
@@ -290,6 +320,7 @@ class OptunaOptimizer:
 
     def get_params(self, trial):
         model_name = self.model_name
+
         if model_name == "lgr":
             params = {
                 "class_weight": trial.suggest_categorical(
@@ -312,6 +343,7 @@ class OptunaOptimizer:
                 "C": trial.suggest_float("c", 0.01, 1000),
             }
             return params
+
         if model_name == "lir":
             params = {
                 "max_depth": trial.suggest_int("max_depth", 2, 15),
@@ -326,6 +358,7 @@ class OptunaOptimizer:
                 "colsample_bytree": trial.suggest_float("colsample_bytree", 0.1, 1.0),
             }
             return params
+
         if model_name == "xgbc":
             params = {
                 "max_depth": trial.suggest_int("max_depth", 2, 15),
@@ -352,6 +385,7 @@ class OptunaOptimizer:
                     }
                 )
             return params
+
         if model_name == "xgbr":
             params = {
                 "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
@@ -621,7 +655,7 @@ class OptunaOptimizer:
             params = {
                 "epochs": trial.suggest_int("epochs", 5, 55, step=5, log=False),  # 5,55
                 "batchsize": trial.suggest_int("batchsize", 8, 40, step=16, log=False),
-                "learning_rate": trial.suggest_uniform("learning_rate", 0.002, 1),
+                "learning_rate": trial.suggest_uniform("learning_rate", 0, 3),
                 "o": trial.suggest_categorical("o", [True, False]),
             }
             return params
@@ -630,7 +664,7 @@ class OptunaOptimizer:
             params = {
                 "epochs": trial.suggest_int("epochs", 5, 55, step=5, log=False),  # 5,55
                 "batchsize": trial.suggest_int("batchsize", 8, 40, step=16, log=False),
-                "learning_rate": trial.suggest_uniform("learning_rate", 0.002, 1),
+                "learning_rate": trial.suggest_uniform("learning_rate", 0, 3),
                 "prime": trial.suggest_categorical(
                     "prime", [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
                 ),
@@ -681,6 +715,28 @@ class OptunaOptimizer:
                 "o": o,
             }
             return params
+
+        if model_name == "tez1":
+            #-batch_size = 16 
+            #-epochs = 5 
+            #=====seed = 42 
+            #===target_size = 28 
+            #-learning_rate = 0.002 
+
+            params = {
+                "batch_size": trial.suggest_categorical("n_estimators", [16  ]), #,32,64, 128,256, 512]),
+                "epochs" : trial.suggest_int("epochs", 5, 6, step= 1, log=False), # 55, step=5, log=False),  # 5,55
+                "learning_rate" : trial.suggest_uniform('learning_rate',0,3),
+                "patience" : trial.suggest_categorical("patience", [3, 4, 5]),
+            }
+            params = {
+                "batch_size" : 16,
+                "epochs" : 5,
+                "learning_rate" : 0.002,
+                "patience" : 4
+            }
+            return params
+
 
         if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
@@ -735,13 +791,40 @@ class OptunaOptimizer:
         if model_name == "rfc":
             return RandomForestClassifier(**params, random_state=self._random_state)
         if model_name == "k1":
-            return self._k1(params)
+            return self._k1(params, random_state = self._random_state)
         if model_name == "k2":
-            return self._k2(params)
+            return self._k2(params, random_state= self._random_state)
         if model_name == "k3":
-            return self._k3(params)
+            return self._k3(params, random_state = self._random_state)
+        if model_name == "tez1":
+            return self._tez1(params, random_state = self._random_state)
         else:
             raise Exception(f"{model_name} is invalid!")
+
+    def _tez1(self, params, random_state):
+        """
+        self.train_image_paths
+        self.valid_image_paths
+        self.train_dataset 
+        selt.valid_dataset
+        """
+        print("params of tez1")
+        print(params)
+        print("="*40)
+        batch_size = params["batch_size"] 
+        epochs = params["epochs"]
+        learning_rate = params["learning_rate"] #10**(-1*params["learning_rate"])
+
+        img_size = 256 #nothing to do with model used for naming output files
+        model_name = "resnet50"
+        seed = random_state
+        target_size = len(set(self.ytrain))
+        n_train_steps =  int(len(self.train_image_paths) / batch_size * epochs)
+
+        model= UModel(model_name = model_name, num_classes = target_size,
+                  learning_rate = learning_rate, n_train_steps = n_train_steps) 
+
+        return model
 
     def _k1(self, params):
         # simple model
@@ -752,7 +835,7 @@ class OptunaOptimizer:
         model.add(BatchNormalization())
         model.add(Dense(16, activation="relu"))
         model.add(BatchNormalization())
-        adam = tf.keras.optimizers.Adam(learning_rate=params["learning_rate"])
+        adam = tf.keras.optimizers.Adam(learning_rate= 10**(-1*params["learning_rate"]) )
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
         # For #class more than 2 output label has multiple node:
         # confusion remains with 2class problem as it can have both one node or 2 node in end
@@ -839,7 +922,7 @@ class OptunaOptimizer:
             model.add(BatchNormalization())
             no_cols = int(no_cols // params["prime"])
 
-        adam = tf.keras.optimizers.Adam(learning_rate=params["learning_rate"])
+        adam = tf.keras.optimizers.Adam(learning_rate= 10**(-1*params["learning_rate"]))
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
         # For #class more than 2 output label has multiple node:
         # confusion remains with 2class problem as it can have both one node or 2 node in end
@@ -928,7 +1011,7 @@ class OptunaOptimizer:
             )
             model.add(Dropout(params["dropout_placeholder"][i]))
 
-        adam = tf.keras.optimizers.Adam(learning_rate=params["learning_rate"])
+        adam = tf.keras.optimizers.Adam(learning_rate= 10**(-1*params["learning_rate"]))
         # PREDICT: gives probability always so in case of metrics which takes hard class do (argmax)
         # For #class more than 2 output label has multiple node:
         # confusion remains with 2class problem as it can have both one node or 2 node in end
@@ -1053,6 +1136,23 @@ class OptunaOptimizer:
                 callbacks=[stop, checkpoint, reduce_lr],
             )
             self._history = history.history
+        if self.model_name == "tez1":
+            stop = EarlyStopping( monitor="valid_loss", 
+                model_path =  f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin",  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin', 
+                    patience = params["patience"], mode="min")
+            model.fit(
+                self.train_dataset,
+                valid_dataset=self.valid_dataset,
+                train_bs= params["batch_size"],
+                valid_bs = 16,
+                device="cuda",
+                epochs = params["epochs"] ,
+                callbacks=[stop],
+                fp16=True,
+                )
+            model.save(f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin",)
+
+
         else:
             model.fit(self.xtrain, self.ytrain)
 
@@ -1140,44 +1240,68 @@ class OptunaOptimizer:
         # xtest = test1.copy()
         # return
         target_name = self.locker["target_name"]
-        ytrain = xtrain[target_name]
-        yvalid = xvalid[target_name]
+        self.ytrain = xtrain[target_name].values
+        self.yvalid = xvalid[target_name].values
 
-        xtrain = xtrain[useful_features]
-        xvalid = xvalid[useful_features]
+ 
+        if self.locker["data_type"] == "image":
+            image_path = f'../input_{self.locker["comp_name"]}/' + 'train_img/'
+            self.train_image_paths = [os.path.join(image_path, x) for x in xtrain[self.locker["id_name"]].values]
+            self.valid_image_paths = [os.path.join(image_path, x) for x in xvalid[self.locker["id_name"]].values]
 
-        prep_dict = {
-            "SiMe": SimpleImputer(strategy="mean"),
-            "SiMd": SimpleImputer(strategy="median"),
-            "SiMo": SimpleImputer(strategy="mode"),
-            "Ro": RobustScaler(),
-            "Sd": StandardScaler(),
-        }
-        for f in self.prep_list:
-            if f in list(prep_dict.keys()):
-                sc = prep_dict[f]
-                xtrain = sc.fit_transform(xtrain)
-                xvalid = sc.transform(xvalid)
-            elif f == "Lg":
-                xtrain = pd.DataFrame(xtrain, columns=useful_features)
-                xvalid = pd.DataFrame(xvalid, columns=useful_features)
-                # xtest = pd.DataFrame(xtest, columns=useful_features)
-                for col in useful_features:
-                    xtrain[col] = np.log1p(xtrain[col])
-                    xvalid[col] = np.log1p(xvalid[col])
-                    # xtest[col] = np.log1p(xtest[col])
-            else:
-                raise Exception(f"scaler {f} is invalid!")
+            aug = A.Compose([
+                            A.Normalize(
+                                mean=[0.5, 0.5, 0.5],
+                                std=[0.5, 0.5, 0.5],
+                                max_pixel_value=255.0, 
+                                p=1.0
+                            ) ], p=1.)
 
-        # create instances
-        if self.model_name.startswith("k") and self.comp_type != "2class":
-            ## to one hot
-            ytrain = np_utils.to_categorical(ytrain)
-            yvalid = np_utils.to_categorical(yvalid)
-        self.xtrain = xtrain
-        self.ytrain = ytrain
-        self.xvalid = xvalid
-        self.yvalid = yvalid
+            self.train_dataset = ImageDataset(
+            image_paths=self.train_image_paths, targets=self.ytrain, 
+            augmentations=aug)
+
+            self.valid_dataset = ImageDataset(
+            image_paths=self.valid_image_paths, targets=self.yvalid,
+            augmentations=aug)
+
+        elif self.locker["data_type"] == "tabular":
+            xtrain = xtrain[useful_features]
+            xvalid = xvalid[useful_features]
+
+            prep_dict = {
+                "SiMe": SimpleImputer(strategy="mean"),
+                "SiMd": SimpleImputer(strategy="median"),
+                "SiMo": SimpleImputer(strategy="mode"),
+                "Ro": RobustScaler(),
+                "Sd": StandardScaler(),
+            }
+            for f in self.prep_list:
+                if f in list(prep_dict.keys()):
+                    sc = prep_dict[f]
+                    xtrain = sc.fit_transform(xtrain)
+                    xvalid = sc.transform(xvalid)
+                elif f == "Lg":
+                    xtrain = pd.DataFrame(xtrain, columns=useful_features)
+                    xvalid = pd.DataFrame(xvalid, columns=useful_features)
+                    # xtest = pd.DataFrame(xtest, columns=useful_features)
+                    for col in useful_features:
+                        xtrain[col] = np.log1p(xtrain[col])
+                        xvalid[col] = np.log1p(xvalid[col])
+                        # xtest[col] = np.log1p(xtest[col])
+                else:
+                    raise Exception(f"scaler {f} is invalid!")
+
+            # create instances
+            if self.model_name.startswith("k") and self.comp_type != "2class":
+                ## to one hot
+                self.ytrain = np_utils.to_categorical(self.ytrain)
+                self.yvalid = np_utils.to_categorical(self.yvalid)
+            self.xtrain = xtrain
+            self.ytrain = ytrain
+            self.xvalid = xvalid
+            self.yvalid = yvalid
+        
         # create optuna study
         study = optuna.create_study(direction=self._aim, study_name=self.model_name)
         study.optimize(
@@ -1196,6 +1320,44 @@ class OptunaOptimizer:
             )
         return study, self._random_state
 
+class UModel(tez.Model):
+    def __init__(self, model_name, num_classes, learning_rate, n_train_steps
+#                 , warmup_ratio
+                ):
+        super().__init__()
+
+        self.learning_rate = learning_rate
+        self.n_train_steps = n_train_steps
+#        self.warmup_ratio = warmup_ratio
+        self.model = timm.create_model(model_name, pretrained=True, in_chans=3, num_classes=num_classes)
+        self.step_scheduler_after = "batch"
+    
+    def monitor_metrics(self, outputs, targets):
+        if targets is None:
+            return {}
+        outputs = torch.argmax(outputs, dim=1).cpu().detach().numpy()
+        targets = targets.cpu().detach().numpy()
+        accuracy = metrics.accuracy_score(targets, outputs)
+        return {"accuracy": accuracy}
+    
+    
+    def fetch_optimizer(self):
+        opt = torch.optim.Adam(self.parameters(), lr=3e-4)
+        return opt
+    
+    def fetch_scheduler(self):
+        sch = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            self.optimizer, T_0=10, T_mult=1, eta_min=1e-6, last_epoch=-1
+        )
+        return sch
+
+    def forward(self, image, targets=None):
+        x = self.model(image)
+        if targets is not None:
+            loss = nn.CrossEntropyLoss()(x, targets)
+            metrics = self.monitor_metrics(x, targets)
+            return x, loss, metrics
+        return x, 0, {}
 
 if __name__ == "__main__":
     import optuna
