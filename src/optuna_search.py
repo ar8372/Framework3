@@ -730,13 +730,13 @@ class OptunaOptimizer:
 
             params = {
                 "batch_size": trial.suggest_categorical(
-                    "batch_size", [16, 64]
+                    "batch_size", [16, 32, 64]
                 ),  # ,32,64, 128,256, 512]),
                 # "epochs": trial.suggest_int(
                 #     "epochs", 1, 2, step=1, log=False
                 # ),  # 55, step=5, log=False),  # 5,55
-                "epochs": trial.suggest_categorical("epochs", [5]),
-                "learning_rate": trial.suggest_uniform("learning_rate", 0, 3),
+                "epochs": trial.suggest_categorical("epochs", [5, 10, 15]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 0, 8),
                 "patience": trial.suggest_categorical("patience", [3, 4, 5]),
             }
             return params
