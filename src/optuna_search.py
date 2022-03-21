@@ -1263,6 +1263,7 @@ class OptunaOptimizer:
             self.optimize_on = optimize_on
         if prep_list != "--|--":
             self.prep_list = prep_list
+        self.my_folds = my_folds
         my_folds1 = my_folds.copy()
         # test1  = test.copy()
 
@@ -1379,20 +1380,6 @@ class OptunaOptimizer:
         self.generate_random_no()
         random_list = np.random.randint(1, 1000, 5)  # 100
         if self.model_name == "tez1":
-            # prep test dataset
-            sample = pd.read_csv(
-                f"../models_{self.locker['comp_name']}/" + "sample.csv"
-            )
-
-            # te_orig_id = dfx_te['id'].copy()
-            # dfx_te['id'] = dfx_te['id'] + '.jpeg'
-
-            self.test_image_paths = [
-                f"../input_{self.locker['comp_name']}/" + "test_img/" + x
-                for x in sample[self.locker["id_name"]].values
-            ]
-
-            # fake targets
             aug = A.Compose(
                 [
                     A.Normalize(
@@ -1404,6 +1391,15 @@ class OptunaOptimizer:
                 ],
                 p=1.0,
             )
+            #------------------  prep test dataset
+            sample = pd.read_csv(
+                f"../models_{self.locker['comp_name']}/" + "sample.csv"
+            )
+            self.test_image_paths = [
+                f"../input_{self.locker['comp_name']}/" + "test_img/" + x
+                for x in sample[self.locker["id_name"]].values
+            ]
+            # fake targets
             self.test_targets = sample[
                 self.locker["target_name"]
             ].values  # dfx_te.digit_sum.values
@@ -1412,6 +1408,23 @@ class OptunaOptimizer:
                 targets=self.test_targets,
                 augmentations=aug,
             )
+            #------------------ re define training set 
+            image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
+
+            target_name = self.locker["target_name"]
+            self.ytrain = self.my_folds[target_name].values
+
+            self.train_image_paths = [
+                os.path.join(image_path, x)
+                for x in self.my_folds[self.locker["id_name"]].values # xtrain change to my_folds
+            ]
+            self.xtrain = ImageDataset(
+                image_paths=self.train_image_paths,
+                targets=self.test_targets,
+                augmentations=aug,
+            )            
+            #------ full my_folds data is now xtrain, ytrain
+
             scores = []
             final_test_predictions = []
             for rn in random_list:
