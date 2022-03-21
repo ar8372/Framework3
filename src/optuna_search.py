@@ -1165,7 +1165,7 @@ class OptunaOptimizer:
                 patience=params["patience"],
                 mode="min",
             )
-            self._history = model.fit(
+            self._history=model.fit(
                 self.xtrain,  # self.train_dataset
                 valid_dataset=self.xvalid,  # self.valid_dataset
                 train_bs=params["batch_size"],
@@ -1182,6 +1182,7 @@ class OptunaOptimizer:
         else:
             model.fit(self.xtrain, self.ytrain)
 
+        # Make prediction and Score
         metrics_name = self.metrics_name
         if self.locker["data_type"] == "image":
             # storage for oof and submission
@@ -1263,7 +1264,7 @@ class OptunaOptimizer:
             self.optimize_on = optimize_on
         if prep_list != "--|--":
             self.prep_list = prep_list
-        self.my_folds = my_folds  # make it public for the object
+        self.my_folds = my_folds # make it public for the object
         my_folds1 = my_folds.copy()
         # test1  = test.copy()
 
@@ -1286,8 +1287,7 @@ class OptunaOptimizer:
                 os.path.join(image_path, x)
                 for x in xvalid[self.locker["id_name"]].values
             ]
-
-            aug = A.Compose(
+            self.aug = A.Compose(
                 [
                     A.Normalize(
                         mean=[0.5, 0.5, 0.5],
@@ -1298,17 +1298,16 @@ class OptunaOptimizer:
                 ],
                 p=1.0,
             )
-
             self.xtrain = ImageDataset(  # train_dataset
                 image_paths=self.train_image_paths,
                 targets=self.ytrain,
-                augmentations=aug,
+                augmentations=self.aug,
             )
 
             self.xvalid = ImageDataset(  # valid_dataset
                 image_paths=self.valid_image_paths,
                 targets=self.yvalid,
-                augmentations=aug,
+                augmentations=self.aug,
             )
 
         elif self.locker["data_type"] == "tabular":
@@ -1381,21 +1380,12 @@ class OptunaOptimizer:
         self.generate_random_no()
         random_list = np.random.randint(1, 1000, 5)  # 100
 
-        sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
+        sample = pd.read_csv(
+            f"../models_{self.locker['comp_name']}/" + "sample.csv"
+        )
 
         if self.model_name == "tez1":
-            aug = A.Compose(
-                [
-                    A.Normalize(
-                        mean=[0.5, 0.5, 0.5],
-                        std=[0.5, 0.5, 0.5],
-                        max_pixel_value=255.0,
-                        p=1.0,
-                    )
-                ],
-                p=1.0,
-            )
-            # ------------------  prep test dataset
+            #------------------  prep test dataset
             self.test_image_paths = [
                 f"../input_{self.locker['comp_name']}/" + "test_img/" + x
                 for x in sample[self.locker["id_name"]].values
@@ -1407,9 +1397,9 @@ class OptunaOptimizer:
             self.test_dataset = ImageDataset(
                 image_paths=self.test_image_paths,
                 targets=self.test_targets,
-                augmentations=aug,
+                augmentations=self.aug,
             )
-            # ------------------ re define training set
+            #------------------ re define training set 
             image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
 
             target_name = self.locker["target_name"]
@@ -1417,19 +1407,17 @@ class OptunaOptimizer:
 
             self.train_image_paths = [
                 os.path.join(image_path, x)
-                for x in self.my_folds[
-                    self.locker["id_name"]
-                ].values  # xtrain change to my_folds
+                for x in self.my_folds[self.locker["id_name"]].values # xtrain change to my_folds
             ]
             self.xtrain = ImageDataset(
                 image_paths=self.train_image_paths,
                 targets=self.test_targets,
-                augmentations=aug,
-            )
+                augmentations=self.aug,
+            )   
 
-            self.xvalid = self.xtrain
-            self.yvalid = self.ytrain
-            # ------ full my_folds data is now xtrain, ytrain
+            self.xvalid = self.xtrain 
+            self.yvalid = self.ytrain         
+            #------ full my_folds data is now xtrain, ytrain
 
         scores = []
         final_test_predictions = []
