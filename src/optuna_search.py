@@ -1165,7 +1165,7 @@ class OptunaOptimizer:
                 patience=params["patience"],
                 mode="min",
             )
-            model.fit(
+            self._history= model.fit(
                 self.xtrain,  # self.train_dataset
                 valid_dataset=self.xvalid,  # self.valid_dataset
                 train_bs=params["batch_size"],
@@ -1263,7 +1263,7 @@ class OptunaOptimizer:
             self.optimize_on = optimize_on
         if prep_list != "--|--":
             self.prep_list = prep_list
-        self.my_folds = my_folds
+        self.my_folds = my_folds # make it public for the object
         my_folds1 = my_folds.copy()
         # test1  = test.copy()
 
@@ -1312,6 +1312,7 @@ class OptunaOptimizer:
             )
 
         elif self.locker["data_type"] == "tabular":
+            # concept of useful feature don't make sense for image problem
             xtrain = xtrain[useful_features]
             xvalid = xvalid[useful_features]
 
@@ -1379,6 +1380,11 @@ class OptunaOptimizer:
         self._seed = True
         self.generate_random_no()
         random_list = np.random.randint(1, 1000, 5)  # 100
+
+        sample = pd.read_csv(
+            f"../models_{self.locker['comp_name']}/" + "sample.csv"
+        )
+
         if self.model_name == "tez1":
             aug = A.Compose(
                 [
@@ -1392,9 +1398,6 @@ class OptunaOptimizer:
                 p=1.0,
             )
             #------------------  prep test dataset
-            sample = pd.read_csv(
-                f"../models_{self.locker['comp_name']}/" + "sample.csv"
-            )
             self.test_image_paths = [
                 f"../input_{self.locker['comp_name']}/" + "test_img/" + x
                 for x in sample[self.locker["id_name"]].values
@@ -1422,24 +1425,27 @@ class OptunaOptimizer:
                 image_paths=self.train_image_paths,
                 targets=self.test_targets,
                 augmentations=aug,
-            )            
+            )   
+
+            self.xvalid = self.xtrain 
+            self.yvalid = self.ytrain         
             #------ full my_folds data is now xtrain, ytrain
 
-            scores = []
-            final_test_predictions = []
-            for rn in random_list:
-                self.random_state = rn
-                # run an algorithm for 100 times
-                scores.append(self.obj("--no-trial--"))
-                final_test_predictions.append(self.test_preds)
-            sample[self.locker["target_name"]] = stats.mode(
-                np.column_stack(final_test_predictions), axis=1
-            )[0]
-            sample.to_csv(
-                f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}.csv",
-                index=False,
-            )
-            return np.mean(scores), np.std(scores)
+        scores = []
+        final_test_predictions = []
+        for rn in random_list:
+            self.random_state = rn
+            # run an algorithm for 100 times
+            scores.append(self.obj("--no-trial--"))
+            final_test_predictions.append(self.test_preds)
+        sample[self.locker["target_name"]] = stats.mode(
+            np.column_stack(final_test_predictions), axis=1
+        )[0]
+        sample.to_csv(
+            f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}.csv",
+            index=False,
+        )
+        return np.mean(scores), np.std(scores)
 
 
 if __name__ == "__main__":
