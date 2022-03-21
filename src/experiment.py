@@ -5,7 +5,7 @@ import os
 import sys
 import pickle
 import pandas as pd
-
+from custom_models import UModel
 
 class Agent:
     def __init__(
@@ -102,9 +102,12 @@ class Agent:
             with_gpu=self.with_gpu,
             save_models=self.save_models,
         )
-        study, random_state = opt.run(my_folds, self.useful_features)
+        self.study, random_state, seed_mean, seed_std= opt.run(my_folds, self.useful_features)
         if self.save_models == True:
-            self._save_models(study, random_state)
+            self._save_models(self.study, random_state, seed_mean, seed_std)
+        
+        # Let's make perdiction on Test Set:
+        #self._seed_it()
 
     def get_exp_no(self):
         # exp_no, current_level
@@ -113,7 +116,7 @@ class Agent:
         )
         self.current_exp_no = int(self.current_dict["current_exp_no"])
 
-    def _save_models(self, study, random_state):
+    def _save_models(self, study, random_state, seed_mean, seed_std):
         Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
         Table = pd.DataFrame(Table)
         # what unifies it
@@ -133,6 +136,8 @@ class Agent:
             self.n_trials,
             self.prep_list,
             self.metrics_name,
+            seed_mean,
+            seed_std,
         ]
 
         # --------------- dump experiment no
@@ -142,6 +147,8 @@ class Agent:
         )
         # ---------------- dump table
         self.save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", Table)
+
+
 
     def show_variables(self):
         print()

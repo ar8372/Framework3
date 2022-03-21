@@ -82,6 +82,8 @@ if __name__ == "__main__":
             "no_iterations",
             "prep_list",
             "metrics_name",
+            "seed_mean",
+            "seed_std",
         ]
     )
     with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:

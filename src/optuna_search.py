@@ -138,7 +138,7 @@ import os, cv2, json
 from PIL import Image
 
 import random
-
+from custom_models import *
 # ------------------------------
 
 
@@ -149,7 +149,7 @@ class OptunaOptimizer:
         comp_type="2class",
         metrics_name="accuracy",
         aim="maximize",
-        n_trials=50,
+        n_trials=2, #50,
         optimize_on=0,
         prep_list=[],
         with_gpu=False,
@@ -164,6 +164,7 @@ class OptunaOptimizer:
         self.save_models = save_models
         self._trial_score = None
         self._history = None
+        self._seed = False # in start we want to find best params then we will loop
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.metrics_list = [
             "accuracy",
@@ -728,20 +729,22 @@ class OptunaOptimizer:
 
             params = {
                 "batch_size": trial.suggest_categorical(
-                    "n_estimators", [16]
+                    "batch_size", [64]
                 ),  # ,32,64, 128,256, 512]),
-                "epochs": trial.suggest_int(
-                    "epochs", 5, 6, step=1, log=False
-                ),  # 55, step=5, log=False),  # 5,55
-                "learning_rate": trial.suggest_uniform("learning_rate", 0, 3),
+                # "epochs": trial.suggest_int(
+                #     "epochs", 1, 2, step=1, log=False
+                # ),  # 55, step=5, log=False),  # 5,55
+                "epochs" : trial.suggest_categorical("epochs", [1]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 0, .03),
                 "patience": trial.suggest_categorical("patience", [3, 4, 5]),
             }
-            params = {
-                "batch_size": 16,
-                "epochs": 1,  # 5
-                "learning_rate": 0.002,
-                "patience": 4,
-            }
+            # params = {
+            #     "batch_size": 64,
+            #     "epochs": 1,  # 5
+            #     "learning_rate": 0.002,
+            #     "patience": 4,
+            # }
+            # return params
             return params
 
         if model_name == "keras":  # demo
@@ -1111,8 +1114,10 @@ class OptunaOptimizer:
         )
 
     def obj(self, trial):
-
-        params = self.get_params(trial)
+        if self._seed == True:
+            params = self.params 
+        else:
+            params = self.get_params(trial)
         model = self.get_model(params)
 
         if self.model_name == "lgbmr":
@@ -1153,9 +1158,14 @@ class OptunaOptimizer:
             )
             self._history = history.history
         if self.model_name == "tez1":
+            model_path_es= f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
+            model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin"
+            if self._seed == True:
+                model_path_es = model_path_es + "_seed"
+                model_path_s = model_path_s + "_seed"
             stop = EarlyStopping(
                 monitor="valid_loss",
-                model_path=f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin",  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
+                model_path= model_path_es, 
                 patience=params["patience"],
                 mode="min",
             )
@@ -1170,7 +1180,7 @@ class OptunaOptimizer:
                 fp16=True,
             )
             model.save(
-                f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin",
+                model_path_s,
             )
 
         else:
@@ -1192,15 +1202,18 @@ class OptunaOptimizer:
             valid_preds = np.argmax(temp_preds, axis=1)
             # prval[val_idx,:] = temp_preds  #to make OOF
 
-            # produce predictions - test data
-            # prfull = np.zeros(( len(test_image_paths), 28))
-            # preds = model.predict(test_dataset, batch_size= 128, n_jobs=-1)
-            # temp_preds = None
-            # for p in preds:
-            #     if temp_preds is None:
-            #         temp_preds = p
-            #     else:
-            #         temp_preds = np.vstack((temp_preds, p))
+            if self._seed == True: # so create test prediction
+                # produce predictions - test data
+                prfull = np.zeros(( len(self.test_image_paths), 28))
+                preds = model.predict(self.test_dataset, batch_size= 128, n_jobs=-1)
+                temp_preds = None
+                for p in preds:
+                    if temp_preds is None:
+                        temp_preds = p
+                    else:
+                        temp_preds = np.vstack((temp_preds, p))
+                self.test_preds = temp_preds.argmax(axis = 1)
+
         elif self.locker["data_type"] == "tabular":
             if metrics_name in [
                 "auc",
@@ -1235,7 +1248,7 @@ class OptunaOptimizer:
             score = rg(self.metrics_name, self.yvalid, valid_preds)
 
         # Let's save these values
-        self._trial_score = score  # save it to save in log_table
+        self._trial_score = score  # save it to save in log_table because params don't contain our metrics score
         self.save_logs(params)
 
         return score
@@ -1354,54 +1367,57 @@ class OptunaOptimizer:
                 f"../models_{self.locker['comp_name']}/log_exp_{c+1}.pkl",
                 self._log_table,
             )
-        return study, self._random_state
+        print("="*40)
+        print("Best parameters found:")
+        print(study.best_trial.value)
+        self.params = study.best_trial.params  # crete params to be used in seed
+        print(study.best_trial.params)
+        print("="*40)
+        # later put conditions on whether to put seed or not
+        seed_mean, seed_std= self._seed_it() # generate seeds 
+        return study, self._random_state, seed_mean, seed_std
 
+    def _seed_it(self):
+        self._seed = True
+        self.generate_random_no()
+        random_list = np.random.randint(1,1000,2) #100
+        if self.model_name == "tez1":
+                # prep test dataset
+                sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + 'sample.csv')
+                
+                #te_orig_id = dfx_te['id'].copy()
+                #dfx_te['id'] = dfx_te['id'] + '.jpeg'
 
-class UModel(tez.Model):
-    def __init__(
-        self,
-        model_name,
-        num_classes,
-        learning_rate,
-        n_train_steps
-        #                 , warmup_ratio
-    ):
-        super().__init__()
+                self.test_image_paths = [f"../input_{self.locker['comp_name']}/" + 'test_img/' + x for x in sample[self.locker["id_name"]].values]
 
-        self.learning_rate = learning_rate
-        self.n_train_steps = n_train_steps
-        #        self.warmup_ratio = warmup_ratio
-        self.model = timm.create_model(
-            model_name, pretrained=True, in_chans=3, num_classes=num_classes
-        )
-        self.step_scheduler_after = "batch"
-
-    def monitor_metrics(self, outputs, targets):
-        if targets is None:
-            return {}
-        outputs = torch.argmax(outputs, dim=1).cpu().detach().numpy()
-        targets = targets.cpu().detach().numpy()
-        accuracy = metrics.accuracy_score(targets, outputs)
-        return {"accuracy": accuracy}
-
-    def fetch_optimizer(self):
-        opt = torch.optim.Adam(self.parameters(), lr=3e-4)
-        return opt
-
-    def fetch_scheduler(self):
-        sch = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            self.optimizer, T_0=10, T_mult=1, eta_min=1e-6, last_epoch=-1
-        )
-        return sch
-
-    def forward(self, image, targets=None):
-        x = self.model(image)
-        if targets is not None:
-            loss = nn.CrossEntropyLoss()(x, targets)
-            metrics = self.monitor_metrics(x, targets)
-            return x, loss, metrics
-        return x, 0, {}
-
+                # fake targets
+                aug = A.Compose(
+                                [
+                                    A.Normalize(
+                                        mean=[0.5, 0.5, 0.5],
+                                        std=[0.5, 0.5, 0.5],
+                                        max_pixel_value=255.0,
+                                        p=1.0,
+                                    )
+                                ],
+                                p=1.0,
+                            )                
+                self.test_targets = sample[self.locker["target_name"]].values #dfx_te.digit_sum.values
+                self.test_dataset = ImageDataset(
+                    image_paths=self.test_image_paths,
+                    targets=self.test_targets,
+                    augmentations = aug,
+                )
+                scores = []
+                final_test_predictions = []
+                for rn in random_list:
+                    self.random_state = rn
+                    # run an algorithm for 100 times
+                    scores.append(self.obj('--no-trial--'))
+                    final_test_predictions.append(self.test_preds)
+                sample[self.locker["target_name"]] = stats.mode(np.column_stack(final_test_predictions), axis=1)[0]
+                sample.to_csv(f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}.csv", index=False)
+                return np.mean(scores), np.std(scores)
 
 if __name__ == "__main__":
     import optuna
