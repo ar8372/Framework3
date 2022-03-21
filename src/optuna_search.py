@@ -816,7 +816,9 @@ class OptunaOptimizer:
         print("=" * 40)
         batch_size = params["batch_size"]
         epochs = params["epochs"]
-        learning_rate = 10**(-1*params["learning_rate"]) #params["learning_rate"]  # 
+        learning_rate = 10 ** (
+            -1 * params["learning_rate"]
+        )  # params["learning_rate"]  #
 
         img_size = 256  # nothing to do with model used for naming output files
         model_name = "resnet50"
