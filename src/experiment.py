@@ -177,10 +177,10 @@ if __name__ == "__main__":
     model_name = "tez1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3" ]
     # --------------->["tez1"]
     comp_type = (
-        "2class"  # -------->["regression", "2class","multi_class", "multi_label"]
+        "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
     metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
-    n_trials = 2  # ------------> no of times to run optuna
+    n_trials = 20  # ------------> no of times to run optuna
     prep_list = [
         "Sd",
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list

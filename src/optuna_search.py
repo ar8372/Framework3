@@ -730,22 +730,15 @@ class OptunaOptimizer:
 
             params = {
                 "batch_size": trial.suggest_categorical(
-                    "batch_size", [64]
+                    "batch_size", [16, 64]
                 ),  # ,32,64, 128,256, 512]),
                 # "epochs": trial.suggest_int(
                 #     "epochs", 1, 2, step=1, log=False
                 # ),  # 55, step=5, log=False),  # 5,55
-                "epochs": trial.suggest_categorical("epochs", [1]),
-                "learning_rate": trial.suggest_uniform("learning_rate", 0, 0.03),
+                "epochs": trial.suggest_categorical("epochs", [5]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 0, 3),
                 "patience": trial.suggest_categorical("patience", [3, 4, 5]),
             }
-            # params = {
-            #     "batch_size": 64,
-            #     "epochs": 1,  # 5
-            #     "learning_rate": 0.002,
-            #     "patience": 4,
-            # }
-            # return params
             return params
 
         if model_name == "keras":  # demo
@@ -823,7 +816,7 @@ class OptunaOptimizer:
         print("=" * 40)
         batch_size = params["batch_size"]
         epochs = params["epochs"]
-        learning_rate = params["learning_rate"]  # 10**(-1*params["learning_rate"])
+        learning_rate = 10**(-1*params["learning_rate"]) #params["learning_rate"]  # 
 
         img_size = 256  # nothing to do with model used for naming output files
         model_name = "resnet50"
@@ -1162,8 +1155,8 @@ class OptunaOptimizer:
             model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin"
             if self._seed == True:
-                model_path_es = model_path_es + "_seed"
-                model_path_s = model_path_s + "_seed"
+                model_path_es = model_path_es + f"_seed_{self.random_state}"
+                model_path_s = model_path_s + f"_seed_{self.random_state}"
             stop = EarlyStopping(
                 monitor="valid_loss",
                 model_path=model_path_es,
@@ -1379,9 +1372,10 @@ class OptunaOptimizer:
         return study, self._random_state, seed_mean, seed_std
 
     def _seed_it(self):
+        print("SEEDING")
         self._seed = True
         self.generate_random_no()
-        random_list = np.random.randint(1, 1000, 2)  # 100
+        random_list = np.random.randint(1, 1000, 5)  # 100
         if self.model_name == "tez1":
             # prep test dataset
             sample = pd.read_csv(
