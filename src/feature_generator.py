@@ -4,6 +4,7 @@ import os
 import sys
 import pickle
 from collections import defaultdict
+from utils import *
 
 
 class features:
@@ -12,7 +13,7 @@ class features:
             for i in x:
                 comp_name = i
         x.close()
-        a = self.load_pickle(f"../models_{comp_name}/locker.pkl")
+        a = load_pickle(f"../models_{comp_name}/locker.pkl")
         # --------------------------------------
         self.locker = a
         # -------------------------------------
@@ -33,14 +34,13 @@ class features:
         else:
             self.level_no += 1
         self.current_dict["current_level"] = self.level_no
-        with open(f"../models_{self.locker['comp_name']}/current_dict.pkl", "wb") as f:
-            pickle.dump(self.current_dict, f)
+        save_pickle(f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict )
 
     def display_features_generated(self):
         # display all the feature engineering done so far
         # Key:- f"l{self.level_no}_f{feat_no}"
         # value:- [created, from , info]
-        self.feat_dict = self.load_pickle(
+        self.feat_dict = load_pickle(
             f"../models_{self.locker['comp_name']}/features_dict.pkl"
         )
         for key, value in self.feat_dict.items():
@@ -59,20 +59,11 @@ class features:
 
     def get_feat_no(self):
         # exp_no, current_level, current_feature_no
-        self.current_dict = self.load_pickle(
+        self.current_dict = load_pickle(
             f"../models_{self.locker['comp_name']}/current_dict.pkl"
         )
         self.level_no = int(self.current_dict["current_level"])
         self.current_feature_no = int(self.current_dict["current_feature_no"])
-
-    def save_pickle(self, path, to_dump):
-        with open(path, "wb") as f:
-            pickle.dump(to_dump, f)
-
-    def load_pickle(self, path):
-        with open(path, "rb") as f:
-            o = pickle.load(f)
-        return o
 
     def isRepetition(self, gen_features, old_features, feat_title):
         # self.curr
@@ -105,97 +96,97 @@ class features:
         if useful_features == "--|--":
             useful_features = self.useful_features
         self.get_feat_no()  # --updated self.current_feature_no to the latest feat no
-        self.feat_dict = self.load_pickle(
+        self.feat_dict = load_pickle(
             f"../models_{self.locker['comp_name']}/features_dict.pkl"
         )
         feat_no = self.current_feature_no + 1
         # ------------------------------------------
         new_features = [
-            f"l{self.level_no}_f{feat_no}_nan_count",
-            f"l{self.level_no}_f{feat_no}_abs_sum",
-            f"l{self.level_no}_f{feat_no}_sem",
-            f"l{self.level_no}_f{feat_no}_std",
-            f"l{self.level_no}_f{feat_no}_mad",
-            f"l{self.level_no}_f{feat_no}_avg",
-            f"l{self.level_no}_f{feat_no}_median",
-            f"l{self.level_no}_f{feat_no}_max",
-            f"l{self.level_no}_f{feat_no}_min",
-            f"l{self.level_no}_f{feat_no}_skew",
-            f"l{self.level_no}_f{feat_no}_num_missing_std",
+            f"l_{self.level_no}_f_{feat_no}_nan_count",
+            f"l_{self.level_no}_f_{feat_no}_abs_sum",
+            f"l_{self.level_no}_f_{feat_no}_sem",
+            f"l_{self.level_no}_f_{feat_no}_std",
+            f"l_{self.level_no}_f_{feat_no}_mad",
+            f"l_{self.level_no}_f_{feat_no}_avg",
+            f"l_{self.level_no}_f_{feat_no}_median",
+            f"l_{self.level_no}_f_{feat_no}_max",
+            f"l_{self.level_no}_f_{feat_no}_min",
+            f"l_{self.level_no}_f_{feat_no}_skew",
+            f"l_{self.level_no}_f_{feat_no}_num_missing_std",
         ]
         # -------------------------------------------------
         self.isRepetition(
             new_features, useful_features, feat_title
         )  # check for duplicate process
         # -------------------------------------------------
-        self.test[f"l{self.level_no}_f{feat_no}_nan_count"] = self.test.isnull().sum(
+        self.test[f"l_{self.level_no}_f_{feat_no}_nan_count"] = self.test.isnull().sum(
             axis=1
         )
         self.my_folds[
-            f"l{self.level_no}_f{feat_no}_nan_count"
+            f"l_{self.level_no}_f_{feat_no}_nan_count"
         ] = self.my_folds.isnull().sum(axis=1)
 
         # self.my_folds[f'l{self.level_no}_f{feat_no}_n_missing'] = my_folds[useful_features].isna().sum(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_abs_sum"] = (
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_abs_sum"] = (
             self.my_folds[useful_features].abs().sum(axis=1)
         )
-        self.my_folds[f"l{self.level_no}_f{feat_no}_sem"] = self.my_folds[
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_sem"] = self.my_folds[
             useful_features
         ].sem(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_std"] = self.my_folds[
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_std"] = self.my_folds[
             useful_features
         ].std(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_mad"] = self.my_folds[
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_mad"] = self.my_folds[
             useful_features
         ].mad(axis=1)
         self.my_folds[f"l{self.level_no}_f{feat_no}_avg"] = self.my_folds[
             useful_features
         ].mean(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_median"] = self.my_folds[
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_median"] = self.my_folds[
             useful_features
         ].median(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_max"] = self.my_folds[
+        self.my_folds[f"l_{self.level_no}_f-{feat_no}_max"] = self.my_folds[
             useful_features
         ].max(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_min"] = self.my_folds[
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_min"] = self.my_folds[
             useful_features
         ].min(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_skew"] = self.my_folds[
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_skew"] = self.my_folds[
             useful_features
         ].skew(axis=1)
-        self.my_folds[f"l{self.level_no}_f{feat_no}_num_missing_std"] = (
+        self.my_folds[f"l_{self.level_no}_f_{feat_no}_num_missing_std"] = (
             self.my_folds[useful_features].isna().std(axis=1).astype("float")
         )
 
         # test[f'l{self.level_no}_f{feat_no}_n_missing'] = test[useful_features].isna().sum(axis=1)
-        self.test[f"l{self.level_no}_f{feat_no}_abs_sum"] = (
+        self.test[f"l_{self.level_no}_f_{feat_no}_abs_sum"] = (
             self.test[useful_features].abs().sum(axis=1)
         )
-        self.test[f"l{self.level_no}_f{feat_no}_sem"] = self.test[useful_features].sem(
+        self.test[f"l_{self.level_no}_f_{feat_no}_sem"] = self.test[useful_features].sem(
             axis=1
         )
-        self.test[f"l{self.level_no}_f{feat_no}_std"] = self.test[useful_features].std(
+        self.test[f"l_{self.level_no}_f_{feat_no}_std"] = self.test[useful_features].std(
             axis=1
         )
-        self.test[f"l{self.level_no}_f{feat_no}_mad"] = self.test[useful_features].mad(
+        self.test[f"l_{self.level_no}_f_{feat_no}_mad"] = self.test[useful_features].mad(
             axis=1
         )
-        self.test[f"l{self.level_no}_f{feat_no}_avg"] = self.test[useful_features].mean(
+        self.test[f"l_{self.level_no}_f_{feat_no}_avg"] = self.test[useful_features].mean(
             axis=1
         )
-        self.test[f"l{self.level_no}_f{feat_no}_median"] = self.test[
+        self.test[f"l_{self.level_no}_f_{feat_no}_median"] = self.test[
             useful_features
         ].median(axis=1)
-        self.test[f"l{self.level_no}_f{feat_no}_max"] = self.test[useful_features].max(
+        self.test[f"l_{self.level_no}_f_{feat_no}_max"] = self.test[useful_features].max(
             axis=1
         )
-        self.test[f"l{self.level_no}_f{feat_no}_min"] = self.test[useful_features].min(
+        self.test[f"l_{self.level_no}_f_{feat_no}_min"] = self.test[useful_features].min(
             axis=1
         )
-        self.test[f"l{self.level_no}_f{feat_no}_skew"] = self.test[
+        self.test[f"l_{self.level_no}_f_{feat_no}_skew"] = self.test[
             useful_features
         ].skew(axis=1)
-        self.test[f"l{self.level_no}_f{feat_no}_num_missing_std"] = (
+        self.test[f"l_{self.level_no}_f_{feat_no}_num_missing_std"] = (
             self.test[useful_features].isna().std(axis=1).astype("float")
         )
 
@@ -209,19 +200,19 @@ class features:
         self.current_feature_no = feat_no
         self.current_dict["current_level"] = self.level_no
         self.current_dict["current_feature_no"] = self.current_feature_no
-        self.save_pickle(
+        save_pickle(
             f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict
         )
         # -----------------------------dump feature dictionary
-        feat_dict = self.load_pickle(
+        feat_dict = load_pickle(
             f"../models_{self.locker['comp_name']}/features_dict.pkl"
         )
-        feat_dict[f"l{self.level_no}_f{feat_no}"] = [
+        feat_dict[f"l_{self.level_no}_f_{feat_no}"] = [
             new_features,
             useful_features,
             feat_title,
         ]
-        self.save_pickle(
+        save_pickle(
             f"../models_{self.locker['comp_name']}/features_dict.pkl", feat_dict
         )
         print("New features create:- ")

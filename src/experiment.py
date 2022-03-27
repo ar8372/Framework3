@@ -5,8 +5,9 @@ import os
 import sys
 import pickle
 import pandas as pd
-from custom_models import UModel
-
+#from custom_models import UModel
+#from custom_models import *
+from utils import *
 
 class Agent:
     def __init__(
@@ -25,8 +26,8 @@ class Agent:
             for i in x:
                 comp_name = i
         x.close()
-        self.locker = self.load_pickle(f"../models_{comp_name}/locker.pkl")
-        self.current_dict = self.load_pickle(f"../models_{comp_name}/current_dict.pkl")
+        self.locker = load_pickle(f"../models_{comp_name}/locker.pkl")
+        self.current_dict = load_pickle(f"../models_{comp_name}/current_dict.pkl")
         # ----------------------------------------------------------
         self.useful_features = useful_features
         self.model_name = model_name
@@ -37,15 +38,6 @@ class Agent:
         self.optimize_on = optimize_on
         self.save_models = True
         self.with_gpu = True
-
-    def save_pickle(self, path, to_dump):
-        with open(path, "wb") as f:
-            pickle.dump(to_dump, f)
-
-    def load_pickle(self, path):
-        with open(path, "rb") as f:
-            o = pickle.load(f)
-        return o
 
     def sanity_check(self):
         if "--|--" in [
@@ -114,13 +106,13 @@ class Agent:
 
     def get_exp_no(self):
         # exp_no, current_level
-        self.current_dict = self.load_pickle(
+        self.current_dict = load_pickle(
             f"../models_{self.locker['comp_name']}/current_dict.pkl"
         )
         self.current_exp_no = int(self.current_dict["current_exp_no"])
 
     def _save_models(self, study, random_state, seed_mean, seed_std):
-        Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
+        Table = load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
         Table = pd.DataFrame(Table)
         # what unifies it
         self.get_exp_no()
@@ -141,15 +133,20 @@ class Agent:
             self.metrics_name,
             seed_mean,
             seed_std,
+            None,
+            None,
+            {"seed_single": None,
+            "seed_all": None,
+            "fold_all": None}
         ]
 
         # --------------- dump experiment no
         self.current_dict["current_exp_no"] = self.current_exp_no
-        self.save_pickle(
+        save_pickle(
             f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict
         )
         # ---------------- dump table
-        self.save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", Table)
+        save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", Table)
 
     def show_variables(self):
         print()
@@ -180,7 +177,7 @@ if __name__ == "__main__":
         "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
     metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
-    n_trials = 30  # ------------> no of times to run optuna
+    n_trials = 5  # ------------> no of times to run optuna
     prep_list = [
         "Sd",
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list

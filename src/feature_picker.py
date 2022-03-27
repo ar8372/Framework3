@@ -54,12 +54,14 @@ class Picker:
         if self.list_levels != []:
             valid_keys1 = []
             for key in list(self.feat_dict.keys()):
-                if str(key[1]) in str(self.list_levels):
+                t = str(key).split("_")[1]
+                if t in str(self.list_levels):
                     valid_keys1.append(key)
         if self.list_features != []:
             valid_keys2 = []
             for key in list(self.feat_dict.keys()):
-                if str(key[4]) in str(self.list_features):
+                t = str(key).split("_")[3]
+                if t in str(self.list_features):
                     valid_keys2.append(key)
         if self.list_feat_title != []:
             valid_keys3 = []

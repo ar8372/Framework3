@@ -114,16 +114,12 @@ import os
 import albumentations as A
 import pandas as pd
 import numpy as np
-
-
 import tez
 from tez.datasets import ImageDataset
 from tez.callbacks import EarlyStopping
-
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-
 from sklearn import metrics, model_selection, preprocessing
 import timm
 
@@ -131,20 +127,28 @@ from sklearn.model_selection import KFold
 
 # ignoring warnings
 import warnings
-
 warnings.simplefilter("ignore")
-
 import os, cv2, json
 from PIL import Image
 
 import random
+
+import tez
+from tez.datasets import ImageDataset
+from tez.callbacks import EarlyStopping
+
+
+
 from custom_models import *
-from custom_model import *
+from custom_classes import *
+from utils import *
 
 # ------------------------------
-# keras image 
+# keras image
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-#-------------
+
+# -------------
+
 
 class OptunaOptimizer:
     def __init__(
@@ -152,7 +156,6 @@ class OptunaOptimizer:
         model_name="lgr",
         comp_type="2class",
         metrics_name="accuracy",
-        aim="maximize",
         n_trials=2,  # 50,
         optimize_on=0,
         prep_list=[],
@@ -163,12 +166,11 @@ class OptunaOptimizer:
             for i in x:
                 comp_name = i
         x.close()
-        self.locker = self.load_pickle(f"../models_{comp_name}/locker.pkl")
-        self.current_dict = self.load_pickle(f"../models_{comp_name}/current_dict.pkl")
+        self.locker = load_pickle(f"../models_{comp_name}/locker.pkl")
+        self.current_dict = load_pickle(f"../models_{comp_name}/current_dict.pkl")
         self.save_models = save_models
         self._trial_score = None
         self._history = None
-        self._seed = False  # in start we want to find best params then we will loop
         self.cutmix = False
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.metrics_list = [
@@ -214,6 +216,8 @@ class OptunaOptimizer:
         self.metrics_name = metrics_name
         self.with_gpu = with_gpu
         self._log_table = None  # will track experiments
+        self._state = "opt" #["opt","fold", "seed"]
+        # in start we want to find best params then we will loop
         if self.metrics_name in [
             "accuracy",
             "f1",
@@ -232,15 +236,6 @@ class OptunaOptimizer:
         self.model_name = model_name
         self.optimize_on = optimize_on
         self.sanity_check()
-
-    def save_pickle(self, path, to_dump):
-        with open(path, "wb") as f:
-            pickle.dump(to_dump, f)
-
-    def load_pickle(self, path):
-        with open(path, "rb") as f:
-            o = pickle.load(f)
-        return o
 
     def show_variables(self):
         print()
@@ -303,7 +298,7 @@ class OptunaOptimizer:
     def generate_random_no(self):
         comp_random_state = self.locker["random_state"]
         total_no_folds = self.locker["no_folds"]
-        fold_on = self.optimize_on
+        #fold_on = self.optimize_on
         metric_no = self.metrics_list.index(self.metrics_name)
         comp_type_no = self.comp_list.index(self.comp_type)
         model_no = self.model_list.index(self.model_name)
@@ -316,15 +311,15 @@ class OptunaOptimizer:
         # round_on
         # level_on
         #
-        seed = comp_random_state + total_no_folds * 2 + fold_on * 3 + metric_no * 4
+        seed = comp_random_state + total_no_folds * 2 + metric_no * 3
         seed += int(
-            comp_type_no * 5 + model_no * 6 + prep_no * 7
+            comp_type_no * 4 + model_no * 5 + prep_no * 6
         )  # + round_on * 4 + level_on * 5
         seed = int(seed)
         os.environ["PYTHONHASHSEED"] = str(seed)
         np.random.seed(seed)
         random.seed(seed)
-        tf.random.set_seed(seed)
+        tf.random.set_seed(seed) #f"The truth value of a {type(self).__name__} is ambiguous. "
         return np.random.randint(3, 1000)  # it should return 5
 
     def get_params(self, trial):
@@ -734,14 +729,14 @@ class OptunaOptimizer:
 
             params = {
                 "batch_size": trial.suggest_categorical(
-                    "batch_size", [16, 32, 64]
+                    "batch_size", [16]
                 ),  # ,32,64, 128,256, 512]),
                 # "epochs": trial.suggest_int(
                 #     "epochs", 1, 2, step=1, log=False
                 # ),  # 55, step=5, log=False),  # 5,55
-                "epochs": trial.suggest_categorical("epochs", [5, 10, 15]),
-                "learning_rate": trial.suggest_uniform("learning_rate", 0, 8),
-                "patience": trial.suggest_categorical("patience", [3, 4, 5]),
+                "epochs": trial.suggest_categorical("epochs", [5]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 2, 8),
+                "patience": trial.suggest_categorical("patience", [ 5]),
             }
             return params
 
@@ -806,8 +801,8 @@ class OptunaOptimizer:
         if model_name == "tez1":
             return self._tez1(params, random_state=self._random_state)
         if model_name == "kaggletv":
-            _model_name = 'resnet34'
-            model = pretrainedmodels.__dict__[_model_name](pretrained='imagenet')
+            _model_name = "resnet34"
+            model = pretrainedmodels.__dict__[_model_name](pretrained="imagenet")
             model = model.cuda()
             optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
             return model
@@ -1113,19 +1108,20 @@ class OptunaOptimizer:
         if self._log_table is None:
             # not initialized
             self._log_table = pd.DataFrame(
-                columns=["trial_score"] + list(params.keys()) + ["keras_history"]
+                columns=["trial_score"] + list(params.keys()) + ["keras_history" ]
             )
         self._log_table.loc[self._log_table.shape[0], :] = (
             [self._trial_score] + list(params.values()) + [self._history]
         )
 
     def obj(self, trial):
-        if self._seed == True:
+        if self._state == "seed" or self._state == "fold":
             params = self.params
         else:
             params = self.get_params(trial)
         model = self.get_model(params)
 
+        # fit xtrain
         if self.model_name == "lgbmr":
             model.fit(
                 self.xtrain,
@@ -1136,10 +1132,10 @@ class OptunaOptimizer:
                 callbacks=[LightGBMPruningCallback(trial, "auc")],
                 verbose=0,
             )
-        if self.model_name in ["k1", "k2", "k3"]:
+        if self.model_name in ["k1", "k2", "k3"]: # keras
             stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
             checkpoint = ModelCheckpoint(
-                filepath="./",
+                filepath="./",  # to work on this part
                 save_weights_only=True,
                 monitor="val_accuracy",
                 mode="max",
@@ -1153,29 +1149,38 @@ class OptunaOptimizer:
                 min_lr=0.00001,
                 verbose=1,
             )
-            history = model.fit(
-                x=self.xtrain,
-                y=self.ytrain,
-                batch_size=params["batchsize"],
-                epochs=params["epochs"],
-                shuffle=True,
-                validation_split=0.15,
-                callbacks=[stop, checkpoint, reduce_lr],
-            )
+            #----------------------
+            if self.locker["data_type"] == "tabular":
+                history = model.fit(
+                    x=self.xtrain,
+                    y=self.ytrain,
+                    batch_size=params["batchsize"],
+                    epochs=params["epochs"],
+                    shuffle=True,
+                    validation_split=0.15,
+                    callbacks=[stop, checkpoint, reduce_lr],
+                )
             if self.locker["data_type"] == "image":
-                history = model.fit(self.train_datagen, steps_per_epoch= np.ceil(len(self.xtrain)/self.params["batchsize"])
-                                    epochs = self.params["epochs"],
-                                    verbose=2,
-                                    validatioin_data = self.valid_datagen,
-                                    validation_step = 8,
-                                    callbacks = [stop, checkpoint, reduce_lr])
-                model.evaluate_generator(generator=self.valid_datagen, steps=1) # 1 to make it perfectly divisible
+                history = model.fit(
+                    self.train_datagen,
+                    steps_per_epoch=np.ceil(
+                        len(self.xtrain) / self.params["batchsize"]
+                    ),
+                    epochs=self.params["epochs"],
+                    verbose=2,
+                    validatioin_data=self.valid_datagen,
+                    validation_step=8,
+                    callbacks=[stop, checkpoint, reduce_lr],
+                )
+                model.evaluate_generator(
+                    generator=self.valid_datagen, steps=1
+                )  # 1 to make it perfectly divisible
 
             self._history = history.history
         if self.model_name == "tez1":
             model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin"
-            if self._seed == True:
+            if self._state == "seed":
                 model_path_es = model_path_es + f"_seed_{self.random_state}"
                 model_path_s = model_path_s + f"_seed_{self.random_state}"
             stop = EarlyStopping(
@@ -1184,7 +1189,7 @@ class OptunaOptimizer:
                 patience=params["patience"],
                 mode="min",
             )
-            history=model.fit(
+            history = model.fit(
                 self.xtrain,  # self.train_dataset
                 valid_dataset=self.xvalid,  # self.valid_dataset
                 train_bs=params["batch_size"],
@@ -1194,38 +1199,56 @@ class OptunaOptimizer:
                 callbacks=[stop],
                 fp16=True,
             )
-            self._history = history.history
+            #self._history = history.history
             model.save(
                 model_path_s,
             )
-
-        else:  #tabular
+        else:  # tabular
             model.fit(self.xtrain, self.ytrain)
 
-        # Make prediction and Score
+        # Make prediction 
         metrics_name = self.metrics_name
         if self.locker["data_type"] == "image":
             # storage for oof and submission
+            if self.pravl is None:
+                self.pravl = np.zeros((len(self.valid_image_paths), 28))  # dfx.shape[0]
 
             # produce predictions - oof
-            prval = np.zeros((len(self.valid_image_paths), 28))  # dfx.shape[0]
-            if self.locker["model_name"] in ["k1", "k2", "k3"]:
-                # keras image 
+            if self.model_name in ["k1", "k2", "k3"]:
+                # keras image
                 self.valid_datagen.reset()
-                pred=model.predict_generator(valid_datagen, steps=STEP_SIZE_TEST, verbose=1)
+                pred = model.predict_generator(
+                    valid_datagen, steps=STEP_SIZE_TEST, verbose=1
+                )
             preds = model.predict(self.xvalid, batch_size=16, n_jobs=-1)
-            
+
             temp_preds = None
             for p in preds:
                 if temp_preds is None:
                     temp_preds = p
                 else:
                     temp_preds = np.vstack((temp_preds, p))
-            valid_preds = np.argmax(temp_preds, axis=1)
-            # prval[val_idx,:] = temp_preds  #to make OOF
+            self.valid_preds = np.argmax(temp_preds, axis=1)
 
-            if self._seed == True:  # so create test prediction
+            if self._state == "seed" or self._state == "fold":  # so create test prediction
                 # produce predictions - test data
+                self.test = pd.read_csv(f"../models_{self.comp_name}/test.csv")
+                # ------------------  prep test dataset
+                self.test_image_paths = [
+                    f"../input_{self.locker['comp_name']}/" + "test_img/" + x
+                    for x in self.test[self.locker["id_name"]].values
+                ]
+                # fake targets
+                self.test_targets = self.test[
+                    self.locker["target_name"]
+                ].values  # dfx_te.digit_sum.values
+                self.test_dataset = ImageDataset(
+                    image_paths=self.test_image_paths,
+                    targets=self.test_targets,
+                    augmentations=self.aug,
+                )
+
+
                 prfull = np.zeros((len(self.test_image_paths), 28))
                 preds = model.predict(self.test_dataset, batch_size=128, n_jobs=-1)
                 temp_preds = None
@@ -1235,7 +1258,6 @@ class OptunaOptimizer:
                     else:
                         temp_preds = np.vstack((temp_preds, p))
                 self.test_preds = temp_preds.argmax(axis=1)
-
         elif self.locker["data_type"] == "tabular":
             if metrics_name in [
                 "auc",
@@ -1244,14 +1266,15 @@ class OptunaOptimizer:
             ]:
                 # special case
                 if self.comp_type == "2class":
-                    valid_preds = model.predict_proba(self.xvalid)[:, 1]
+                    self.valid_preds = model.predict_proba(self.xvalid)[:, 1]
                 else:
-                    valid_preds = model.predict(self.xvalid)
+                    self.valid_preds = model.predict(self.xvalid)
             else:
-                valid_preds = model.predict(self.xvalid)
+                self.valid_preds = model.predict(self.xvalid)
         else:
             raise Exception(f"metrics not set yet of type {self.data_type}")
 
+        # score valid predictions
         if self.metrics_name in [
             "auc",
             "accuracy",
@@ -1263,15 +1286,16 @@ class OptunaOptimizer:
         ]:
             # Classification
             cl = ClassificationMetrics()
-            score = cl(self.metrics_name, self.yvalid, valid_preds)
+            score = cl(self.metrics_name, self.yvalid, self.valid_preds)
         elif self.metrics_name in ["mae", "mse", "rmse", "msle", "rmsle", "r2"]:
             # Regression
             rg = RegressionMetrics()
-            score = rg(self.metrics_name, self.yvalid, valid_preds)
+            score = rg(self.metrics_name, self.yvalid, self.valid_preds)
 
-        # Let's save these values
-        self._trial_score = score  # save it to save in log_table because params don't contain our metrics score
-        self.save_logs(params)
+        if self._state != "fold":
+            # Let's save these values
+            self._trial_score = score  # save it to save in log_table because params don't contain our metrics score
+            self.save_logs(params)
 
         return score
 
@@ -1289,83 +1313,88 @@ class OptunaOptimizer:
             self.optimize_on = optimize_on
         if prep_list != "--|--":
             self.prep_list = prep_list
-        self.my_folds = my_folds # make it public for the object
+        self.my_folds = my_folds  # make it public for the object
         my_folds1 = my_folds.copy()
         # test1  = test.copy()
 
         fold = self.optimize_on
+        # Select fold
         xtrain = my_folds1[my_folds1.fold != fold].reset_index(drop=True)
         xvalid = my_folds1[my_folds1.fold == fold].reset_index(drop=True)
         # xtest = test1.copy()
+        #self.val_idx = xvalid[self.locker["id_name"]].values.tolist()
+        self.val_idx = xvalid[self.locker["id_name"]].values.tolist()
+
         # return
         target_name = self.locker["target_name"]
-        self.ytrain = self.xtrain[target_name].values
-        self.yvalid = self.xvalid[target_name].values
+        self.ytrain = xtrain[target_name].values
+        self.yvalid = xvalid[target_name].values
 
         if self.locker["data_type"] == "image":
             # cut mix is used in images only
 
             image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
-            
-            if self.locker["model_name"] in ["k1", "k2", "k3"]:
-                # use keras flow_from_dataframe
-                train_datagen = ImageDataGenerator(rescale = 1./255)
-                valid_datagen = ImageDataGenerator(rescale = 1./255)
-                
-                self.train_datagen = train_datagen.flow_from_dataframe(
-                    dataframe = xtrain,
-                    directory = image_path,
-                    target_size = (28, 28), # images are resized to (28,28)
-                    x_col = self.locker["id_name"],
-                    y_col = self.locker["target_name"],
-                    batch_size = 32,
-                    seed = 42,
-                    shuffle = True,
-                    class_mode = "categorical", # "binary"
-                )
-                if self.use_cutmix == True:
-                    train_datagen1 = train_datagen.flow_from_dataframe(
-                        dataframe = xtrain,
-                        directory = image_path,
-                        target_size = (28, 28), # images are resized to (28,28)
-                        x_col = self.locker["id_name"],
-                        y_col = self.locker["target_name"],
-                        batch_size = 32,
-                        seed = 42,
-                        shuffle = True, # Required for cutmix
-                        class_mode = "categorical", # "binary"
-                    )          
-                    train_datagen2 = train_datagen.flow_from_dataframe(
-                        dataframe = xtrain,
-                        directory = image_path,
-                        target_size = (28, 28), # images are resized to (28,28)
-                        x_col = self.locker["id_name"],
-                        y_col = self.locker["target_name"],
-                        batch_size = 32,
-                        seed = 42,
-                        shuffle = True, # Required for cutmix
-                        class_mode = "categorical", # "binary"
-                    )        
-                    self.train_datagen = CutMixImageDataGenerator(
-                        generator1 = train_generator1,
-                        generator2 = train_generator2,
-                        img_size = (28,28),
-                        batch_size = 32,
-                    )
 
+            if self.model_name in ["k1", "k2", "k3"]:
+                # use keras flow_from_dataframe
+                train_datagen = ImageDataGenerator(rescale=1.0 / 255)
+                valid_datagen = ImageDataGenerator(rescale=1.0 / 255)
+                
+                if self.use_cutmix != True:
+                    self.train_datagen = train_datagen.flow_from_dataframe(
+                        dataframe=xtrain,
+                        directory=image_path,
+                        target_size=(28, 28),  # images are resized to (28,28)
+                        x_col=self.locker["id_name"],
+                        y_col=self.locker["target_name"],
+                        batch_size=32,
+                        seed=42,
+                        shuffle=True,
+                        class_mode="categorical",  # "binary"
+                    )
+                elif self.use_cutmix == True:
+                    train_datagen1 = train_datagen.flow_from_dataframe(
+                        dataframe=xtrain,
+                        directory=image_path,
+                        target_size=(28, 28),  # images are resized to (28,28)
+                        x_col=self.locker["id_name"],
+                        y_col=self.locker["target_name"],
+                        batch_size=32,
+                        seed=42,
+                        shuffle=True,  # Required for cutmix
+                        class_mode="categorical",  # "binary"
+                    )
+                    train_datagen2 = train_datagen.flow_from_dataframe(
+                        dataframe=xtrain,
+                        directory=image_path,
+                        target_size=(28, 28),  # images are resized to (28,28)
+                        x_col=self.locker["id_name"],
+                        y_col=self.locker["target_name"],
+                        batch_size=32,
+                        seed=42,
+                        shuffle=True,  # Required for cutmix
+                        class_mode="categorical",  # "binary"
+                    )
+                    self.train_datagen = CutMixImageDataGenerator(
+                        generator1=train_generator1,
+                        generator2=train_generator2,
+                        img_size=(28, 28),
+                        batch_size=32,
+                    )
                 self.valid_datagen = valid_datagen.flow_from_dataframe(
-                    dataframe = xvalid,
-                    directory = image_path,
-                    target_size = (28, 28), # images are resized to (28,28)
-                    x_col = self.locker["id_name"],
-                    y_col = self.locker["target_name"],
-                    batch_size = 32,
-                    seed = 42,
-                    shuffle = True,
-                    class_mode = "categorical", # "binary"
+                    dataframe=xvalid,
+                    directory=image_path,
+                    target_size=(28, 28),  # images are resized to (28,28)
+                    x_col=self.locker["id_name"],
+                    y_col=self.locker["target_name"],
+                    batch_size=32,
+                    seed=42,
+                    shuffle=True,
+                    class_mode="categorical",  # "binary"
                 )
-                # use keras flow_from_directory don't use for now because it looks for subfolders for different targets like horses/humans
-            elif self.locker["model_name"] == "tez1": # assume pytorch : tez
+                # use keras flow_from_directory don't use for now because it looks for subfolders with folder name as different targets like horses/humans
+
+            elif self.model_name == "tez1":  # assume pytorch : tez
                 # use pytorch
                 self.train_image_paths = [
                     os.path.join(image_path, x)
@@ -1398,28 +1427,23 @@ class OptunaOptimizer:
                     targets=self.yvalid,
                     augmentations=self.aug,
                 )
-            elif self.locker["model_name"] == "kaggletv": # assume pytorch : tez
+            elif self.model_name == "kaggletv":  # assume pytorch : tez
                 # use pytorch loading of images happens in BengaliDataset
-                self.train_augmentation = Compose([
-                    Rotate(20),
-                    ToTensor()
-                ])
+                self.train_augmentation = Compose([Rotate(20), ToTensor()])
 
-                self.valid_augmentation = Compose([
-                    ToTensor()
-                ])
+                self.valid_augmentation = Compose([ToTensor()])
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
                 self.xtrain = BengaliDataset(  # train_dataset
                     csv=xtrain,
-                    img_height = 28,
-                    img_width = 28,
+                    img_height=28,
+                    img_width=28,
                     transform=self.train_augmentation,
                 )
 
                 self.xvalid = BengaliDataset(  # valid_dataset
                     csv=xvalid,
-                    img_height= 28,
-                    img_width = 28,
+                    img_height=28,
+                    img_width=28,
                     transform=self.valid_augmentation,
                 )
 
@@ -1461,44 +1485,43 @@ class OptunaOptimizer:
             self.xvalid = xvalid
             self.yvalid = yvalid
 
-        # create optuna study
-        study = optuna.create_study(direction=self._aim, study_name=self.model_name)
-        study.optimize(
-            lambda trial: self.obj(trial),
-            n_trials=self.n_trials,
-        )  # it tries 50 different values to find optimal hyperparameter
+        if self._state == "opt":
+            # create optuna study
+            study = optuna.create_study(direction=self._aim, study_name=self.model_name)
+            study.optimize(
+                lambda trial: self.obj(trial),
+                n_trials=self.n_trials,
+            )  # it tries 50 different values to find optimal hyperparameter
 
-        if self.save_models == True:
-            # let's save logs
-            c = self.current_dict[
-                "current_exp_no"
-            ]  # optuna is called once in each exp so c+1 will be correct
-            self.save_pickle(
-                f"../models_{self.locker['comp_name']}/log_exp_{c+1}.pkl",
-                self._log_table,
-            )
-        print("=" * 40)
-        print("Best parameters found:")
-        print(study.best_trial.value)
-        self.params = study.best_trial.params  # crete params to be used in seed
-        print(study.best_trial.params)
-        print("=" * 40)
-        # later put conditions on whether to put seed or not
-        seed_mean, seed_std = self._seed_it()  # generate seeds
-        return study, self._random_state, seed_mean, seed_std
+            if self.save_models == True:
+                # let's save logs
+                c = self.current_dict[
+                    "current_exp_no"
+                ]  # optuna is called once in each exp so c+1 will be correct
+                save_pickle(
+                    f"../models_{self.locker['comp_name']}/log_exp_{c+1}.pkl",
+                    self._log_table,
+                )
+            print("=" * 40)
+            print("Best parameters found:")
+            print(study.best_trial.value)
+            self.params = study.best_trial.params  # crete params to be used in seed
+            print(study.best_trial.params)
+            print("=" * 40)
+            # later put conditions on whether to put seed or not
+            seed_mean, seed_std = self._seed_it()  # generate seeds
+            return study, self._random_state, seed_mean, seed_std
 
     def _seed_it(self):
         print("SEEDING")
-        self._seed = True
+        self._state = "seed"
         self.generate_random_no()
-        random_list = np.random.randint(1, 1000, 5)  # 100
+        random_list = np.random.randint(1, 1000, 3)  # 100
 
-        sample = pd.read_csv(
-            f"../models_{self.locker['comp_name']}/" + "sample.csv"
-        )
+        sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
 
         if self.model_name == "tez1":
-            #------------------  prep test dataset
+            # ------------------  prep test dataset
             self.test_image_paths = [
                 f"../input_{self.locker['comp_name']}/" + "test_img/" + x
                 for x in sample[self.locker["id_name"]].values
@@ -1512,7 +1535,7 @@ class OptunaOptimizer:
                 targets=self.test_targets,
                 augmentations=self.aug,
             )
-            #------------------ re define training set 
+            # ------------------ re define training set
             image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
 
             target_name = self.locker["target_name"]
@@ -1520,17 +1543,19 @@ class OptunaOptimizer:
 
             self.train_image_paths = [
                 os.path.join(image_path, x)
-                for x in self.my_folds[self.locker["id_name"]].values # xtrain change to my_folds
+                for x in self.my_folds[
+                    self.locker["id_name"]
+                ].values  # xtrain change to my_folds
             ]
             self.xtrain = ImageDataset(
                 image_paths=self.train_image_paths,
                 targets=self.test_targets,
                 augmentations=self.aug,
-            )   
+            )
 
-            self.xvalid = self.xtrain 
-            self.yvalid = self.ytrain         
-            #------ full my_folds data is now xtrain, ytrain
+            self.xvalid = self.xtrain
+            self.yvalid = self.ytrain
+            # ------ full my_folds data is now xtrain, ytrain
 
         scores = []
         final_test_predictions = []
@@ -1539,11 +1564,15 @@ class OptunaOptimizer:
             # run an algorithm for 100 times
             scores.append(self.obj("--no-trial--"))
             final_test_predictions.append(self.test_preds)
+        final_test_predictions[0].to_csv(
+            f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}_single.csv",
+            index=False,
+        )
         sample[self.locker["target_name"]] = stats.mode(
             np.column_stack(final_test_predictions), axis=1
         )[0]
         sample.to_csv(
-            f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}.csv",
+            f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}_all.csv",
             index=False,
         )
         return np.mean(scores), np.std(scores)
