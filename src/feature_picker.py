@@ -5,7 +5,10 @@ import sys
 import pickle
 from collections import defaultdict
 
-
+"""
+picks features for training a model 
+params: list of levels, list of features, title.
+"""
 class Picker:
     def __init__(self):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:

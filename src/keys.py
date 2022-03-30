@@ -3,7 +3,9 @@ import pickle
 import os
 import sys
 
-
+"""
+generates keys and stores it in models_ultramnist
+"""
 class KeyMaker:
     def __init__(
         self,
@@ -140,3 +142,9 @@ class KeyMaker:
 
 if __name__ == "__main__":
     x = KeyMaker()
+    x.id_name = "id"
+    x.target_name = "digit_sum"
+    x.comp_type = "multi_class"
+    x.no_folds = 5
+    x.data_type = "image"
+    x.update()

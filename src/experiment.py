@@ -135,9 +135,9 @@ class Agent:
             seed_std,
             None,
             None,
-            {"seed_single": None,
-            "seed_all": None,
-            "fold_all": None}
+            None,
+            None,
+            None
         ]
 
         # --------------- dump experiment no
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         list_features=list_features,
         list_feat_title=list_feat_title,
     )
-    useful_features = ["image_id"]  # ["SibSp", "Parch", "Pclass"]
+    useful_features = ["id"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
     model_name = "tez1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3" ]
     # --------------->["tez1"]
@@ -177,11 +177,11 @@ if __name__ == "__main__":
         "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
     metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
-    n_trials = 5  # ------------> no of times to run optuna
+    n_trials = 2  # ------------> no of times to run optuna
     prep_list = [
         "Sd",
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list
-    optimize_on = 1  # fold on which optimize
+    optimize_on = 0  # fold on which optimize
     with_gpu = True
     # -----------------------------------------------------------
 

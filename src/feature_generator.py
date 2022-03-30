@@ -6,7 +6,10 @@ import pickle
 from collections import defaultdict
 from utils import *
 
-
+"""
+generates new features on top of some existing featrues. 
+and stores this info as a dictionary.
+"""
 class features:
     def __init__(self):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:

@@ -25,7 +25,7 @@ if __name__ == "__main__":
     with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
         a = pickle.load(f)
 
-    df = pd.read_csv(f"../input_{comp_name}/train.csv")
+    df = pd.read_csv(f"../models_{comp_name}/train.csv")
     df["fold"] = -1
 
     df = df.sample(frac=1).reset_index(drop=True)
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     if a["data_type"] == "image":
         df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
         useful_features = [a["id_name"]]
-        with open(f"../models_{a['comp_name']}/useful_features_l1.pkl", "wb") as f:
+        with open(f"../models_{a['comp_name']}/useful_features_l_1.pkl", "wb") as f:
             pickle.dump(useful_features, f)
     elif a["data_type"] == "tabular":
         df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         test.to_csv(f"../models_{comp_name}/test.csv", index=False)
 
         useful_features = test.drop(a["id_name"], axis=1).columns.tolist()
-        with open(f"../models_{a['comp_name']}/useful_features_l1.pkl", "wb") as f:
+        with open(f"../models_{a['comp_name']}/useful_features_l_1.pkl", "wb") as f:
             pickle.dump(useful_features, f)
 
     # --------------------------------dump current
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         pickle.dump(current_dict, f)
     # --------------------------------dump features_dict
     feat_dict = defaultdict()
-    feat_dict["l1_f0"] = [useful_features, 0, "base"]
+    feat_dict["l_1_f_0"] = [useful_features, 0, "base"]
     with open(f"../models_{a['comp_name']}/features_dict.pkl", "wb") as f:
         pickle.dump(feat_dict, f)
     # ---------------------------------dump Table

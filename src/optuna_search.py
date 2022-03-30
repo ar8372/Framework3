@@ -148,6 +148,9 @@ from utils import *
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # -------------
+"""
+self._state = fold, opt, seed
+"""
 
 
 class OptunaOptimizer:
@@ -167,7 +170,7 @@ class OptunaOptimizer:
                 comp_name = i
         x.close()
         self.locker = load_pickle(f"../models_{comp_name}/locker.pkl")
-        self.current_dict = load_pickle(f"../models_{comp_name}/current_dict.pkl")
+        self.current_dict = load_pickle(f"../models_{self.locker['comp_name']}/current_dict.pkl")
         self.save_models = save_models
         self._trial_score = None
         self._history = None
@@ -302,6 +305,7 @@ class OptunaOptimizer:
         metric_no = self.metrics_list.index(self.metrics_name)
         comp_type_no = self.comp_list.index(self.comp_type)
         model_no = self.model_list.index(self.model_name)
+        
         prep_no = 0
         for p in self._prep_list:
             if p == "Lg":
@@ -311,9 +315,9 @@ class OptunaOptimizer:
         # round_on
         # level_on
         #
-        seed = comp_random_state + total_no_folds * 2 + metric_no * 3
+        seed = comp_random_state + total_no_folds * 2 + metric_no * 3 + self.optimize_on * 4
         seed += int(
-            comp_type_no * 4 + model_no * 5 + prep_no * 6
+            comp_type_no * 5 + model_no * 6 + prep_no * 7 + self.current_dict["current_level"]
         )  # + round_on * 4 + level_on * 5
         seed = int(seed)
         os.environ["PYTHONHASHSEED"] = str(seed)
@@ -1122,6 +1126,48 @@ class OptunaOptimizer:
         model = self.get_model(params)
 
         # fit xtrain
+#--------------------------------------------------------------------------
+        # if self.data_type == "image":
+        #     pass 
+        # elif self.data_type == "tabular":
+        #     if self.model_name.startswith("k"): # keras model 
+        #         stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
+        #         checkpoint = ModelCheckpoint(
+        #             filepath="./",  # to work on this part
+        #             save_weights_only=True,
+        #             monitor="val_accuracy",
+        #             mode="max",
+        #             save_best_only=True,
+        #         )
+
+        #         reduce_lr = ReduceLROnPlateau(
+        #             monitor="val_accuracy",
+        #             factor=0.5,
+        #             patience=5,
+        #             min_lr=0.00001,
+        #             verbose=1,
+        #         )
+        #         history = model.fit(
+        #             x=self.xtrain,
+        #             y=self.ytrain,
+        #             batch_size=params["batchsize"],
+        #             epochs=params["epochs"],
+        #             shuffle=True,
+        #             validation_split=0.15,
+        #             callbacks=[stop, checkpoint, reduce_lr],
+        #         )
+        #     else:
+        #         # ml model 
+        #         model.fit(self.xtrain, self.ytrain)
+
+        # elif  self.data_type == "text":
+        #     pass 
+        # else:
+        #     raise Exception(f"{self.data_type} is not a valid data type!")
+
+
+
+#----------------------------------------------------------------------------
         if self.model_name == "lgbmr":
             model.fit(
                 self.xtrain,
@@ -1178,8 +1224,8 @@ class OptunaOptimizer:
 
             self._history = history.history
         if self.model_name == "tez1":
-            model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es.bin"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
-            model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s.bin"
+            model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
+            model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
                 model_path_es = model_path_es + f"_seed_{self.random_state}"
                 model_path_s = model_path_s + f"_seed_{self.random_state}"
@@ -1210,29 +1256,28 @@ class OptunaOptimizer:
         metrics_name = self.metrics_name
         if self.locker["data_type"] == "image":
             # storage for oof and submission
-            if self.pravl is None:
-                self.pravl = np.zeros((len(self.valid_image_paths), 28))  # dfx.shape[0]
 
             # produce predictions - oof
             if self.model_name in ["k1", "k2", "k3"]:
                 # keras image
                 self.valid_datagen.reset()
-                pred = model.predict_generator(
+                valid_preds = model.predict_generator(
                     valid_datagen, steps=STEP_SIZE_TEST, verbose=1
                 )
-            preds = model.predict(self.xvalid, batch_size=16, n_jobs=-1)
+            else:
+                valid_preds = model.predict(self.xvalid, batch_size=16, n_jobs=-1)
+                temp_preds = None
+                for p in valid_preds:
+                    if temp_preds is None:
+                        temp_preds = p
+                    else:
+                        temp_preds = np.vstack((temp_preds, p))
 
-            temp_preds = None
-            for p in preds:
-                if temp_preds is None:
-                    temp_preds = p
-                else:
-                    temp_preds = np.vstack((temp_preds, p))
             self.valid_preds = np.argmax(temp_preds, axis=1)
 
             if self._state == "seed" or self._state == "fold":  # so create test prediction
                 # produce predictions - test data
-                self.test = pd.read_csv(f"../models_{self.comp_name}/test.csv")
+                self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/test.csv")
                 # ------------------  prep test dataset
                 self.test_image_paths = [
                     f"../input_{self.locker['comp_name']}/" + "test_img/" + x
@@ -1249,10 +1294,9 @@ class OptunaOptimizer:
                 )
 
 
-                prfull = np.zeros((len(self.test_image_paths), 28))
-                preds = model.predict(self.test_dataset, batch_size=128, n_jobs=-1)
+                test_preds = model.predict(self.test_dataset, batch_size=128, n_jobs=-1)
                 temp_preds = None
-                for p in preds:
+                for p in test_preds:
                     if temp_preds is None:
                         temp_preds = p
                     else:
@@ -1333,7 +1377,7 @@ class OptunaOptimizer:
         if self.locker["data_type"] == "image":
             # cut mix is used in images only
 
-            image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
+            image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
 
             if self.model_name in ["k1", "k2", "k3"]:
                 # use keras flow_from_dataframe
@@ -1426,6 +1470,30 @@ class OptunaOptimizer:
                     image_paths=self.valid_image_paths,
                     targets=self.yvalid,
                     augmentations=self.aug,
+                )
+            elif self.model_name == "tez2": # tez2 is the latest version tez
+                self.train_augmentation = Compose(
+                    [
+                        albumentations.Normalize(
+                            mean = [0.485, 0.456, 0.406],
+                            std = [0.229, 0.224, 0.225],
+                            max_pixel_value = 255.0,
+                            p = 1.0,
+                        ),
+                    ],
+                    p = 1.0
+                )
+
+                self.valid_augmentations = Compose(
+                    [
+                        albumentations.Normalize(
+                            mean = [0.485, 0.456, 0.406],
+                            std = [0.229, 0.224, 0.225],
+                            max_pixel_value = 255.0,
+                            p = 1.0,
+                        ),
+                    ],
+                    p = 1.0,
                 )
             elif self.model_name == "kaggletv":  # assume pytorch : tez
                 # use pytorch loading of images happens in BengaliDataset
@@ -1536,7 +1604,7 @@ class OptunaOptimizer:
                 augmentations=self.aug,
             )
             # ------------------ re define training set
-            image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
+            image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
 
             target_name = self.locker["target_name"]
             self.ytrain = self.my_folds[target_name].values
@@ -1564,7 +1632,8 @@ class OptunaOptimizer:
             # run an algorithm for 100 times
             scores.append(self.obj("--no-trial--"))
             final_test_predictions.append(self.test_preds)
-        final_test_predictions[0].to_csv(
+        sample[self.locker["target_name"]] = np.array(final_test_predictions[0])
+        sample.to_csv(
             f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}_single.csv",
             index=False,
         )

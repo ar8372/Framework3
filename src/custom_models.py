@@ -74,3 +74,49 @@ class UModel( tez.Model): #nn.Module): #tez.Model):
             metrics = self.monitor_metrics(x, targets)
             return x, loss, metrics
         return x, 0, {}
+
+
+class DigitRecognizerModel(nn.Module):
+    def __init__(self, model_name, num_classes, learning_rate, n_train_steps):
+        super().__init__()
+
+        self.learning_rate = learning_rate
+        self.n_train_steps = n_train_steps
+        self.model = timm.create_model(
+            model_name,
+            pretrained=True,
+            in_chans=1,
+            num_classes=num_classes,
+        )
+
+    def monitor_metrics(self, outputs, targets):
+        device = targets.get_device()
+        outputs = np.argmax(outputs.cpu().detach().numpy(), axis=1)
+        targets = targets.cpu().detach().numpy()
+        acc = metrics.accuracy_score(targets, outputs)
+        acc = torch.tensor(acc, device=device)
+        return {"accuracy": acc}
+
+    def optimizer_scheduler(self):
+        opt = torch.optim.SGD(
+            self.parameters(),
+            lr=self.learning_rate,
+            momentum=0.9,
+        )
+        sch = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            opt,
+            factor=0.5,
+            patience=2,
+            verbose=True,
+            mode="max",
+            threshold=1e-4,
+        )
+        return opt, sch
+
+    def forward(self, image, targets=None):
+        x = self.model(image)
+        if targets is not None:
+            loss = nn.CrossEntropyLoss()(x, targets)
+            metrics = self.monitor_metrics(x, targets)
+            return x, loss, metrics
+        return x, 0, {}

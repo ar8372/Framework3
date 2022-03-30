@@ -9,6 +9,10 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 
+"""
+Inference file
+"""
+
 class predictor(OptunaOptimizer):
     def __init__(self, exp_no):
         self.exp_no = exp_no
@@ -24,8 +28,6 @@ class predictor(OptunaOptimizer):
         row_e = self.Table[self.Table.exp_no == self.exp_no]
         self.model_name = row_e.model_name.values[0] 
         self.params = row_e.bp.values[0] 
-        self.params["epochs"] = 1
-        self.params["batch_size"] = 128
         self.random_state = row_e.random_state.values[0]  
         self.with_gpu = row_e.with_gpu.values[0] 
         self.features_list = row_e.features_list.values[0] 
@@ -50,7 +52,6 @@ class predictor(OptunaOptimizer):
         scores = []
         oof_prediction = {}
         test_predictions = []
-        self.pravl = None 
 
         for fold in range(5):
             # select data: xtrain xvalid etc
@@ -99,14 +100,14 @@ class predictor(OptunaOptimizer):
 
 
         #---- update table 
-        # self.Table[self.Table.exp_no == self.exp_no]["fold_mean"] = np.mean(scores)
-        # self.Table[self.Table.exp_no == self.exp_no]["fold_std"] = np.std(scores)
-        # self.Table[self.Table.exp_no == self.exp_no]["pblb_single_seed"] = None
-        # self.Table[self.Table.exp_no == self.exp_no]["pblb_all_seed"] = None
-        # self.Table[self.Table.exp_no == self.exp_no]["pblb_all_fold"] = None
+        self.Table.loc[self.Table.exp_no == self.exp_no, "fold_mean"] = np.mean(scores)
+        self.Table.loc[self.Table.exp_no == self.exp_no, "fold_std"] = np.std(scores)
+        self.Table.loc[self.Table.exp_no == self.exp_no, "pblb_single_seed"] = None
+        self.Table.loc[self.Table.exp_no == self.exp_no, "pblb_all_seed"] = None
+        self.Table.loc[self.Table.exp_no == self.exp_no, "pblb_all_fold"] = None
         # pblb to be updated mannually
         # ---------------- dump table
-        # save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", Table)
+        save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", self.Table)
 
 
 

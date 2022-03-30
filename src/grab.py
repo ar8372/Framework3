@@ -3,7 +3,9 @@ import pandas as pd
 import pickle
 import sys
 
-
+"""
+used to show stored variables:
+"""
 class Storage:
     def __init__(self):
         # read all stored files:
