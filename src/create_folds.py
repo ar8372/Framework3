@@ -83,12 +83,12 @@ if __name__ == "__main__":
             "prep_list",
             "metrics_name",
             "seed_mean",
-            "seed_std", #---\
+            "seed_std",  # ---\
             "fold_mean",
             "fold_std",
             "pblb_single_seed",
             "pblb_all_seed",
-            "pblb_all_fold"
+            "pblb_all_fold",
         ]
     )
     with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:

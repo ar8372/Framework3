@@ -8,10 +8,11 @@
 
 from torch.utils.data import Dataset
 
+
 class TabularDataset:
     def __init__(self, data, target):
         self.data = data
-        self.targets = targets 
+        self.targets = targets
 
     def __len__(self):
         return self.data.shape[0]
@@ -21,16 +22,16 @@ class TabularDataset:
         target = self.targets[idx]
 
         return {
-            "x": torch.tensor(sample, dtype= float),
-            "y": torch.tensor(target, dtype = long),
+            "x": torch.tensor(sample, dtype=float),
+            "y": torch.tensor(target, dtype=long),
         }
 
 
 # classification / regression
 class TextDataset:
     def __init__(self, data, targets, tokenizer):
-        self.data = data # list of texts 
-        self.targets = targets 
+        self.data = data  # list of texts
+        self.targets = targets
         self.tokenizer = tokenizer
 
     def __len__(self):
@@ -41,25 +42,25 @@ class TextDataset:
         text = self.data[idx]
 
         # len(self.target.shape) will catch (30,)
-        if len(self.target.shape)==2 and self.target.shape[1] > 1:
+        if len(self.target.shape) == 2 and self.target.shape[1] > 1:
             target = self.targets[idx, :]
         else:
-            target = self.targets[idx] 
-        # binary: 0, 1, 1, 0 
+            target = self.targets[idx]
+        # binary: 0, 1, 1, 0
         # multiclass: 1, 2, 0, 1
-        # regr(single col/ multicol): 0.3, 4, 5 
+        # regr(single col/ multicol): 0.3, 4, 5
         # multilabel classification: [1, 0, 0, 1, 0], [1, 1, 0, 0, 0] # entity extraction
-        # input_ids: text=> tokens i.e numbers 
+        # input_ids: text=> tokens i.e numbers
 
-        input_ids = tokenizer(text) # transformers
-        #input_ids : set of numbers [101, 42, 27, 216]
+        input_ids = tokenizer(text)  # transformers
+        # input_ids : set of numbers [101, 42, 27, 216]
         # these seq can be of different length so do padding
 
-
-
         return {
-            "text": torch.tensor(input_ids, dtype= torch.long),
-            "target": torch.tensor(target ) # dtype= classification: torch.long, reg: torch.float)
+            "text": torch.tensor(input_ids, dtype=torch.long),
+            "target": torch.tensor(
+                target
+            ),  # dtype= classification: torch.long, reg: torch.float)
         }
 
 
@@ -108,6 +109,7 @@ class BengaliDataset(Dataset):
 
         return img, np.array([target_1, target_2, target_3])
 
+
 class DigitRecognizerDataset:
     def __init__(self, df, augmentations):
         self.df = df
@@ -129,7 +131,8 @@ class DigitRecognizerDataset:
             "image": torch.tensor(image, dtype=torch.float),
             "targets": torch.tensor(targets, dtype=torch.long),
         }
-        
+
+
 class CutMixImageDataGenerator:
     def __init__(self, generator1, generator2, img_size, batch_size):
         self.batch_index = 0

@@ -127,6 +127,7 @@ from sklearn.model_selection import KFold
 
 # ignoring warnings
 import warnings
+
 warnings.simplefilter("ignore")
 import os, cv2, json
 from PIL import Image
@@ -136,7 +137,6 @@ import random
 import tez
 from tez.datasets import ImageDataset
 from tez.callbacks import EarlyStopping
-
 
 
 from custom_models import *
@@ -170,7 +170,9 @@ class OptunaOptimizer:
                 comp_name = i
         x.close()
         self.locker = load_pickle(f"../models_{comp_name}/locker.pkl")
-        self.current_dict = load_pickle(f"../models_{self.locker['comp_name']}/current_dict.pkl")
+        self.current_dict = load_pickle(
+            f"../models_{self.locker['comp_name']}/current_dict.pkl"
+        )
         self.save_models = save_models
         self._trial_score = None
         self._history = None
@@ -219,7 +221,7 @@ class OptunaOptimizer:
         self.metrics_name = metrics_name
         self.with_gpu = with_gpu
         self._log_table = None  # will track experiments
-        self._state = "opt" #["opt","fold", "seed"]
+        self._state = "opt"  # ["opt","fold", "seed"]
         # in start we want to find best params then we will loop
         if self.metrics_name in [
             "accuracy",
@@ -301,11 +303,11 @@ class OptunaOptimizer:
     def generate_random_no(self):
         comp_random_state = self.locker["random_state"]
         total_no_folds = self.locker["no_folds"]
-        #fold_on = self.optimize_on
+        # fold_on = self.optimize_on
         metric_no = self.metrics_list.index(self.metrics_name)
         comp_type_no = self.comp_list.index(self.comp_type)
         model_no = self.model_list.index(self.model_name)
-        
+
         prep_no = 0
         for p in self._prep_list:
             if p == "Lg":
@@ -315,15 +317,25 @@ class OptunaOptimizer:
         # round_on
         # level_on
         #
-        seed = comp_random_state + total_no_folds * 2 + metric_no * 3 + self.optimize_on * 4
+        seed = (
+            comp_random_state
+            + total_no_folds * 2
+            + metric_no * 3
+            + self.optimize_on * 4
+        )
         seed += int(
-            comp_type_no * 5 + model_no * 6 + prep_no * 7 + self.current_dict["current_level"]
+            comp_type_no * 5
+            + model_no * 6
+            + prep_no * 7
+            + self.current_dict["current_level"]
         )  # + round_on * 4 + level_on * 5
         seed = int(seed)
         os.environ["PYTHONHASHSEED"] = str(seed)
         np.random.seed(seed)
         random.seed(seed)
-        tf.random.set_seed(seed) #f"The truth value of a {type(self).__name__} is ambiguous. "
+        tf.random.set_seed(
+            seed
+        )  # f"The truth value of a {type(self).__name__} is ambiguous. "
         return np.random.randint(3, 1000)  # it should return 5
 
     def get_params(self, trial):
@@ -740,7 +752,7 @@ class OptunaOptimizer:
                 # ),  # 55, step=5, log=False),  # 5,55
                 "epochs": trial.suggest_categorical("epochs", [5]),
                 "learning_rate": trial.suggest_uniform("learning_rate", 2, 8),
-                "patience": trial.suggest_categorical("patience", [ 5]),
+                "patience": trial.suggest_categorical("patience", [5]),
             }
             return params
 
@@ -1112,7 +1124,7 @@ class OptunaOptimizer:
         if self._log_table is None:
             # not initialized
             self._log_table = pd.DataFrame(
-                columns=["trial_score"] + list(params.keys()) + ["keras_history" ]
+                columns=["trial_score"] + list(params.keys()) + ["keras_history"]
             )
         self._log_table.loc[self._log_table.shape[0], :] = (
             [self._trial_score] + list(params.values()) + [self._history]
@@ -1126,11 +1138,11 @@ class OptunaOptimizer:
         model = self.get_model(params)
 
         # fit xtrain
-#--------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
         # if self.data_type == "image":
-        #     pass 
+        #     pass
         # elif self.data_type == "tabular":
-        #     if self.model_name.startswith("k"): # keras model 
+        #     if self.model_name.startswith("k"): # keras model
         #         stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
         #         checkpoint = ModelCheckpoint(
         #             filepath="./",  # to work on this part
@@ -1157,17 +1169,15 @@ class OptunaOptimizer:
         #             callbacks=[stop, checkpoint, reduce_lr],
         #         )
         #     else:
-        #         # ml model 
+        #         # ml model
         #         model.fit(self.xtrain, self.ytrain)
 
         # elif  self.data_type == "text":
-        #     pass 
+        #     pass
         # else:
         #     raise Exception(f"{self.data_type} is not a valid data type!")
 
-
-
-#----------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------
         if self.model_name == "lgbmr":
             model.fit(
                 self.xtrain,
@@ -1178,7 +1188,7 @@ class OptunaOptimizer:
                 callbacks=[LightGBMPruningCallback(trial, "auc")],
                 verbose=0,
             )
-        if self.model_name in ["k1", "k2", "k3"]: # keras
+        if self.model_name in ["k1", "k2", "k3"]:  # keras
             stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
             checkpoint = ModelCheckpoint(
                 filepath="./",  # to work on this part
@@ -1195,7 +1205,7 @@ class OptunaOptimizer:
                 min_lr=0.00001,
                 verbose=1,
             )
-            #----------------------
+            # ----------------------
             if self.locker["data_type"] == "tabular":
                 history = model.fit(
                     x=self.xtrain,
@@ -1245,14 +1255,14 @@ class OptunaOptimizer:
                 callbacks=[stop],
                 fp16=True,
             )
-            #self._history = history.history
+            # self._history = history.history
             model.save(
                 model_path_s,
             )
         else:  # tabular
             model.fit(self.xtrain, self.ytrain)
 
-        # Make prediction 
+        # Make prediction
         metrics_name = self.metrics_name
         if self.locker["data_type"] == "image":
             # storage for oof and submission
@@ -1275,9 +1285,13 @@ class OptunaOptimizer:
 
             self.valid_preds = np.argmax(temp_preds, axis=1)
 
-            if self._state == "seed" or self._state == "fold":  # so create test prediction
+            if (
+                self._state == "seed" or self._state == "fold"
+            ):  # so create test prediction
                 # produce predictions - test data
-                self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/test.csv")
+                self.test = pd.read_csv(
+                    f"../models_{self.locker['comp_name']}/test.csv"
+                )
                 # ------------------  prep test dataset
                 self.test_image_paths = [
                     f"../input_{self.locker['comp_name']}/" + "test_img/" + x
@@ -1292,7 +1306,6 @@ class OptunaOptimizer:
                     targets=self.test_targets,
                     augmentations=self.aug,
                 )
-
 
                 test_preds = model.predict(self.test_dataset, batch_size=128, n_jobs=-1)
                 temp_preds = None
@@ -1366,7 +1379,7 @@ class OptunaOptimizer:
         xtrain = my_folds1[my_folds1.fold != fold].reset_index(drop=True)
         xvalid = my_folds1[my_folds1.fold == fold].reset_index(drop=True)
         # xtest = test1.copy()
-        #self.val_idx = xvalid[self.locker["id_name"]].values.tolist()
+        # self.val_idx = xvalid[self.locker["id_name"]].values.tolist()
         self.val_idx = xvalid[self.locker["id_name"]].values.tolist()
 
         # return
@@ -1383,7 +1396,7 @@ class OptunaOptimizer:
                 # use keras flow_from_dataframe
                 train_datagen = ImageDataGenerator(rescale=1.0 / 255)
                 valid_datagen = ImageDataGenerator(rescale=1.0 / 255)
-                
+
                 if self.use_cutmix != True:
                     self.train_datagen = train_datagen.flow_from_dataframe(
                         dataframe=xtrain,
@@ -1471,29 +1484,29 @@ class OptunaOptimizer:
                     targets=self.yvalid,
                     augmentations=self.aug,
                 )
-            elif self.model_name == "tez2": # tez2 is the latest version tez
+            elif self.model_name == "tez2":  # tez2 is the latest version tez
                 self.train_augmentation = Compose(
                     [
                         albumentations.Normalize(
-                            mean = [0.485, 0.456, 0.406],
-                            std = [0.229, 0.224, 0.225],
-                            max_pixel_value = 255.0,
-                            p = 1.0,
+                            mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225],
+                            max_pixel_value=255.0,
+                            p=1.0,
                         ),
                     ],
-                    p = 1.0
+                    p=1.0,
                 )
 
                 self.valid_augmentations = Compose(
                     [
                         albumentations.Normalize(
-                            mean = [0.485, 0.456, 0.406],
-                            std = [0.229, 0.224, 0.225],
-                            max_pixel_value = 255.0,
-                            p = 1.0,
+                            mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225],
+                            max_pixel_value=255.0,
+                            p=1.0,
                         ),
                     ],
-                    p = 1.0,
+                    p=1.0,
                 )
             elif self.model_name == "kaggletv":  # assume pytorch : tez
                 # use pytorch loading of images happens in BengaliDataset

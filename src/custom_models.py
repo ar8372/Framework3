@@ -30,7 +30,8 @@ import random
 
 # ------------------------------
 
-class UModel( tez.Model): #nn.Module): #tez.Model):
+
+class UModel(tez.Model):  # nn.Module): #tez.Model):
     def __init__(
         self,
         model_name,

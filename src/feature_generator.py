@@ -10,6 +10,8 @@ from utils import *
 generates new features on top of some existing featrues. 
 and stores this info as a dictionary.
 """
+
+
 class features:
     def __init__(self):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
@@ -37,7 +39,9 @@ class features:
         else:
             self.level_no += 1
         self.current_dict["current_level"] = self.level_no
-        save_pickle(f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict )
+        save_pickle(
+            f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict
+        )
 
     def display_features_generated(self):
         # display all the feature engineering done so far
@@ -165,27 +169,27 @@ class features:
         self.test[f"l_{self.level_no}_f_{feat_no}_abs_sum"] = (
             self.test[useful_features].abs().sum(axis=1)
         )
-        self.test[f"l_{self.level_no}_f_{feat_no}_sem"] = self.test[useful_features].sem(
-            axis=1
-        )
-        self.test[f"l_{self.level_no}_f_{feat_no}_std"] = self.test[useful_features].std(
-            axis=1
-        )
-        self.test[f"l_{self.level_no}_f_{feat_no}_mad"] = self.test[useful_features].mad(
-            axis=1
-        )
-        self.test[f"l_{self.level_no}_f_{feat_no}_avg"] = self.test[useful_features].mean(
-            axis=1
-        )
+        self.test[f"l_{self.level_no}_f_{feat_no}_sem"] = self.test[
+            useful_features
+        ].sem(axis=1)
+        self.test[f"l_{self.level_no}_f_{feat_no}_std"] = self.test[
+            useful_features
+        ].std(axis=1)
+        self.test[f"l_{self.level_no}_f_{feat_no}_mad"] = self.test[
+            useful_features
+        ].mad(axis=1)
+        self.test[f"l_{self.level_no}_f_{feat_no}_avg"] = self.test[
+            useful_features
+        ].mean(axis=1)
         self.test[f"l_{self.level_no}_f_{feat_no}_median"] = self.test[
             useful_features
         ].median(axis=1)
-        self.test[f"l_{self.level_no}_f_{feat_no}_max"] = self.test[useful_features].max(
-            axis=1
-        )
-        self.test[f"l_{self.level_no}_f_{feat_no}_min"] = self.test[useful_features].min(
-            axis=1
-        )
+        self.test[f"l_{self.level_no}_f_{feat_no}_max"] = self.test[
+            useful_features
+        ].max(axis=1)
+        self.test[f"l_{self.level_no}_f_{feat_no}_min"] = self.test[
+            useful_features
+        ].min(axis=1)
         self.test[f"l_{self.level_no}_f_{feat_no}_skew"] = self.test[
             useful_features
         ].skew(axis=1)

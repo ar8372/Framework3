@@ -6,6 +6,8 @@ import sys
 """
 generates keys and stores it in models_ultramnist
 """
+
+
 class KeyMaker:
     def __init__(
         self,
