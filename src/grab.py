@@ -28,7 +28,7 @@ class Storage:
         )
         # ----------------------------base features
         self.useful_features_l1 = self.load_pickle(
-            f"../models_{self.locker['comp_name']}/useful_features_l1.pkl"
+            f"../models_{self.locker['comp_name']}/useful_features_l_1.pkl"
         )
         # -----------------------------Table
         self.Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")

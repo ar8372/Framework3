@@ -171,9 +171,9 @@ if __name__ == "__main__":
         list_features=list_features,
         list_feat_title=list_feat_title,
     )
-    useful_features = ["id"]  # ["SibSp", "Parch", "Pclass"]
+    useful_features = ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
-    model_name = "tez1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3" ]
+    model_name = "tez2"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3", "tez1", "tez2", "p1" ]
     # --------------->["tez1"]
     comp_type = (
         "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]

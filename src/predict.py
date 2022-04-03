@@ -44,6 +44,16 @@ class predictor(OptunaOptimizer):
             with_gpu=self.with_gpu,
         )
 
+        #--- sanity check [new_feat, old_feat, feat_title]
+        # ---------------
+        self.feat_dict = load_pickle(
+            f"../models_{self.locker['comp_name']}/features_dict.pkl"
+        )
+        new_features = [f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"]
+        useful_features = self.useful_features
+        self.isRepetition(new_features, useful_features, f"exp_{self.exp_no}") # same set is already present 
+        # new_feat, old_feat, exp_no := so don't add this test set and my_folds
+
     def run_folds(self):
         self._state = "fold"
         image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
@@ -122,7 +132,27 @@ class predictor(OptunaOptimizer):
         # ---------------- dump table
         save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", self.Table)
 
+    def isRepetition(self, gen_features, old_features, feat_title):
+        # self.curr
+        for key, value in self.feat_dict.items():
+            f1, f2, ft = value
+            if f2 == 0:
+                # from base
+                pass
+            elif len(f1[0].split("_")[0]) < 5 or (
+                f1[0].split("_")[0][0] == "l" and f1[0].split("_")[0][2] == "f"
+            ):
+                # originate from base so f2 can't be split
+                f1 = ["_".join(f.split("_")[2:]) for f in f1]
+                gen_features = ["_".join(f.split("_")[2:]) for f in gen_features]
+            else:
+                f2 = ["_".join(f.split("_")[2:]) for f in f2]
+                old_features = ["_".join(f.split("_")[2:]) for f in old_features]
+                f1 = ["_".join(f.split("_")[2:]) for f in f1]
+                gen_features = ["_".join(f.split("_")[2:]) for f in gen_features]
+            if f1 == gen_features and f2 == old_features and ft == feat_title:
+                raise Exception("This feature is already present in my_folds!")
 
 if __name__ == "__main__":
-    p = predictor(exp_no=1)
+    p = predictor(exp_no=2)
     p.run_folds()

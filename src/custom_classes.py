@@ -7,6 +7,9 @@
 # preprocessing and scaling
 
 from torch.utils.data import Dataset
+import numpy as np 
+import pandas as pd
+import torch
 
 
 class TabularDataset:
@@ -110,6 +113,7 @@ class BengaliDataset(Dataset):
         return img, np.array([target_1, target_2, target_3])
 
 
+#  tez2
 class DigitRecognizerDataset:
     def __init__(self, df, augmentations):
         self.df = df
