@@ -11,6 +11,7 @@ from scipy import stats
 import gc
 import psutil
 import seaborn as sns
+
 """
 """
 import albumentations
@@ -24,6 +25,7 @@ from sklearn import metrics, model_selection
 from tez import Tez, TezConfig
 from tez.callbacks import EarlyStopping
 from tez.utils import seed_everything
+
 """
 """
 sns.set()
@@ -59,7 +61,8 @@ import lightgbm as lgb
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from catboost import CatBoostRegressor, CatBoostClassifier
-#from sklearn.experimental import enable_hist_gradient_boosting
+
+# from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 # import the necessary packages
@@ -347,7 +350,7 @@ class OptunaOptimizer:
             )  # + round_on * 4 + level_on * 5
             seed = int(seed)
         else:
-            seed = self._random_state 
+            seed = self._random_state
 
         os.environ["PYTHONHASHSEED"] = str(seed)
         np.random.seed(seed)
@@ -355,7 +358,7 @@ class OptunaOptimizer:
         tf.random.set_seed(
             seed
         )  # f"The truth value of a {type(self).__name__} is ambiguous. "
-        return seed #np.random.randint(3, 1000) # it should return 5
+        return seed  # np.random.randint(3, 1000) # it should return 5
 
     def get_params(self, trial):
         model_name = self.model_name
@@ -856,14 +859,14 @@ class OptunaOptimizer:
         if model_name == "tez1":
             return self._tez1(params, random_state=self._random_state)
         if model_name == "tez2":
-            return self._tez2(params, random_state= self._random_state)
+            return self._tez2(params, random_state=self._random_state)
         if model_name == "kaggletv":
             _model_name = "resnet34"
             model = pretrainedmodels.__dict__[_model_name](pretrained="imagenet")
             model = model.cuda()
             optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
             return model
-        if model_name == "p1": # pytorch1 
+        if model_name == "p1":  # pytorch1
             # basic pytorch model
             pass
         else:
@@ -923,13 +926,13 @@ class OptunaOptimizer:
         model_name = "resnet50"
         seed = random_state
         target_size = len(set(self.ytrain))
-        #n_train_steps = int(len(self.train_image_paths) / batch_size * epochs)
+        # n_train_steps = int(len(self.train_image_paths) / batch_size * epochs)
         n_train_steps = int(len(self.train_dataset) / batch_size / 1 * epochs)
         model = DigitRecognizerModel(
-            model_name = "resnet50",
-            num_classes = target_size ,
-            learning_rate = learning_rate,
-            n_train_steps = n_train_steps,
+            model_name="resnet50",
+            num_classes=target_size,
+            learning_rate=learning_rate,
+            n_train_steps=n_train_steps,
         )
         model = Tez(model)
         return model
@@ -1344,7 +1347,7 @@ class OptunaOptimizer:
             if self._state == "seed":
                 model_path_es = model_path_es + f"_seed_{self._random_state}"
                 model_path_s = model_path_s + f"_seed_{self._random_state}"
-            
+
             # config = TezConfig(
             #     training_batch_size= 64,
             #     validation_batch_size=2  * 64,
@@ -1356,19 +1359,19 @@ class OptunaOptimizer:
             #     fp16=True,
             # )
             config = TezConfig(
-                training_batch_size= params["batch_size"],
-                validation_batch_size=2  * params["batch_size"],
+                training_batch_size=params["batch_size"],
+                validation_batch_size=2 * params["batch_size"],
                 test_batch_size=2 * params["batch_size"],
-                gradient_accumulation_steps= 1,
-                epochs= params["epochs"],
+                gradient_accumulation_steps=1,
+                epochs=params["epochs"],
                 step_scheduler_after="epoch",
                 step_scheduler_metric="valid_accuracy",
                 fp16=True,
             )
-            
+
             es = EarlyStopping(
                 monitor="valid_accuracy",
-                model_path= model_path_es,
+                model_path=model_path_es,
                 patience=10,
                 mode="max",
                 save_weights_only=True,
@@ -1401,7 +1404,9 @@ class OptunaOptimizer:
                     valid_datagen, steps=STEP_SIZE_TEST, verbose=1
                 )
             else:
-                valid_preds = model.predict(self.valid_dataset, batch_size=16, n_jobs=-1)
+                valid_preds = model.predict(
+                    self.valid_dataset, batch_size=16, n_jobs=-1
+                )
                 temp_preds = None
                 for p in valid_preds:
                     if temp_preds is None:
@@ -1416,7 +1421,9 @@ class OptunaOptimizer:
             ):  # so create test prediction
                 # produce predictions - test data
 
-                test_preds = model.predict(self.test_dataset, batch_size=params["batch_size"], n_jobs=-1)
+                test_preds = model.predict(
+                    self.test_dataset, batch_size=params["batch_size"], n_jobs=-1
+                )
                 temp_preds = None
                 for p in test_preds:
                     if temp_preds is None:
@@ -1426,7 +1433,7 @@ class OptunaOptimizer:
                 self.test_preds = temp_preds.argmax(axis=1)
                 print("Printing test predictions")
                 print(self.test_preds.shape)
-                print("="*40)
+                print("=" * 40)
         elif self.locker["data_type"] == "tabular":
             if metrics_name in [
                 "auc",
@@ -1502,7 +1509,7 @@ class OptunaOptimizer:
             # cut mix is used in images only
 
             image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
-            print("comp name is : ",  self.locker["comp_name"])
+            print("comp name is : ", self.locker["comp_name"])
             if self.model_name in ["k1", "k2", "k3"]:
                 # use keras flow_from_dataframe
                 train_datagen = ImageDataGenerator(rescale=1.0 / 255)
@@ -1621,13 +1628,13 @@ class OptunaOptimizer:
                 )
 
                 self.train_dataset = DigitRecognizerDataset(
-                    df = xtrain.drop([self.locker["id_name"], 'fold'], axis=1),
-                    augmentations = self.train_aug,
+                    df=xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+                    augmentations=self.train_aug,
                 )
 
                 self.valid_dataset = DigitRecognizerDataset(
-                    df = xvalid.drop([self.locker["id_name"], 'fold'], axis=1),
-                    augmentations = self.valid_aug,
+                    df=xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    augmentations=self.valid_aug,
                 )
 
             elif self.model_name == "kaggletv":  # assume pytorch : tez
@@ -1761,22 +1768,24 @@ class OptunaOptimizer:
 
         if self.model_name == "tez2":
 
-            self.test_df = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
-            self.test_df[self.locker["target_name"]] = 0.0 # fake target
+            self.test_df = pd.read_csv(
+                f"../models_{self.locker['comp_name']}/" + "test.csv"
+            )
+            self.test_df[self.locker["target_name"]] = 0.0  # fake target
             self.test_dataset = DigitRecognizerDataset(
                 df=self.test_df.drop(self.locker["id_name"], axis=1),
                 augmentations=self.valid_aug,
-            )    
+            )
             # ------------------ re define training set
             self.train_df = self.my_folds.copy()
             self.yvalid = self.train_df[self.locker["target_name"]]
             print("thsi si yvalid shape:")
             print(self.yvalid.shape)
-            print("="*30)
+            print("=" * 30)
             self.train_dataset = DigitRecognizerDataset(
-                df=self.train_df.drop([self.locker["id_name"], 'fold'], axis=1),
+                df=self.train_df.drop([self.locker["id_name"], "fold"], axis=1),
                 augmentations=self.train_aug,
-            )        
+            )
             self.valid_dataset = self.train_dataset
 
             self.valid_dataset = self.train_dataset

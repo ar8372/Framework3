@@ -44,14 +44,16 @@ class predictor(OptunaOptimizer):
             with_gpu=self.with_gpu,
         )
 
-        #--- sanity check [new_feat, old_feat, feat_title]
+        # --- sanity check [new_feat, old_feat, feat_title]
         # ---------------
         self.feat_dict = load_pickle(
             f"../models_{self.locker['comp_name']}/features_dict.pkl"
         )
         new_features = [f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"]
         useful_features = self.useful_features
-        self.isRepetition(new_features, useful_features, f"exp_{self.exp_no}") # same set is already present 
+        self.isRepetition(
+            new_features, useful_features, f"exp_{self.exp_no}"
+        )  # same set is already present
         # new_feat, old_feat, exp_no := so don't add this test set and my_folds
 
     def run_folds(self):
@@ -152,6 +154,7 @@ class predictor(OptunaOptimizer):
                 gen_features = ["_".join(f.split("_")[2:]) for f in gen_features]
             if f1 == gen_features and f2 == old_features and ft == feat_title:
                 raise Exception("This feature is already present in my_folds!")
+
 
 if __name__ == "__main__":
     p = predictor(exp_no=2)

@@ -151,7 +151,7 @@ if __name__ == "__main__":
     # x.no_folds = 5
     # x.data_type = "image"
 
-    ## mnist 
+    ## mnist
     x.id_name = "ImageId"
     x.target_name = "label"
     x.comp_type = "multi_class"
@@ -159,4 +159,4 @@ if __name__ == "__main__":
     x.data_type = "image"  # image_path, image_df
 
     x.update()
-    #x.show_stored_keys()
+    # x.show_stored_keys()
