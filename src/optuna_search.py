@@ -1450,7 +1450,7 @@ class OptunaOptimizer:
             self.optimize_on = optimize_on
         if prep_list != "--|--":
             self.prep_list = prep_list
-        self.useful_features =  useful_features # ["pixel"]
+        self.useful_features = useful_features  # ["pixel"]
         self.my_folds = my_folds  # make it public for the object
         my_folds1 = my_folds.copy()
         # test1  = test.copy()
@@ -1531,11 +1531,11 @@ class OptunaOptimizer:
             self.train_aug = A.Compose([Rotate(20), ToTensor()])
             self.valid_aug = A.Compose([ToTensor()])
 
-
-        self.sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
+        self.sample = pd.read_csv(
+            f"../models_{self.locker['comp_name']}/" + "sample.csv"
+        )
         self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
-        self.test[self.locker["target_name"]] = 0.0 
-
+        self.test[self.locker["target_name"]] = 0.0
 
         # => datasets
         if self.locker["data_type"] == "image_path":
@@ -1647,10 +1647,10 @@ class OptunaOptimizer:
             # # it is not good to use whole image everytime
             # # create a seperate test_df and sample_df aka test to store test set
             # self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test_df.csv")
-            t= []
+            t = []
             for n in self.useful_features:
                 t += filter(lambda x: x.startswith(n), list(self.xtrain.columns))
-            self.useful_features = t 
+            self.useful_features = t
 
             if self._dataset in [
                 "BengaliDataset",
@@ -1671,7 +1671,9 @@ class OptunaOptimizer:
                     transform=self.valid_aug,
                 )
                 print("we are herej")
-                print(len(self.test[self.useful_features + [self.locker["target_name"]]]))
+                print(
+                    len(self.test[self.useful_features + [self.locker["target_name"]]])
+                )
                 self.test_dataset = BengaliDataset(
                     df=self.test[self.useful_features + [self.locker["target_name"]]],
                     img_height=28,
@@ -1693,7 +1695,9 @@ class OptunaOptimizer:
                     augmentations=self.valid_aug,
                 )
                 print("we are herej", self.test.shape)
-                print(self.test[self.useful_features + [self.locker["target_name"]]].shape)                
+                print(
+                    self.test[self.useful_features + [self.locker["target_name"]]].shape
+                )
                 self.test_dataset = DigitRecognizerDataset(
                     df=self.test[self.useful_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
@@ -1722,8 +1726,12 @@ class OptunaOptimizer:
                     self.xtrain = sc.fit_transform(self.xtrain)
                     self.xvalid = sc.transform(self.xvalid)
                 elif f == "Lg":
-                    self.xtrain = pd.DataFrame(self.xtrain, columns=self.useful_features)
-                    self.xvalid = pd.DataFrame(self.xvalid, columns=self.useful_features)
+                    self.xtrain = pd.DataFrame(
+                        self.xtrain, columns=self.useful_features
+                    )
+                    self.xvalid = pd.DataFrame(
+                        self.xvalid, columns=self.useful_features
+                    )
                     # xtest = pd.DataFrame(xtest, columns=useful_features)
                     for col in self.useful_features:
                         self.xtrain[col] = np.log1p(self.xtrain[col])
@@ -1776,9 +1784,11 @@ class OptunaOptimizer:
         Use full train set and test set. call it train and valid
         """
         # --> test set
-        self.sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
+        self.sample = pd.read_csv(
+            f"../models_{self.locker['comp_name']}/" + "sample.csv"
+        )
         self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
-        self.test[self.locker["target_name"]] = 0.0 
+        self.test[self.locker["target_name"]] = 0.0
 
         if self.locker["data_type"] == "image_path":
             image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
@@ -1918,7 +1928,11 @@ class OptunaOptimizer:
                     augmentations=self.valid_aug,
                 )
                 print("here it is ")
-                print(self.test[self.useful_features + [self.locker["target_name"]]].head())
+                print(
+                    self.test[
+                        self.useful_features + [self.locker["target_name"]]
+                    ].head()
+                )
                 self.test_dataset = DigitRecognizerDataset(
                     df=self.test[self.useful_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
@@ -1972,8 +1986,12 @@ class OptunaOptimizer:
                     self.xtrain = sc.fit_transform(self.xtrain)
                     self.xvalid = sc.transform(self.xvalid)
                 elif f == "Lg":
-                    self.xtrain = pd.DataFrame(self.xtrain, columns=self.useful_features)
-                    self.xvalid = pd.DataFrame(self.xvalid, columns=self.useful_features)
+                    self.xtrain = pd.DataFrame(
+                        self.xtrain, columns=self.useful_features
+                    )
+                    self.xvalid = pd.DataFrame(
+                        self.xvalid, columns=self.useful_features
+                    )
                     # xtest = pd.DataFrame(xtest, columns=useful_features)
                     for col in self.useful_features:
                         self.xtrain[col] = np.log1p(self.xtrain[col])

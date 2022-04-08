@@ -191,7 +191,7 @@ if __name__ == "__main__":
     )
     # in case of taking image from dataframe use name which is in all cols like pixel
     # in case of taking image path use ImageId columns
-    useful_features = ["pixel"] #["ImageId"]  # ["SibSp", "Parch", "Pclass"]
+    useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
     model_name = "tez2"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3", "tez1", "tez2", "p1" ]
     # --------------->["tez1"]

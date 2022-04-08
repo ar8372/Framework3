@@ -35,7 +35,7 @@ class predictor(OptunaOptimizer):
         self.metrics_name = row_e.metrics_name.values[0]
         self.level_no = row_e.level_no.values[0]
         self.useful_features = row_e.features_list.values[0]
-        self.aug_type = row_e.aug_type[0] 
+        self.aug_type = row_e.aug_type[0]
         self._dataset = row_e._dataset[0]
         print(self.aug_type)
         print(self._dataset)
@@ -47,8 +47,8 @@ class predictor(OptunaOptimizer):
             metrics_name=self.metrics_name,
             prep_list=self.prep_list,
             with_gpu=self.with_gpu,
-            aug_type = self.aug_type,
-            _dataset = self._dataset,
+            aug_type=self.aug_type,
+            _dataset=self._dataset,
         )
 
         # --- sanity check [new_feat, old_feat, feat_title]
