@@ -28,13 +28,18 @@ class predictor(OptunaOptimizer):
         row_e = self.Table[self.Table.exp_no == self.exp_no]
         self.model_name = row_e.model_name.values[0]
         self.params = row_e.bp.values[0]
-        self.random_state = row_e.random_state.values[0]
+        self._random_state = row_e.random_state.values[0]
         self.with_gpu = row_e.with_gpu.values[0]
         self.features_list = row_e.features_list.values[0]
         self.prep_list = row_e.prep_list.values[0]
         self.metrics_name = row_e.metrics_name.values[0]
         self.level_no = row_e.level_no.values[0]
         self.useful_features = row_e.features_list.values[0]
+        self.aug_type = row_e.aug_type[0] 
+        self._dataset = row_e._dataset[0]
+        print(self.aug_type)
+        print(self._dataset)
+        print("working")
 
         super().__init__(
             model_name=self.model_name,
@@ -42,6 +47,8 @@ class predictor(OptunaOptimizer):
             metrics_name=self.metrics_name,
             prep_list=self.prep_list,
             with_gpu=self.with_gpu,
+            aug_type = self.aug_type,
+            _dataset = self._dataset,
         )
 
         # --- sanity check [new_feat, old_feat, feat_title]
@@ -157,5 +164,5 @@ class predictor(OptunaOptimizer):
 
 
 if __name__ == "__main__":
-    p = predictor(exp_no=2)
+    p = predictor(exp_no=1)
     p.run_folds()

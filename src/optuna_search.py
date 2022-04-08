@@ -1394,9 +1394,6 @@ class OptunaOptimizer:
                             temp_preds = np.vstack((temp_preds, p))
 
                 self.test_preds = temp_preds.argmax(axis=1)
-                print("Printing test predictions")
-                print(self.test_preds.shape)
-                print("=" * 40)
         elif self.locker["data_type"] == "tabular":
             if metrics_name in [
                 "auc",
@@ -1425,7 +1422,6 @@ class OptunaOptimizer:
         ]:
             # Classification
             cl = ClassificationMetrics()
-            print(self.yvalid.shape, self.valid_preds.shape)
             score = cl(self.metrics_name, self.yvalid, self.valid_preds)
         elif self.metrics_name in ["mae", "mse", "rmse", "msle", "rmsle", "r2"]:
             # Regression
@@ -1532,11 +1528,18 @@ class OptunaOptimizer:
             self.train_aug = A.Compose([Rotate(20), ToTensor()])
             self.valid_aug = A.Compose([ToTensor()])
 
+
+        self.sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
+        self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
+        self.test[self.locker["target_name"]] = 0.0 
+
         # => datasets
         if self.locker["data_type"] == "image_path":
+            image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
+            test_path = f"../input_{self.locker['comp_name']}/" + "test_img/"
             if self.model_name in ["tez1", "tez2"]:
                 # now implemented for pytorch
-                image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
+
                 # use pytorch
                 self.train_image_paths = [
                     os.path.join(image_path, str(x))
@@ -1559,6 +1562,24 @@ class OptunaOptimizer:
                     targets=self.yvalid,
                     augmentations=self.valid_aug,
                 )
+
+                # ------------------  prep test dataset
+                self.test_image_paths = [
+                    os.path.join(
+                        test_path, str(x)
+                    )  # f"../input_{self.locker['comp_name']}/" + "test_img/" + x
+                    for x in self.sample[self.locker["id_name"]].values
+                ]
+                # fake targets
+                self.test_targets = self.sample[
+                    self.locker["target_name"]
+                ].values  # dfx_te.digit_sum.values
+                self.test_dataset = ImageDataset(
+                    image_paths=self.test_image_paths,
+                    targets=self.test_targets,
+                    augmentations=self.aug,
+                )
+
             elif self.model_name in ["k1", "k2", "k3"]:
                 # now implemented for keras
                 # use keras flow_from_dataframe
@@ -1619,6 +1640,7 @@ class OptunaOptimizer:
                 )
 
         elif self.locker["data_type"] == "image_df":
+
             if self._dataset in [
                 "BengaliDataset",
             ]:
@@ -1637,6 +1659,14 @@ class OptunaOptimizer:
                     img_width=28,
                     transform=self.valid_aug,
                 )
+
+                self.test_dataset = BengaliDataset(
+                    df=self.test.drop([self.locker["id_name"]], axis=1),
+                    img_height=28,
+                    img_width=28,
+                    augmentations=self.valid_aug,
+                )
+
             elif self._dataset in [
                 "DigitRecognizerDataset",
             ]:
@@ -1648,6 +1678,11 @@ class OptunaOptimizer:
 
                 self.valid_dataset = DigitRecognizerDataset(
                     df=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    augmentations=self.valid_aug,
+                )
+                
+                self.test_dataset = DigitRecognizerDataset(
+                    df=self.test.drop([self.locker["id_name"]], axis=1),
                     augmentations=self.valid_aug,
                 )
 
@@ -1728,7 +1763,9 @@ class OptunaOptimizer:
         Use full train set and test set. call it train and valid
         """
         # --> test set
-        sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
+        self.sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
+        self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
+        self.test[self.locker["target_name"]] = 0.0 
 
         if self.locker["data_type"] == "image_path":
             image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
@@ -1765,10 +1802,10 @@ class OptunaOptimizer:
                     os.path.join(
                         image_path, str(x)
                     )  # f"../input_{self.locker['comp_name']}/" + "test_img/" + x
-                    for x in sample[self.locker["id_name"]].values
+                    for x in self.sample[self.locker["id_name"]].values
                 ]
                 # fake targets
-                self.test_targets = sample[
+                self.test_targets = self.sample[
                     self.locker["target_name"]
                 ].values  # dfx_te.digit_sum.values
                 self.test_dataset = ImageDataset(
@@ -1944,15 +1981,15 @@ class OptunaOptimizer:
             # run an algorithm for 100 times
             scores.append(self.obj("--no-trial--"))
             final_test_predictions.append(self.test_preds)
-        sample[self.locker["target_name"]] = np.array(final_test_predictions[0])
-        sample.to_csv(
+        self.sample[self.locker["target_name"]] = np.array(final_test_predictions[0])
+        self.sample.to_csv(
             f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}_single.csv",
             index=False,
         )
-        sample[self.locker["target_name"]] = stats.mode(
+        self.sample[self.locker["target_name"]] = stats.mode(
             np.column_stack(final_test_predictions), axis=1
         )[0]
-        sample.to_csv(
+        self.sample.to_csv(
             f"../models_{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']+1}_l_{self.current_dict['current_level']}_all.csv",
             index=False,
         )
