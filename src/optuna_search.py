@@ -181,6 +181,8 @@ class OptunaOptimizer:
         prep_list=[],
         with_gpu=False,
         save_models=True,
+        aug_type = "aug2",
+        _dataset = "ImageDataset",
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -238,6 +240,8 @@ class OptunaOptimizer:
         self.comp_type = comp_type
         self.metrics_name = metrics_name
         self.with_gpu = with_gpu
+        self.aug_type = aug_type 
+        self._dataset = _dataset
         self._log_table = None  # will track experiments
         self._state = "opt"  # ["opt","fold", "seed"]
         # in start we want to find best params then we will loop
@@ -1220,45 +1224,7 @@ class OptunaOptimizer:
         model = self.get_model(params)
 
         # fit xtrain
-        # --------------------------------------------------------------------------
-        # if self.data_type == "image_df":
-        #     pass
-        # elif self.data_type == "tabular":
-        #     if self.model_name.startswith("k"): # keras model
-        #         stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
-        #         checkpoint = ModelCheckpoint(
-        #             filepath="./",  # to work on this part
-        #             save_weights_only=True,
-        #             monitor="val_accuracy",
-        #             mode="max",
-        #             save_best_only=True,
-        #         )
-
-        #         reduce_lr = ReduceLROnPlateau(
-        #             monitor="val_accuracy",
-        #             factor=0.5,
-        #             patience=5,
-        #             min_lr=0.00001,
-        #             verbose=1,
-        #         )
-        #         history = model.fit(
-        #             x=self.xtrain,
-        #             y=self.ytrain,
-        #             batch_size=params["batchsize"],
-        #             epochs=params["epochs"],
-        #             shuffle=True,
-        #             validation_split=0.15,
-        #             callbacks=[stop, checkpoint, reduce_lr],
-        #         )
-        #     else:
-        #         # ml model
-        #         model.fit(self.xtrain, self.ytrain)
-
-        # elif  self.data_type == "text":
-        #     pass
-        # else:
-        #     raise Exception(f"{self.data_type} is not a valid data type!")
-
+        # ----------------------------------------------------------------------------
         # ----------------------------------------------------------------------------
         if self.model_name == "lgbmr":
             model.fit(
@@ -1271,6 +1237,7 @@ class OptunaOptimizer:
                 verbose=0,
             )
         if self.model_name in ["k1", "k2", "k3"]:  # keras
+            #------------------------- general for all keras model
             stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
             checkpoint = ModelCheckpoint(
                 filepath="./",  # to work on this part
@@ -1300,22 +1267,22 @@ class OptunaOptimizer:
                 )
             if self.locker["data_type"] == "image":
                 history = model.fit(
-                    self.train_datagen,
+                    self.train_dataset,
                     steps_per_epoch=np.ceil(
                         len(self.xtrain) / self.params["batchsize"]
                     ),
                     epochs=self.params["epochs"],
                     verbose=2,
-                    validatioin_data=self.valid_datagen,
+                    validatioin_data=self.valid_dataset,
                     validation_step=8,
                     callbacks=[stop, checkpoint, reduce_lr],
                 )
                 model.evaluate_generator(
-                    generator=self.valid_datagen, steps=1
+                    generator=self.valid_dataset, steps=1
                 )  # 1 to make it perfectly divisible
 
             self._history = history.history
-        if self.model_name == "tez1":
+        if self.model_name in  ["tez1", "tez2"]:
             model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
@@ -1327,48 +1294,6 @@ class OptunaOptimizer:
                 patience=params["patience"],
                 mode="min",
             )
-            history = model.fit(
-                self.train_dataset,  # self.train_dataset
-                valid_dataset=self.valid_dataset,  # self.valid_dataset
-                train_bs=params["batch_size"],
-                valid_bs=16,
-                device="cuda",
-                epochs=params["epochs"],
-                callbacks=[stop],
-                fp16=True,
-            )
-            # self._history = history.history
-            model.save(
-                model_path_s,
-            )
-        if self.model_name == "tez2":
-            model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
-            model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
-            if self._state == "seed":
-                model_path_es = model_path_es + f"_seed_{self._random_state}"
-                model_path_s = model_path_s + f"_seed_{self._random_state}"
-
-            # config = TezConfig(
-            #     training_batch_size= 64,
-            #     validation_batch_size=2  * 64,
-            #     test_batch_size=2 * 64,
-            #     gradient_accumulation_steps= 1,
-            #     epochs= params["epochs"],
-            #     step_scheduler_after="epoch",
-            #     step_scheduler_metric="valid_accuracy",
-            #     fp16=True,
-            # )
-            config = TezConfig(
-                training_batch_size=params["batch_size"],
-                validation_batch_size=2 * params["batch_size"],
-                test_batch_size=2 * params["batch_size"],
-                gradient_accumulation_steps=1,
-                epochs=params["epochs"],
-                step_scheduler_after="epoch",
-                step_scheduler_metric="valid_accuracy",
-                fp16=True,
-            )
-
             es = EarlyStopping(
                 monitor="valid_accuracy",
                 model_path=model_path_es,
@@ -1377,12 +1302,39 @@ class OptunaOptimizer:
                 save_weights_only=True,
             )
 
-            model.fit(
-                self.train_dataset,
-                valid_dataset=self.valid_dataset,
-                callbacks=[es],
-                config=config,
-            )
+            if self.model_name == "tez1":
+                history = model.fit(
+                    self.train_dataset,  # self.train_dataset
+                    valid_dataset=self.valid_dataset,  # self.valid_dataset
+                    train_bs=params["batch_size"],
+                    valid_bs=16,
+                    device="cuda",
+                    epochs=params["epochs"],
+                    callbacks=[stop],
+                    fp16=True,
+                )
+                # self._history = history.history
+                model.save(
+                    model_path_s,
+                )
+            elif self.model_name == "tez2":
+                config = TezConfig(
+                    training_batch_size=params["batch_size"],
+                    validation_batch_size=2 * params["batch_size"],
+                    test_batch_size=2 * params["batch_size"],
+                    gradient_accumulation_steps=1,
+                    epochs=params["epochs"],
+                    step_scheduler_after="epoch",
+                    step_scheduler_metric="valid_accuracy",
+                    fp16=True,
+                )
+
+                model.fit(
+                    self.train_dataset,
+                    valid_dataset=self.valid_dataset,
+                    callbacks=[es],
+                    config=config,
+                )
             # self._history = history.history
             model.save(
                 model_path_s,
@@ -1391,19 +1343,27 @@ class OptunaOptimizer:
         else:  # tabular
             model.fit(self.xtrain, self.ytrain)
 
-        # Make prediction
+
+
+        """
+        Make prediction    [keras datagen pytorch dataset ] 
+        tabular xvalid yvalid
+
+        """
+
+
         metrics_name = self.metrics_name
-        if self.locker["data_type"] == "image":
+        if self.locker["data_type"] in ["image_path", "image_df", "image_folder"]:
             # storage for oof and submission
 
             # produce predictions - oof
             if self.model_name in ["k1", "k2", "k3"]:
                 # keras image
-                self.valid_datagen.reset()
-                valid_preds = model.predict_generator(
-                    valid_datagen, steps=STEP_SIZE_TEST, verbose=1
+                self.valid_dataset.reset()
+                temp_preds = model.predict_generator(
+                    self.valid_dataset, steps=STEP_SIZE_TEST, verbose=1
                 )
-            else:
+            elif self.model_name in ["tez1", "tez2"]:
                 valid_preds = model.predict(
                     self.valid_dataset, batch_size=16, n_jobs=-1
                 )
@@ -1421,15 +1381,21 @@ class OptunaOptimizer:
             ):  # so create test prediction
                 # produce predictions - test data
 
-                test_preds = model.predict(
-                    self.test_dataset, batch_size=params["batch_size"], n_jobs=-1
-                )
-                temp_preds = None
-                for p in test_preds:
-                    if temp_preds is None:
-                        temp_preds = p
-                    else:
-                        temp_preds = np.vstack((temp_preds, p))
+                if self.model_name in ["k1", "k2", "k3"]:
+                    self.valid_dataset = model.predict_generator(
+                        self.test_dataset, steps = STEP_SIZE_TEST, verbose = 1
+                    )
+                elif self.model_name in ["tez1", "tez2"]:
+                    test_preds = model.predict(
+                        self.test_dataset, batch_size=params["batch_size"], n_jobs=-1
+                    )
+                    temp_preds = None
+                    for p in test_preds:
+                        if temp_preds is None:
+                            temp_preds = p
+                        else:
+                            temp_preds = np.vstack((temp_preds, p))
+
                 self.test_preds = temp_preds.argmax(axis=1)
                 print("Printing test predictions")
                 print(self.test_preds.shape)
@@ -1448,7 +1414,7 @@ class OptunaOptimizer:
             else:
                 self.valid_preds = model.predict(self.xvalid)
         else:
-            raise Exception(f"metrics not set yet of type {self.data_type}")
+            raise Exception(f"metrics not set yet of type {self.locker['data_type']}")
 
         # score valid predictions
         if self.metrics_name in [
@@ -1462,6 +1428,7 @@ class OptunaOptimizer:
         ]:
             # Classification
             cl = ClassificationMetrics()
+            print(self.yvalid.shape, self.valid_preds.shape)
             score = cl(self.metrics_name, self.yvalid, self.valid_preds)
         elif self.metrics_name in ["mae", "mse", "rmse", "msle", "rmsle", "r2"]:
             # Regression
@@ -1495,29 +1462,117 @@ class OptunaOptimizer:
 
         fold = self.optimize_on
         # Select fold
-        xtrain = my_folds1[my_folds1.fold != fold].reset_index(drop=True)
-        xvalid = my_folds1[my_folds1.fold == fold].reset_index(drop=True)
+        self.xtrain = my_folds1[my_folds1.fold != fold].reset_index(drop=True)
+        self.xvalid = my_folds1[my_folds1.fold == fold].reset_index(drop=True)
         # xtest = test1.copy()
         # self.val_idx = xvalid[self.locker["id_name"]].values.tolist()
-        self.val_idx = xvalid[self.locker["id_name"]].values.tolist()
+        self.val_idx = self.xvalid[self.locker["id_name"]].values.tolist()
         # return
         target_name = self.locker["target_name"]
-        self.ytrain = xtrain[target_name].values
-        self.yvalid = xvalid[target_name].values
+        self.ytrain = self.xtrain[target_name].values
+        self.yvalid = self.xvalid[target_name].values
 
-        if self.locker["data_type"] == "image":
-            # cut mix is used in images only
+        """
+        image_df : image is stored in dataframe 
+        image_path: image path is there in dataframe 
+        image_folder: there are image folders
 
-            image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
-            print("comp name is : ", self.locker["comp_name"])
-            if self.model_name in ["k1", "k2", "k3"]:
+        returns 
+        self.valid_dataset 
+        self.train_dataset
+        """
+        #=> albumations augmentations 
+        #tez1
+        if self.aug_type == "aug1":
+            self.train_aug = A.Compose(
+                [
+                    A.Normalize(
+                        mean=[0.5, 0.5, 0.5],
+                        std=[0.5, 0.5, 0.5],
+                        max_pixel_value=255.0,
+                        p=1.0,
+                    )
+                ],
+                p=1.0,
+                )
+            self.valid_aug = A.Compose(
+                [
+                    A.Normalize(
+                        mean=[0.5, 0.5, 0.5],
+                        std=[0.5, 0.5, 0.5],
+                        max_pixel_value=255.0,
+                        p=1.0,
+                    )
+                ],
+                p=1.0,
+                )
+        # tez2
+        elif self.aug_type == "aug2":
+            self.train_aug = A.Compose(
+                [
+                    albumentations.Normalize(
+                        mean=[0.485, 0.456, 0.406],
+                        std=[0.229, 0.224, 0.225],
+                        max_pixel_value=255.0,
+                        p=1.0,
+                    ),
+                ],
+                p=1.0,
+            )
+            self.valid_aug = A.Compose(
+                [
+                    albumentations.Normalize(
+                        mean=[0.485, 0.456, 0.406],
+                        std=[0.229, 0.224, 0.225],
+                        max_pixel_value=255.0,
+                        p=1.0,
+                    ),
+                ],
+                p=1.0,
+            )
+        # kaggle tv
+        elif self.aug_type == "aug3":
+            self.train_aug = A.Compose([Rotate(20), ToTensor()])
+            self.valid_aug = A.Compose([ToTensor()])
+
+
+
+        #=> datasets
+        if self.locker["data_type"] == "image_path":
+            if self.model_name in ["tez1", "tez2"]:
+                # now implemented for pytorch
+                image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
+                # use pytorch
+                self.train_image_paths = [
+                    os.path.join(image_path, str(x))
+                    for x in self.xtrain[self.locker["id_name"]].values
+                ]
+                self.valid_image_paths = [
+                    os.path.join(image_path, str(x))
+                    for x in self.xvalid[self.locker["id_name"]].values
+                ]
+
+                # imageDataset
+                self.train_dataset = ImageDataset(  # train_dataset
+                    image_paths=self.train_image_paths,
+                    targets=self.ytrain,
+                    augmentations=self.train_aug,
+                )
+
+                self.valid_dataset = ImageDataset(  # valid_dataset
+                    image_paths=self.valid_image_paths,
+                    targets=self.yvalid,
+                    augmentations=self.valid_aug,
+                )
+            elif self.model_name in ["k1","k2", "k3"]:
+                # now implemented for keras
                 # use keras flow_from_dataframe
                 train_datagen = ImageDataGenerator(rescale=1.0 / 255)
                 valid_datagen = ImageDataGenerator(rescale=1.0 / 255)
 
                 if self.use_cutmix != True:
-                    self.train_datagen = train_datagen.flow_from_dataframe(
-                        dataframe=xtrain,
+                    self.train_dataset = train_datagen.flow_from_dataframe(
+                        dataframe=self.xtrain,
                         directory=image_path,
                         target_size=(28, 28),  # images are resized to (28,28)
                         x_col=self.locker["id_name"],
@@ -1529,7 +1584,7 @@ class OptunaOptimizer:
                     )
                 elif self.use_cutmix == True:
                     train_datagen1 = train_datagen.flow_from_dataframe(
-                        dataframe=xtrain,
+                        dataframe=self.xtrain,
                         directory=image_path,
                         target_size=(28, 28),  # images are resized to (28,28)
                         x_col=self.locker["id_name"],
@@ -1540,7 +1595,7 @@ class OptunaOptimizer:
                         class_mode="categorical",  # "binary"
                     )
                     train_datagen2 = train_datagen.flow_from_dataframe(
-                        dataframe=xtrain,
+                        dataframe=self.xtrain,
                         directory=image_path,
                         target_size=(28, 28),  # images are resized to (28,28)
                         x_col=self.locker["id_name"],
@@ -1550,14 +1605,14 @@ class OptunaOptimizer:
                         shuffle=True,  # Required for cutmix
                         class_mode="categorical",  # "binary"
                     )
-                    self.train_datagen = CutMixImageDataGenerator(
+                    self.train_dataset = CutMixImageDataGenerator(
                         generator1=train_generator1,
                         generator2=train_generator2,
                         img_size=(28, 28),
                         batch_size=32,
                     )
-                self.valid_datagen = valid_datagen.flow_from_dataframe(
-                    dataframe=xvalid,
+                self.valid_dataset = valid_datagen.flow_from_dataframe(
+                    dataframe= self.xvalid,
                     directory=image_path,
                     target_size=(28, 28),  # images are resized to (28,28)
                     x_col=self.locker["id_name"],
@@ -1567,100 +1622,46 @@ class OptunaOptimizer:
                     shuffle=True,
                     class_mode="categorical",  # "binary"
                 )
-                # use keras flow_from_directory don't use for now because it looks for subfolders with folder name as different targets like horses/humans
-
-            elif self.model_name == "tez1":  # assume pytorch : tez
-                # use pytorch
-                self.train_image_paths = [
-                    os.path.join(image_path, x)
-                    for x in xtrain[self.locker["id_name"]].values
-                ]
-                self.valid_image_paths = [
-                    os.path.join(image_path, x)
-                    for x in xvalid[self.locker["id_name"]].values
-                ]
-                self.aug = A.Compose(
-                    [
-                        A.Normalize(
-                            mean=[0.5, 0.5, 0.5],
-                            std=[0.5, 0.5, 0.5],
-                            max_pixel_value=255.0,
-                            p=1.0,
-                        )
-                    ],
-                    p=1.0,
-                )
+      
+        elif self.locker["data_type"] == "image_df":
+            if self._dataset in ["BengaliDataset",]:
+                # now implemented for pytorch 
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
-                self.train_dataset = ImageDataset(  # train_dataset
-                    image_paths=self.train_image_paths,
-                    targets=self.ytrain,
-                    augmentations=self.aug,
+                self.train_dataset = BengaliDataset(  # train_dataset
+                    csv= self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+                    img_height=28,
+                    img_width=28,
+                    transform=self.train_aug,
                 )
 
-                self.valid_dataset = ImageDataset(  # valid_dataset
-                    image_paths=self.valid_image_paths,
-                    targets=self.yvalid,
-                    augmentations=self.aug,
+                self.valid_dataset = BengaliDataset(  # valid_dataset
+                    csv= self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    img_height=28,
+                    img_width=28,
+                    transform=self.valid_aug,
                 )
-            elif self.model_name == "tez2":  # tez2 is the latest version tez
-                self.train_aug = A.Compose(
-                    [
-                        albumentations.Normalize(
-                            mean=[0.485, 0.456, 0.406],
-                            std=[0.229, 0.224, 0.225],
-                            max_pixel_value=255.0,
-                            p=1.0,
-                        ),
-                    ],
-                    p=1.0,
-                )
-
-                self.valid_aug = A.Compose(
-                    [
-                        albumentations.Normalize(
-                            mean=[0.485, 0.456, 0.406],
-                            std=[0.229, 0.224, 0.225],
-                            max_pixel_value=255.0,
-                            p=1.0,
-                        ),
-                    ],
-                    p=1.0,
-                )
-
+            elif self._dataset in ["DigitRecognizerDataset", ]:
+                # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
-                    df=xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+                    df= self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.train_aug,
                 )
 
                 self.valid_dataset = DigitRecognizerDataset(
-                    df=xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    df= self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
                 )
 
-            elif self.model_name == "kaggletv":  # assume pytorch : tez
-                # use pytorch loading of images happens in BengaliDataset
-                self.train_augmentation = A.Compose([Rotate(20), ToTensor()])
-
-                self.valid_augmentation = A.Compose([ToTensor()])
-                # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
-                self.xtrain = BengaliDataset(  # train_dataset
-                    csv=xtrain,
-                    img_height=28,
-                    img_width=28,
-                    transform=self.train_augmentation,
-                )
-
-                self.xvalid = BengaliDataset(  # valid_dataset
-                    csv=xvalid,
-                    img_height=28,
-                    img_width=28,
-                    transform=self.valid_augmentation,
-                )
+                
+        elif self.locker["data_type"] == "image_folder":
+            # folders of train test
+            pass
+            # use keras flow_from_directory don't use for now because it looks for subfolders with folder name as different targets like horses/humans
 
         elif self.locker["data_type"] == "tabular":
             # concept of useful feature don't make sense for image problem
-            xtrain = xtrain[useful_features]
-            xvalid = xvalid[useful_features]
+            self.xtrain = self.xtrain[useful_features]
+            self.xvalid = self.xvalid[useful_features]
 
             prep_dict = {
                 "SiMe": SimpleImputer(strategy="mean"),
@@ -1672,15 +1673,15 @@ class OptunaOptimizer:
             for f in self.prep_list:
                 if f in list(prep_dict.keys()):
                     sc = prep_dict[f]
-                    xtrain = sc.fit_transform(xtrain)
-                    xvalid = sc.transform(xvalid)
+                    self.xtrain = sc.fit_transform(self.xtrain)
+                    self.xvalid = sc.transform(self.xvalid)
                 elif f == "Lg":
-                    xtrain = pd.DataFrame(xtrain, columns=useful_features)
-                    xvalid = pd.DataFrame(xvalid, columns=useful_features)
+                    self.xtrain = pd.DataFrame(self.xtrain, columns=useful_features)
+                    self.xvalid = pd.DataFrame(self.xvalid, columns=useful_features)
                     # xtest = pd.DataFrame(xtest, columns=useful_features)
                     for col in useful_features:
-                        xtrain[col] = np.log1p(xtrain[col])
-                        xvalid[col] = np.log1p(xvalid[col])
+                        self.xtrain[col] = np.log1p(self.xtrain[col])
+                        self.xvalid[col] = np.log1p(self.xvalid[col])
                         # xtest[col] = np.log1p(xtest[col])
                 else:
                     raise Exception(f"scaler {f} is invalid!")
@@ -1690,10 +1691,7 @@ class OptunaOptimizer:
                 ## to one hot
                 self.ytrain = np_utils.to_categorical(self.ytrain)
                 self.yvalid = np_utils.to_categorical(self.yvalid)
-            self.xtrain = xtrain
-            self.ytrain = ytrain
-            self.xvalid = xvalid
-            self.yvalid = yvalid
+
 
         if self._state == "opt":
             # create optuna study
@@ -1726,70 +1724,219 @@ class OptunaOptimizer:
         print("SEEDING")
         self._state = "seed"
         self.generate_random_no()
-        random_list = np.random.randint(1, 1000, 2)  # 100
+        no_seeds = 2
+        random_list = np.random.randint(1, 1000, no_seeds)  # 100
+        print(f"Running {no_seeds} seeds!")
+        """
+        Use full train set and test set. call it train and valid
+        """
+        #--> test set 
+        sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")  
 
-        sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
-
-        if self.model_name == "tez1":
-            # ------------------  prep test dataset
-            self.test_image_paths = [
-                f"../input_{self.locker['comp_name']}/" + "test_img/" + x
-                for x in sample[self.locker["id_name"]].values
-            ]
-            # fake targets
-            self.test_targets = sample[
-                self.locker["target_name"]
-            ].values  # dfx_te.digit_sum.values
-            self.test_dataset = ImageDataset(
-                image_paths=self.test_image_paths,
-                targets=self.test_targets,
-                augmentations=self.aug,
-            )
-            # ------------------ re define training set
+        if self.locker["data_type"] == "image_path":
             image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
+            test_path =  f"../input_{self.locker['comp_name']}/" + "test_img/"
+            if self.locker["dataset"] in ["tez1", "tez2"]:
+                # now implemented for pytorch
+                
+                # use pytorch
+                self.train_image_paths = [
+                    os.path.join(image_path, str(x))
+                    for x in self.my_folds[self.locker["id_name"]].values   #=>
+                ]
+                self.valid_image_paths = [
+                    os.path.join(image_path, str(x))
+                    for x in self.my_folds[self.locker["id_name"]].values   #=>
+                ]
+                self.ytrain = self.my_folds[target_name].values             #=>
+                self.yvalid = self.my_folds[target_name].values             #=>
+                # imageDataset
+                self.train_dataset = ImageDataset(  # train_dataset
+                    image_paths=self.train_image_paths,
+                    targets=self.ytrain,
+                    augmentations=self.aug,
+                )
 
-            target_name = self.locker["target_name"]
-            self.ytrain = self.my_folds[target_name].values
+                self.valid_dataset = ImageDataset(  # valid_dataset
+                    image_paths=self.valid_image_paths,
+                    targets=self.yvalid,
+                    augmentations=self.aug,
+                )
 
-            self.train_image_paths = [
-                os.path.join(image_path, x)
-                for x in self.my_folds[
-                    self.locker["id_name"]
-                ].values  # xtrain change to my_folds
-            ]
-            self.train_dataset = ImageDataset(
-                image_paths=self.train_image_paths,
-                targets=self.test_targets,
-                augmentations=self.aug,
-            )
+                # ------------------  prep test dataset
+                self.test_image_paths = [
+                    os.path.join(image_path, str(x))    #f"../input_{self.locker['comp_name']}/" + "test_img/" + x
+                    for x in sample[self.locker["id_name"]].values
+                ]
+                # fake targets
+                self.test_targets = sample[
+                    self.locker["target_name"]
+                ].values  # dfx_te.digit_sum.values
+                self.test_dataset = ImageDataset(
+                    image_paths=self.test_image_paths,
+                    targets=self.test_targets,
+                    augmentations=self.aug,
+                )
+            elif self.model_name in ["k1", "k2", "k3"]:
+                # now implemented for keras
+                # use keras flow_from_dataframe
+                train_datagen = ImageDataGenerator(rescale=1.0 / 255)
+                valid_datagen = ImageDataGenerator(rescale=1.0 / 255)
 
-            self.valid_dataset = self.train_dataset
-            # ------ full my_folds data is now xtrain, ytrain
+                if self.use_cutmix != True:
+                    self.train_dataset = train_datagen.flow_from_dataframe(
+                        dataframe= self.my_folds,
+                        directory=image_path,
+                        target_size=(28, 28),  # images are resized to (28,28)
+                        x_col=self.locker["id_name"],
+                        y_col=self.locker["target_name"],
+                        batch_size=32,
+                        seed=42,
+                        shuffle=True,
+                        class_mode="categorical",  # "binary"
+                    )
+                elif self.use_cutmix == True:
+                    train_datagen1 = train_datagen.flow_from_dataframe(
+                        dataframe= self.my_folds,
+                        directory=image_path,
+                        target_size=(28, 28),  # images are resized to (28,28)
+                        x_col=self.locker["id_name"],
+                        y_col=self.locker["target_name"],
+                        batch_size=32,
+                        seed=42,
+                        shuffle=True,  # Required for cutmix
+                        class_mode="categorical",  # "binary"
+                    )
+                    train_datagen2 = train_datagen.flow_from_dataframe(
+                        dataframe=self.my_folds,
+                        directory=image_path,
+                        target_size=(28, 28),  # images are resized to (28,28)
+                        x_col=self.locker["id_name"],
+                        y_col=self.locker["target_name"],
+                        batch_size=32,
+                        seed=42,
+                        shuffle=True,  # Required for cutmix
+                        class_mode="categorical",  # "binary"
+                    )
+                    self.train_dataset = CutMixImageDataGenerator(
+                        generator1=train_generator1,
+                        generator2=train_generator2,
+                        img_size=(28, 28),
+                        batch_size=32,
+                    )
+                self.valid_dataset = valid_datagen.flow_from_dataframe(
+                    dataframe= self.my_folds,
+                    directory=image_path,
+                    target_size=(28, 28),  # images are resized to (28,28)
+                    x_col=self.locker["id_name"],
+                    y_col=self.locker["target_name"],
+                    batch_size=32,
+                    seed=42,
+                    shuffle=True,
+                    class_mode="categorical",  # "binary"
+                )
+                
+                test_datagen=ImageDataGenerator(rescale=1./255.)
+                test_generator=test_datagen.flow_from_dataframe(
+                    dataframe= self.test,
+                    directory=test_path,
+                    target_size=(28, 28),  # images are resized to (28,28)
+                    x_col=self.locker["id_name"],
+                    y_col=None,
+                    batch_size=32,
+                    seed=42,
+                    shuffle=True,
+                    class_mode="None",  # "binary"
+                )
+      
+        elif self.locker["data_type"] == "image_df":
+            self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
+            self.yvalid = self.my_folds[self.locker["target_name"]]
+            self.ytrain = self.my_folds[self.locker["target_name"]]
+            # create fake labels 
+            self.test["label"] = 0.0
+            if self._dataset == "DigitRecognizerDataset":
+                # DigitRecognizerDataset
+                self.train_dataset = DigitRecognizerDataset(
+                    df= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    augmentations=self.train_aug,
+                )
 
-        if self.model_name == "tez2":
+                self.valid_dataset = DigitRecognizerDataset(
+                    df= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    augmentations=self.valid_aug,
+                )
 
-            self.test_df = pd.read_csv(
-                f"../models_{self.locker['comp_name']}/" + "test.csv"
-            )
-            self.test_df[self.locker["target_name"]] = 0.0  # fake target
-            self.test_dataset = DigitRecognizerDataset(
-                df=self.test_df.drop(self.locker["id_name"], axis=1),
-                augmentations=self.valid_aug,
-            )
-            # ------------------ re define training set
-            self.train_df = self.my_folds.copy()
-            self.yvalid = self.train_df[self.locker["target_name"]]
-            print("thsi si yvalid shape:")
-            print(self.yvalid.shape)
-            print("=" * 30)
-            self.train_dataset = DigitRecognizerDataset(
-                df=self.train_df.drop([self.locker["id_name"], "fold"], axis=1),
-                augmentations=self.train_aug,
-            )
-            self.valid_dataset = self.train_dataset
 
-            self.valid_dataset = self.train_dataset
-            # ------ full my_folds data is now xtrain, ytrain
+                self.test_dataset = DigitRecognizerDataset(
+                    df= self.test.drop([self.locker["id_name"]], axis=1),
+                    augmentations=self.valid_aug,
+                )
+
+            elif self._dataset == "BengaliDataset":
+                # now implemented for pytorch 
+                # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
+                self.train_dataset = BengaliDataset(  # train_dataset
+                    csv= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    img_height=28,
+                    img_width=28,
+                    transform=self.train_aug,
+                )
+
+                self.valid_dataset = BengaliDataset(  # valid_dataset
+                    csv= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    img_height=28,
+                    img_width=28,
+                    transform=self.valid_aug,
+                )
+                self.test_dataset = BengaliDataset(
+                    df= self.test.drop([self.locker["id_name"]], axis=1),
+                    img_height=28,
+                    img_width=28,
+                    augmentations=self.valid_aug,
+                )
+
+        elif self.locker["data_type"] == "image_folder":
+            # folders of train test
+            pass
+            # use keras flow_from_directory don't use for now because it looks for subfolders with folder name as different targets like horses/humans
+
+        elif self.locker["data_type"] == "tabular":
+            # concept of useful feature don't make sense for image problem
+            self.xtrain = self.my_folds[useful_features]
+            self.xvalid = self.my_folds[useful_features]
+            self.yvalid = self.my_folds[self.locker["target_name"]]
+            self.ytrain = self.my_folds[self.locker["target_name"]]
+
+            prep_dict = {
+                "SiMe": SimpleImputer(strategy="mean"),
+                "SiMd": SimpleImputer(strategy="median"),
+                "SiMo": SimpleImputer(strategy="mode"),
+                "Ro": RobustScaler(),
+                "Sd": StandardScaler(),
+            }
+            for f in self.prep_list:
+                if f in list(prep_dict.keys()):
+                    sc = prep_dict[f]
+                    self.xtrain = sc.fit_transform(self.xtrain)
+                    self.xvalid = sc.transform(self.xvalid)
+                elif f == "Lg":
+                    self.xtrain = pd.DataFrame(self.xtrain, columns=useful_features)
+                    self.xvalid = pd.DataFrame(self.xvalid, columns=useful_features)
+                    # xtest = pd.DataFrame(xtest, columns=useful_features)
+                    for col in useful_features:
+                        self.xtrain[col] = np.log1p(self.xtrain[col])
+                        self.xvalid[col] = np.log1p(self.xvalid[col])
+                        # xtest[col] = np.log1p(xtest[col])
+                else:
+                    raise Exception(f"scaler {f} is invalid!")
+
+            # create instances
+            if self.model_name.startswith("k") and self.comp_type != "2class":
+                ## to one hot
+                self.ytrain = np_utils.to_categorical(self.ytrain)
+                self.yvalid = np_utils.to_categorical(self.yvalid)
+
 
         scores = []
         final_test_predictions = []
@@ -1831,3 +1978,159 @@ if __name__ == "__main__":
     #         batch_norm_placeholder,
     #         activation_placeholder,
     #     ]
+
+
+
+
+
+# if self.locker["data_type"] == "image_df":
+#             # cut mix is used in images only
+
+#             image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
+#             print("comp name is : ", self.locker["comp_name"])
+#             if self.model_name in ["k1", "k2", "k3"]:
+#                 # use keras flow_from_dataframe
+#                 train_datagen = ImageDataGenerator(rescale=1.0 / 255)
+#                 valid_datagen = ImageDataGenerator(rescale=1.0 / 255)
+
+#                 if self.use_cutmix != True:
+#                     self.train_dataset = train_datagen.flow_from_dataframe(
+#                         dataframe=xtrain,
+#                         directory=image_path,
+#                         target_size=(28, 28),  # images are resized to (28,28)
+#                         x_col=self.locker["id_name"],
+#                         y_col=self.locker["target_name"],
+#                         batch_size=32,
+#                         seed=42,
+#                         shuffle=True,
+#                         class_mode="categorical",  # "binary"
+#                     )
+#                 elif self.use_cutmix == True:
+#                     train_datagen1 = train_datagen.flow_from_dataframe(
+#                         dataframe=xtrain,
+#                         directory=image_path,
+#                         target_size=(28, 28),  # images are resized to (28,28)
+#                         x_col=self.locker["id_name"],
+#                         y_col=self.locker["target_name"],
+#                         batch_size=32,
+#                         seed=42,
+#                         shuffle=True,  # Required for cutmix
+#                         class_mode="categorical",  # "binary"
+#                     )
+#                     train_datagen2 = train_datagen.flow_from_dataframe(
+#                         dataframe=xtrain,
+#                         directory=image_path,
+#                         target_size=(28, 28),  # images are resized to (28,28)
+#                         x_col=self.locker["id_name"],
+#                         y_col=self.locker["target_name"],
+#                         batch_size=32,
+#                         seed=42,
+#                         shuffle=True,  # Required for cutmix
+#                         class_mode="categorical",  # "binary"
+#                     )
+#                     self.train_dataset = CutMixImageDataGenerator(
+#                         generator1=train_generator1,
+#                         generator2=train_generator2,
+#                         img_size=(28, 28),
+#                         batch_size=32,
+#                     )
+#                 self.valid_dataset = valid_datagen.flow_from_dataframe(
+#                     dataframe=xvalid,
+#                     directory=image_path,
+#                     target_size=(28, 28),  # images are resized to (28,28)
+#                     x_col=self.locker["id_name"],
+#                     y_col=self.locker["target_name"],
+#                     batch_size=32,
+#                     seed=42,
+#                     shuffle=True,
+#                     class_mode="categorical",  # "binary"
+#                 )
+#                 # use keras flow_from_directory don't use for now because it looks for subfolders with folder name as different targets like horses/humans
+
+#             elif self.model_name == "tez1":  # assume pytorch : tez
+#                 # use pytorch
+#                 self.train_image_paths = [
+#                     os.path.join(image_path, x)
+#                     for x in xtrain[self.locker["id_name"]].values
+#                 ]
+#                 self.valid_image_paths = [
+#                     os.path.join(image_path, x)
+#                     for x in xvalid[self.locker["id_name"]].values
+#                 ]
+#                 self.aug = A.Compose(
+#                     [
+#                         A.Normalize(
+#                             mean=[0.5, 0.5, 0.5],
+#                             std=[0.5, 0.5, 0.5],
+#                             max_pixel_value=255.0,
+#                             p=1.0,
+#                         )
+#                     ],
+#                     p=1.0,
+#                 )
+#                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
+#                 self.train_dataset = ImageDataset(  # train_dataset
+#                     image_paths=self.train_image_paths,
+#                     targets=self.ytrain,
+#                     augmentations=self.aug,
+#                 )
+
+#                 self.valid_dataset = ImageDataset(  # valid_dataset
+#                     image_paths=self.valid_image_paths,
+#                     targets=self.yvalid,
+#                     augmentations=self.aug,
+#                 )
+#             elif self.model_name == "tez2":  # tez2 is the latest version tez
+#                 self.train_aug = A.Compose(
+#                     [
+#                         albumentations.Normalize(
+#                             mean=[0.485, 0.456, 0.406],
+#                             std=[0.229, 0.224, 0.225],
+#                             max_pixel_value=255.0,
+#                             p=1.0,
+#                         ),
+#                     ],
+#                     p=1.0,
+#                 )
+
+#                 self.valid_aug = A.Compose(
+#                     [
+#                         albumentations.Normalize(
+#                             mean=[0.485, 0.456, 0.406],
+#                             std=[0.229, 0.224, 0.225],
+#                             max_pixel_value=255.0,
+#                             p=1.0,
+#                         ),
+#                     ],
+#                     p=1.0,
+#                 )
+
+#                 self.train_dataset = DigitRecognizerDataset(
+#                     df=xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+#                     augmentations=self.train_aug,
+#                 )
+
+#                 self.valid_dataset = DigitRecognizerDataset(
+#                     df=xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+#                     augmentations=self.valid_aug,
+#                 )
+
+#             elif self.model_name == "kaggletv":  # assume pytorch : tez
+#                 # use pytorch loading of images happens in BengaliDataset
+#                 self.train_augmentation = A.Compose([Rotate(20), ToTensor()])
+
+#                 self.valid_augmentation = A.Compose([ToTensor()])
+#                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
+#                 self.xtrain = BengaliDataset(  # train_dataset
+#                     csv=xtrain,
+#                     img_height=28,
+#                     img_width=28,
+#                     transform=self.train_augmentation,
+#                 )
+
+#                 self.xvalid = BengaliDataset(  # valid_dataset
+#                     csv=xvalid,
+#                     img_height=28,
+#                     img_width=28,
+#                     transform=self.valid_augmentation,
+#                 )

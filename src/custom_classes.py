@@ -10,6 +10,10 @@ from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 import torch
+import os 
+import sys 
+import pickle
+
 
 
 class TabularDataset:
@@ -116,9 +120,18 @@ class BengaliDataset(Dataset):
 #  tez2
 class DigitRecognizerDataset:
     def __init__(self, df, augmentations):
+        with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
+            for i in x:
+                comp_name = i
+        x.close()
+        with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
+            self.locker = pickle.load(f)
+
+
+        print(df.head())
         self.df = df
-        self.targets = df.label.values
-        self.df = self.df.drop(columns=["label"])
+        self.targets = self.df[self.locker["target_name"]].values
+        self.df = self.df.drop(columns=[self.locker["target_name"]])
         self.augmentations = augmentations
 
         self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28, 28))

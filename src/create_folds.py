@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
         df.loc[val_idx, "fold"] = fold
 
-    if a["data_type"] == "image":
+    if a["data_type"] in ["image_path", "image_df"]:
         df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
         useful_features = [a["id_name"]]
         with open(f"../models_{a['comp_name']}/useful_features_l_1.pkl", "wb") as f:
@@ -76,6 +76,8 @@ if __name__ == "__main__":
             "bp",
             "random_state",
             "with_gpu",
+            "aug_type",
+            "_dataset",
             "features_list",
             "level_no",
             "fold_no",
@@ -89,6 +91,7 @@ if __name__ == "__main__":
             "pblb_single_seed",
             "pblb_all_seed",
             "pblb_all_fold",
+            "notes"
         ]
     )
     with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:
