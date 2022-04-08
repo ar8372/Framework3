@@ -126,12 +126,13 @@ class DigitRecognizerDataset:
         with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
 
-        print(df.head())
+        
         self.df = df
         self.targets = self.df[self.locker["target_name"]].values
         self.df = self.df.drop(columns=[self.locker["target_name"]])
         self.augmentations = augmentations
 
+        print("This is shape of df in dataset", self.df.shape)
         self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28, 28))
 
     def __len__(self):

@@ -1,6 +1,14 @@
 # tez ----------------------------
 import os
 import albumentations as A
+from albumentations import (
+    HorizontalFlip, IAAPerspective, ShiftScaleRotate, CLAHE, RandomRotate90,
+    Transpose, ShiftScaleRotate, Blur, OpticalDistortion, GridDistortion, HueSaturationValue,
+    IAAAdditiveGaussianNoise, GaussNoise, MotionBlur, MedianBlur, RandomBrightnessContrast, IAAPiecewiseAffine,
+    IAASharpen, IAAEmboss, Flip, OneOf, Compose, Cutout, Rotate, HorizontalFlip, Normalize
+)
+from albumentations.pytorch import ToTensor #, ToTensorV2
+
 import pandas as pd
 import numpy as np
 
@@ -117,6 +125,8 @@ class trainer_p1:
         # outputs is list of tensors
         preds = torch.cat(outputs).view(-1)
         return preds
+    def save(self):
+        print("not implemented save")
 
 
 class p1_model(nn.Module):

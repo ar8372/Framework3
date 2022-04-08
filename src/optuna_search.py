@@ -234,6 +234,7 @@ class OptunaOptimizer:
             "k3",
             "tez1",
             "tez2",
+            "p1",
         ]
         self._prep_list = ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"]
         self.prep_list = prep_list
@@ -870,14 +871,30 @@ class OptunaOptimizer:
             model = model.cuda()
             optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
             return model
-        if model_name == "p1":  # pytorch1
-            # basic pytorch model
-            pass
+        # if model_name == "p1":  # pytorch1
+        #     # basic pytorch model
+        #     return self._p1()
         else:
             raise Exception(f"{model_name} is invalid!")
 
-    def _p1(self, params, random_state):
-        model = p1_model(self.xtrain[0].shape)
+    # def _p1(self, params, random_state):
+    #     model = p1_model(self.xtrain[0].shape)
+    #     # train_loader
+    #     train_loader = DataLoader(self.train_dataset,
+    #                             shuffle=True,
+    #                             num_workers=4,
+    #                             batch_size=128
+    #                         )
+
+    #     valid_loader = DataLoader(self.valid_dataset,
+    #                         shuffle=False,
+    #                         num_workers=4,
+    #                         batch_size=128
+    #                         )
+    #     optimizer = None
+    #     scheduler = None
+    #     return trainer_p1(model, train_loader, valid_loader, 
+    #             optimizer, scheduler)
 
     def _tez1(self, params, random_state):
         """
@@ -1282,7 +1299,7 @@ class OptunaOptimizer:
                 )  # 1 to make it perfectly divisible
 
             self._history = history.history
-        if self.model_name in ["tez1", "tez2"]:
+        if self.model_name in ["tez1", "tez2", "p1"]:
             model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
@@ -1335,6 +1352,8 @@ class OptunaOptimizer:
                     callbacks=[es],
                     config=config,
                 )
+            # elif self.model_name == "p1":
+            #     model.fit(5)
             # self._history = history.history
             model.save(
                 model_path_s,
