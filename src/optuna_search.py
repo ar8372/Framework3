@@ -1387,6 +1387,7 @@ class OptunaOptimizer:
                         self.test_dataset, batch_size=params["batch_size"], n_jobs=-1
                     )
                     temp_preds = None
+                    print("this is test pred shape")
                     for p in test_preds:
                         if temp_preds is None:
                             temp_preds = p
@@ -1449,10 +1450,12 @@ class OptunaOptimizer:
             self.optimize_on = optimize_on
         if prep_list != "--|--":
             self.prep_list = prep_list
+        self.useful_features =  useful_features # ["pixel"]
         self.my_folds = my_folds  # make it public for the object
         my_folds1 = my_folds.copy()
         # test1  = test.copy()
 
+        # useful features pixel then for from_dataframe => feature name starts with pixel
         fold = self.optimize_on
         # Select fold
         self.xtrain = my_folds1[my_folds1.fold != fold].reset_index(drop=True)
@@ -1533,6 +1536,7 @@ class OptunaOptimizer:
         self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
         self.test[self.locker["target_name"]] = 0.0 
 
+
         # => datasets
         if self.locker["data_type"] == "image_path":
             image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
@@ -1577,7 +1581,7 @@ class OptunaOptimizer:
                 self.test_dataset = ImageDataset(
                     image_paths=self.test_image_paths,
                     targets=self.test_targets,
-                    augmentations=self.aug,
+                    augmentations=self.valid_aug,
                 )
 
             elif self.model_name in ["k1", "k2", "k3"]:
@@ -1640,6 +1644,13 @@ class OptunaOptimizer:
                 )
 
         elif self.locker["data_type"] == "image_df":
+            # # it is not good to use whole image everytime
+            # # create a seperate test_df and sample_df aka test to store test set
+            # self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test_df.csv")
+            t= []
+            for n in self.useful_features:
+                t += filter(lambda x: x.startswith(n), list(self.xtrain.columns))
+            self.useful_features = t 
 
             if self._dataset in [
                 "BengaliDataset",
@@ -1659,9 +1670,10 @@ class OptunaOptimizer:
                     img_width=28,
                     transform=self.valid_aug,
                 )
-
+                print("we are herej")
+                print(len(self.test[self.useful_features + [self.locker["target_name"]]]))
                 self.test_dataset = BengaliDataset(
-                    df=self.test.drop([self.locker["id_name"]], axis=1),
+                    df=self.test[self.useful_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     augmentations=self.valid_aug,
@@ -1680,9 +1692,10 @@ class OptunaOptimizer:
                     df=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
                 )
-                
+                print("we are herej", self.test.shape)
+                print(self.test[self.useful_features + [self.locker["target_name"]]].shape)                
                 self.test_dataset = DigitRecognizerDataset(
-                    df=self.test.drop([self.locker["id_name"]], axis=1),
+                    df=self.test[self.useful_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
                 )
 
@@ -1693,8 +1706,8 @@ class OptunaOptimizer:
 
         elif self.locker["data_type"] == "tabular":
             # concept of useful feature don't make sense for image problem
-            self.xtrain = self.xtrain[useful_features]
-            self.xvalid = self.xvalid[useful_features]
+            self.xtrain = self.xtrain[self.useful_features]
+            self.xvalid = self.xvalid[self.useful_features]
 
             prep_dict = {
                 "SiMe": SimpleImputer(strategy="mean"),
@@ -1709,10 +1722,10 @@ class OptunaOptimizer:
                     self.xtrain = sc.fit_transform(self.xtrain)
                     self.xvalid = sc.transform(self.xvalid)
                 elif f == "Lg":
-                    self.xtrain = pd.DataFrame(self.xtrain, columns=useful_features)
-                    self.xvalid = pd.DataFrame(self.xvalid, columns=useful_features)
+                    self.xtrain = pd.DataFrame(self.xtrain, columns=self.useful_features)
+                    self.xvalid = pd.DataFrame(self.xvalid, columns=self.useful_features)
                     # xtest = pd.DataFrame(xtest, columns=useful_features)
-                    for col in useful_features:
+                    for col in self.useful_features:
                         self.xtrain[col] = np.log1p(self.xtrain[col])
                         self.xvalid[col] = np.log1p(self.xvalid[col])
                         # xtest[col] = np.log1p(xtest[col])
@@ -1800,7 +1813,7 @@ class OptunaOptimizer:
                 # ------------------  prep test dataset
                 self.test_image_paths = [
                     os.path.join(
-                        image_path, str(x)
+                        test_path, str(x)
                     )  # f"../input_{self.locker['comp_name']}/" + "test_img/" + x
                     for x in self.sample[self.locker["id_name"]].values
                 ]
@@ -1904,9 +1917,10 @@ class OptunaOptimizer:
                     df=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
                 )
-
+                print("here it is ")
+                print(self.test[self.useful_features + [self.locker["target_name"]]].head())
                 self.test_dataset = DigitRecognizerDataset(
-                    df=self.test.drop([self.locker["id_name"]], axis=1),
+                    df=self.test[self.useful_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
                 )
 
@@ -1927,7 +1941,7 @@ class OptunaOptimizer:
                     transform=self.valid_aug,
                 )
                 self.test_dataset = BengaliDataset(
-                    df=self.test.drop([self.locker["id_name"]], axis=1),
+                    df=self.test[self.useful_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     augmentations=self.valid_aug,
@@ -1940,8 +1954,8 @@ class OptunaOptimizer:
 
         elif self.locker["data_type"] == "tabular":
             # concept of useful feature don't make sense for image problem
-            self.xtrain = self.my_folds[useful_features]
-            self.xvalid = self.my_folds[useful_features]
+            self.xtrain = self.my_folds[self.useful_features]
+            self.xvalid = self.my_folds[self.useful_features]
             self.yvalid = self.my_folds[self.locker["target_name"]]
             self.ytrain = self.my_folds[self.locker["target_name"]]
 
@@ -1958,10 +1972,10 @@ class OptunaOptimizer:
                     self.xtrain = sc.fit_transform(self.xtrain)
                     self.xvalid = sc.transform(self.xvalid)
                 elif f == "Lg":
-                    self.xtrain = pd.DataFrame(self.xtrain, columns=useful_features)
-                    self.xvalid = pd.DataFrame(self.xvalid, columns=useful_features)
+                    self.xtrain = pd.DataFrame(self.xtrain, columns=self.useful_features)
+                    self.xvalid = pd.DataFrame(self.xvalid, columns=self.useful_features)
                     # xtest = pd.DataFrame(xtest, columns=useful_features)
-                    for col in useful_features:
+                    for col in self.useful_features:
                         self.xtrain[col] = np.log1p(self.xtrain[col])
                         self.xvalid[col] = np.log1p(self.xvalid[col])
                         # xtest[col] = np.log1p(xtest[col])
