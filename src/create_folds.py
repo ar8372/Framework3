@@ -91,7 +91,7 @@ if __name__ == "__main__":
             "pblb_single_seed",
             "pblb_all_seed",
             "pblb_all_fold",
-            "notes"
+            "notes",
         ]
     )
     with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:

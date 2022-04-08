@@ -10,10 +10,9 @@ from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 import torch
-import os 
-import sys 
+import os
+import sys
 import pickle
-
 
 
 class TabularDataset:
@@ -126,7 +125,6 @@ class DigitRecognizerDataset:
         x.close()
         with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
-
 
         print(df.head())
         self.df = df

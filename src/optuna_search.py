@@ -181,8 +181,8 @@ class OptunaOptimizer:
         prep_list=[],
         with_gpu=False,
         save_models=True,
-        aug_type = "aug2",
-        _dataset = "ImageDataset",
+        aug_type="aug2",
+        _dataset="ImageDataset",
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -240,7 +240,7 @@ class OptunaOptimizer:
         self.comp_type = comp_type
         self.metrics_name = metrics_name
         self.with_gpu = with_gpu
-        self.aug_type = aug_type 
+        self.aug_type = aug_type
         self._dataset = _dataset
         self._log_table = None  # will track experiments
         self._state = "opt"  # ["opt","fold", "seed"]
@@ -1237,7 +1237,7 @@ class OptunaOptimizer:
                 verbose=0,
             )
         if self.model_name in ["k1", "k2", "k3"]:  # keras
-            #------------------------- general for all keras model
+            # ------------------------- general for all keras model
             stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
             checkpoint = ModelCheckpoint(
                 filepath="./",  # to work on this part
@@ -1282,7 +1282,7 @@ class OptunaOptimizer:
                 )  # 1 to make it perfectly divisible
 
             self._history = history.history
-        if self.model_name in  ["tez1", "tez2"]:
+        if self.model_name in ["tez1", "tez2"]:
             model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
@@ -1343,14 +1343,11 @@ class OptunaOptimizer:
         else:  # tabular
             model.fit(self.xtrain, self.ytrain)
 
-
-
         """
         Make prediction    [keras datagen pytorch dataset ] 
         tabular xvalid yvalid
 
         """
-
 
         metrics_name = self.metrics_name
         if self.locker["data_type"] in ["image_path", "image_df", "image_folder"]:
@@ -1383,7 +1380,7 @@ class OptunaOptimizer:
 
                 if self.model_name in ["k1", "k2", "k3"]:
                     self.valid_dataset = model.predict_generator(
-                        self.test_dataset, steps = STEP_SIZE_TEST, verbose = 1
+                        self.test_dataset, steps=STEP_SIZE_TEST, verbose=1
                     )
                 elif self.model_name in ["tez1", "tez2"]:
                     test_preds = model.predict(
@@ -1481,8 +1478,8 @@ class OptunaOptimizer:
         self.valid_dataset 
         self.train_dataset
         """
-        #=> albumations augmentations 
-        #tez1
+        # => albumations augmentations
+        # tez1
         if self.aug_type == "aug1":
             self.train_aug = A.Compose(
                 [
@@ -1494,7 +1491,7 @@ class OptunaOptimizer:
                     )
                 ],
                 p=1.0,
-                )
+            )
             self.valid_aug = A.Compose(
                 [
                     A.Normalize(
@@ -1505,7 +1502,7 @@ class OptunaOptimizer:
                     )
                 ],
                 p=1.0,
-                )
+            )
         # tez2
         elif self.aug_type == "aug2":
             self.train_aug = A.Compose(
@@ -1535,9 +1532,7 @@ class OptunaOptimizer:
             self.train_aug = A.Compose([Rotate(20), ToTensor()])
             self.valid_aug = A.Compose([ToTensor()])
 
-
-
-        #=> datasets
+        # => datasets
         if self.locker["data_type"] == "image_path":
             if self.model_name in ["tez1", "tez2"]:
                 # now implemented for pytorch
@@ -1564,7 +1559,7 @@ class OptunaOptimizer:
                     targets=self.yvalid,
                     augmentations=self.valid_aug,
                 )
-            elif self.model_name in ["k1","k2", "k3"]:
+            elif self.model_name in ["k1", "k2", "k3"]:
                 # now implemented for keras
                 # use keras flow_from_dataframe
                 train_datagen = ImageDataGenerator(rescale=1.0 / 255)
@@ -1612,7 +1607,7 @@ class OptunaOptimizer:
                         batch_size=32,
                     )
                 self.valid_dataset = valid_datagen.flow_from_dataframe(
-                    dataframe= self.xvalid,
+                    dataframe=self.xvalid,
                     directory=image_path,
                     target_size=(28, 28),  # images are resized to (28,28)
                     x_col=self.locker["id_name"],
@@ -1622,37 +1617,40 @@ class OptunaOptimizer:
                     shuffle=True,
                     class_mode="categorical",  # "binary"
                 )
-      
+
         elif self.locker["data_type"] == "image_df":
-            if self._dataset in ["BengaliDataset",]:
-                # now implemented for pytorch 
+            if self._dataset in [
+                "BengaliDataset",
+            ]:
+                # now implemented for pytorch
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
                 self.train_dataset = BengaliDataset(  # train_dataset
-                    csv= self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
                     img_height=28,
                     img_width=28,
                     transform=self.train_aug,
                 )
 
                 self.valid_dataset = BengaliDataset(  # valid_dataset
-                    csv= self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
                     img_height=28,
                     img_width=28,
                     transform=self.valid_aug,
                 )
-            elif self._dataset in ["DigitRecognizerDataset", ]:
+            elif self._dataset in [
+                "DigitRecognizerDataset",
+            ]:
                 # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
-                    df= self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.train_aug,
                 )
 
                 self.valid_dataset = DigitRecognizerDataset(
-                    df= self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
                 )
 
-                
         elif self.locker["data_type"] == "image_folder":
             # folders of train test
             pass
@@ -1692,7 +1690,6 @@ class OptunaOptimizer:
                 self.ytrain = np_utils.to_categorical(self.ytrain)
                 self.yvalid = np_utils.to_categorical(self.yvalid)
 
-
         if self._state == "opt":
             # create optuna study
             study = optuna.create_study(direction=self._aim, study_name=self.model_name)
@@ -1730,26 +1727,26 @@ class OptunaOptimizer:
         """
         Use full train set and test set. call it train and valid
         """
-        #--> test set 
-        sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")  
+        # --> test set
+        sample = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "sample.csv")
 
         if self.locker["data_type"] == "image_path":
             image_path = f"../input_{self.locker['comp_name']}/" + "train_img/"
-            test_path =  f"../input_{self.locker['comp_name']}/" + "test_img/"
+            test_path = f"../input_{self.locker['comp_name']}/" + "test_img/"
             if self.locker["dataset"] in ["tez1", "tez2"]:
                 # now implemented for pytorch
-                
+
                 # use pytorch
                 self.train_image_paths = [
                     os.path.join(image_path, str(x))
-                    for x in self.my_folds[self.locker["id_name"]].values   #=>
+                    for x in self.my_folds[self.locker["id_name"]].values  # =>
                 ]
                 self.valid_image_paths = [
                     os.path.join(image_path, str(x))
-                    for x in self.my_folds[self.locker["id_name"]].values   #=>
+                    for x in self.my_folds[self.locker["id_name"]].values  # =>
                 ]
-                self.ytrain = self.my_folds[target_name].values             #=>
-                self.yvalid = self.my_folds[target_name].values             #=>
+                self.ytrain = self.my_folds[target_name].values  # =>
+                self.yvalid = self.my_folds[target_name].values  # =>
                 # imageDataset
                 self.train_dataset = ImageDataset(  # train_dataset
                     image_paths=self.train_image_paths,
@@ -1765,7 +1762,9 @@ class OptunaOptimizer:
 
                 # ------------------  prep test dataset
                 self.test_image_paths = [
-                    os.path.join(image_path, str(x))    #f"../input_{self.locker['comp_name']}/" + "test_img/" + x
+                    os.path.join(
+                        image_path, str(x)
+                    )  # f"../input_{self.locker['comp_name']}/" + "test_img/" + x
                     for x in sample[self.locker["id_name"]].values
                 ]
                 # fake targets
@@ -1785,7 +1784,7 @@ class OptunaOptimizer:
 
                 if self.use_cutmix != True:
                     self.train_dataset = train_datagen.flow_from_dataframe(
-                        dataframe= self.my_folds,
+                        dataframe=self.my_folds,
                         directory=image_path,
                         target_size=(28, 28),  # images are resized to (28,28)
                         x_col=self.locker["id_name"],
@@ -1797,7 +1796,7 @@ class OptunaOptimizer:
                     )
                 elif self.use_cutmix == True:
                     train_datagen1 = train_datagen.flow_from_dataframe(
-                        dataframe= self.my_folds,
+                        dataframe=self.my_folds,
                         directory=image_path,
                         target_size=(28, 28),  # images are resized to (28,28)
                         x_col=self.locker["id_name"],
@@ -1825,7 +1824,7 @@ class OptunaOptimizer:
                         batch_size=32,
                     )
                 self.valid_dataset = valid_datagen.flow_from_dataframe(
-                    dataframe= self.my_folds,
+                    dataframe=self.my_folds,
                     directory=image_path,
                     target_size=(28, 28),  # images are resized to (28,28)
                     x_col=self.locker["id_name"],
@@ -1835,10 +1834,10 @@ class OptunaOptimizer:
                     shuffle=True,
                     class_mode="categorical",  # "binary"
                 )
-                
-                test_datagen=ImageDataGenerator(rescale=1./255.)
-                test_generator=test_datagen.flow_from_dataframe(
-                    dataframe= self.test,
+
+                test_datagen = ImageDataGenerator(rescale=1.0 / 255.0)
+                test_generator = test_datagen.flow_from_dataframe(
+                    dataframe=self.test,
                     directory=test_path,
                     target_size=(28, 28),  # images are resized to (28,28)
                     x_col=self.locker["id_name"],
@@ -1848,49 +1847,50 @@ class OptunaOptimizer:
                     shuffle=True,
                     class_mode="None",  # "binary"
                 )
-      
+
         elif self.locker["data_type"] == "image_df":
-            self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/" + "test.csv")
+            self.test = pd.read_csv(
+                f"../models_{self.locker['comp_name']}/" + "test.csv"
+            )
             self.yvalid = self.my_folds[self.locker["target_name"]]
             self.ytrain = self.my_folds[self.locker["target_name"]]
-            # create fake labels 
+            # create fake labels
             self.test["label"] = 0.0
             if self._dataset == "DigitRecognizerDataset":
                 # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
-                    df= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.train_aug,
                 )
 
                 self.valid_dataset = DigitRecognizerDataset(
-                    df= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
                 )
 
-
                 self.test_dataset = DigitRecognizerDataset(
-                    df= self.test.drop([self.locker["id_name"]], axis=1),
+                    df=self.test.drop([self.locker["id_name"]], axis=1),
                     augmentations=self.valid_aug,
                 )
 
             elif self._dataset == "BengaliDataset":
-                # now implemented for pytorch 
+                # now implemented for pytorch
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
                 self.train_dataset = BengaliDataset(  # train_dataset
-                    csv= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
                     img_height=28,
                     img_width=28,
                     transform=self.train_aug,
                 )
 
                 self.valid_dataset = BengaliDataset(  # valid_dataset
-                    csv= self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
                     img_height=28,
                     img_width=28,
                     transform=self.valid_aug,
                 )
                 self.test_dataset = BengaliDataset(
-                    df= self.test.drop([self.locker["id_name"]], axis=1),
+                    df=self.test.drop([self.locker["id_name"]], axis=1),
                     img_height=28,
                     img_width=28,
                     augmentations=self.valid_aug,
@@ -1937,7 +1937,6 @@ class OptunaOptimizer:
                 self.ytrain = np_utils.to_categorical(self.ytrain)
                 self.yvalid = np_utils.to_categorical(self.yvalid)
 
-
         scores = []
         final_test_predictions = []
         for rn in random_list:
@@ -1978,9 +1977,6 @@ if __name__ == "__main__":
     #         batch_norm_placeholder,
     #         activation_placeholder,
     #     ]
-
-
-
 
 
 # if self.locker["data_type"] == "image_df":

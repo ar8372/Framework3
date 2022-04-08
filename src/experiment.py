@@ -23,8 +23,8 @@ class Agent:
         optimize_on=0,
         save_models=True,
         with_gpu=False,
-        aug_type = "Aug1",
-        _dataset = "ImageDataset"
+        aug_type="Aug1",
+        _dataset="ImageDataset",
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -42,7 +42,7 @@ class Agent:
         self.optimize_on = optimize_on
         self.save_models = True
         self.with_gpu = True
-        self.aug_type = aug_type 
+        self.aug_type = aug_type
         self._dataset = _dataset
 
     def sanity_check(self):
@@ -56,7 +56,7 @@ class Agent:
             self.optimize_on,
             self.save_models,
             self.with_gpu,
-            self.aug_type, 
+            self.aug_type,
             self._dataset,
         ]:
             raise Exception("Found --|--- while sanity check!")
@@ -72,8 +72,8 @@ class Agent:
         optimize_on="--|--",
         save_models="--|--",
         with_gpu="--|--",
-        aug_type = "--|--", 
-        _dataset = "--|--",
+        aug_type="--|--",
+        _dataset="--|--",
     ):
         if useful_features != "--|--":
             self.useful_features = useful_features
@@ -109,8 +109,8 @@ class Agent:
             optimize_on=self.optimize_on,
             with_gpu=self.with_gpu,
             save_models=self.save_models,
-            aug_type = self.aug_type, 
-            _dataset = self._dataset,
+            aug_type=self.aug_type,
+            _dataset=self._dataset,
         )
         self.study, random_state, seed_mean, seed_std = opt.run(
             my_folds, self.useful_features
@@ -204,8 +204,8 @@ if __name__ == "__main__":
     optimize_on = 0  # fold on which optimize
     with_gpu = True
 
-    aug_type = "aug2" # "aug1", "aug2", "aug3"
-    _dataset = "DigitRecognizerDataset" # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset"
+    aug_type = "aug2"  # "aug1", "aug2", "aug3"
+    _dataset = "DigitRecognizerDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset"
     # -----------------------------------------------------------
 
     e = Agent(
@@ -217,8 +217,8 @@ if __name__ == "__main__":
         prep_list=prep_list,
         optimize_on=optimize_on,
         with_gpu=with_gpu,
-        aug_type = aug_type, 
-        _dataset= _dataset
+        aug_type=aug_type,
+        _dataset=_dataset,
     )
     print("=" * 40)
     print("Useful_features:", useful_features)
