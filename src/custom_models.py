@@ -57,7 +57,7 @@ class trainer_p1:
         total_loss = 0
         for batch_index, data in enumerate(self.train_loader):
             loss = self.train_one_step(data)
-            #loss = self.loss_fn(data["targets"], output)
+            # loss = self.loss_fn(data["targets"], output)
             total_loss += loss
         return total_loss
 
@@ -68,10 +68,10 @@ class trainer_p1:
             data[k] = v.to("cuda")
         # make sure forward function of model has same keys
         # dictinary is passed using **
-        output = self.model( data["image"] ) #**data)
+        output = self.model(data["image"])  # **data)
         loss = self.loss_fn(data["targets"], output)
         #
-        #self.scheduler.step()
+        # self.scheduler.step()
         loss.backward()
         self.optimizer.step()
 
@@ -89,7 +89,7 @@ class trainer_p1:
         for k, v in data.items():
             data[k] = v.to("cuda")
         # make sure forward function of model has same keys
-        output = self.model( data["image"])  # **data)
+        output = self.model(data["image"])  # **data)
         loss = self.loss_fn(data["targets"], output)
         return loss
 
@@ -119,7 +119,7 @@ class trainer_p1:
         # outputs is list of tensors
         preds = torch.cat(outputs).view(-1)
         return preds
-    
+
     def save(self, path):
         print(f"not saving for now at {path}")
 
@@ -134,7 +134,7 @@ class p1_model(nn.Module):
 
     def forward(self, data):
         # batch_size, no_featrues : xtrain.shape
-        #xtrain = data["image"]
+        # xtrain = data["image"]
         xtrain = data
         x = self.layer1(xtrain)
         x = self.layer2(x)

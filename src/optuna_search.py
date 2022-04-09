@@ -894,46 +894,42 @@ class OptunaOptimizer:
             return model
         if model_name == "p1":  # pytorch1
             # basic pytorch model
-            return self._p1(params = params)
+            return self._p1(params=params)
         else:
             raise Exception(f"{model_name} is invalid!")
 
     def _p1(self, params=0, random_state=0):
-            self.learning_rate = params["learning_rate"]
-            model = p1_model(len(self.filtered_features))
-            model.to("cuda")
-            # train_loader
-            self.train_loader = DataLoader(self.train_dataset,
-                                    shuffle=True,
-                                    num_workers=4,
-                                    batch_size=128
-                                )
+        self.learning_rate = params["learning_rate"]
+        model = p1_model(len(self.filtered_features))
+        model.to("cuda")
+        # train_loader
+        self.train_loader = DataLoader(
+            self.train_dataset, shuffle=True, num_workers=4, batch_size=128
+        )
 
-            self.valid_loader = DataLoader(self.valid_dataset,
-                                shuffle=False,
-                                num_workers=4,
-                                batch_size=128
-                                )
+        self.valid_loader = DataLoader(
+            self.valid_dataset, shuffle=False, num_workers=4, batch_size=128
+        )
 
-            self.test_loader = DataLoader(self.test_dataset,
-                                shuffle=False,
-                                num_workers = 4, 
-                                batch_size=128)
-            optimizer = torch.optim.SGD(
-                    model.parameters(),
-                    lr= params["learning_rate"],
-                    momentum=0.9,
-                )
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                    optimizer,
-                    factor=0.5,
-                    patience=2,
-                    verbose=True,
-                    mode="max",
-                    threshold=1e-4,
-                )
-            return trainer_p1(model, self.train_loader, self.valid_loader, 
-                    optimizer, scheduler)
+        self.test_loader = DataLoader(
+            self.test_dataset, shuffle=False, num_workers=4, batch_size=128
+        )
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=params["learning_rate"],
+            momentum=0.9,
+        )
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            factor=0.5,
+            patience=2,
+            verbose=True,
+            mode="max",
+            threshold=1e-4,
+        )
+        return trainer_p1(
+            model, self.train_loader, self.valid_loader, optimizer, scheduler
+        )
 
     def _tez1(self, params, random_state):
         """
@@ -1392,7 +1388,7 @@ class OptunaOptimizer:
                     config=config,
                 )
             elif self.model_name == "p1":
-                model.fit(n_iter = 2)
+                model.fit(n_iter=2)
 
             # self._history = history.history
             model.save(
@@ -1468,7 +1464,7 @@ class OptunaOptimizer:
                         if temp_preds is None:
                             temp_preds = p
                         else:
-                            temp_preds = np.vstack((temp_preds, p))                    
+                            temp_preds = np.vstack((temp_preds, p))
 
                 self.test_preds = temp_preds.argmax(axis=1)
         elif self.locker["data_type"] == "tabular":
