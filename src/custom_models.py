@@ -121,7 +121,10 @@ class trainer_p1:
         return preds
 
     def save(self, path):
-        print(f"not saving for now at {path}")
+        state_dict = self.model.cpu().state_dict()
+        self.model = self.model.cuda()
+        torch.save(state_dict, path)
+
 
 
 class p1_model(nn.Module):

@@ -1730,14 +1730,14 @@ class OptunaOptimizer:
                 # now implemented for pytorch
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
                 self.train_dataset = BengaliDataset(  # train_dataset
-                    csv=self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.xtrain[self.filtered_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     transform=self.train_aug,
                 )
 
                 self.valid_dataset = BengaliDataset(  # valid_dataset
-                    csv=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.xvalid[self.filtered_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     transform=self.valid_aug,
@@ -1754,11 +1754,11 @@ class OptunaOptimizer:
             ]:
                 # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
-                    df=self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.xtrain[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.train_aug,
                 )
                 self.valid_dataset = DigitRecognizerDataset(
-                    df=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.xvalid[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
                 )
                 self.test_dataset = DigitRecognizerDataset(
@@ -1983,12 +1983,12 @@ class OptunaOptimizer:
             if self._dataset == "DigitRecognizerDataset":
                 # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
-                    df=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.train_aug,
                 )
 
                 self.valid_dataset = DigitRecognizerDataset(
-                    df=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    df=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
                 )
                 self.test_dataset = DigitRecognizerDataset(
@@ -2000,14 +2000,14 @@ class OptunaOptimizer:
                 # now implemented for pytorch
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
                 self.train_dataset = BengaliDataset(  # train_dataset
-                    csv=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     transform=self.train_aug,
                 )
 
                 self.valid_dataset = BengaliDataset(  # valid_dataset
-                    csv=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
+                    csv=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     transform=self.valid_aug,
