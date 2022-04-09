@@ -78,6 +78,7 @@ if __name__ == "__main__":
             "with_gpu",
             "aug_type",
             "_dataset",
+            "use_cutmix",
             "features_list",
             "level_no",
             "fold_no",

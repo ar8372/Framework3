@@ -37,6 +37,7 @@ class predictor(OptunaOptimizer):
         self.useful_features = row_e.features_list.values[0]
         self.aug_type = row_e.aug_type.values[0]
         self._dataset = row_e._dataset.values[0]
+        self.use_cutmix = row_e.use_cutmix.values[0]
 
         super().__init__(
             model_name=self.model_name,
@@ -46,6 +47,7 @@ class predictor(OptunaOptimizer):
             with_gpu=self.with_gpu,
             aug_type=self.aug_type,
             _dataset=self._dataset,
+            use_cutmix = self.use_cutmix
         )
 
         # --- sanity check [new_feat, old_feat, feat_title]
@@ -161,5 +163,5 @@ class predictor(OptunaOptimizer):
 
 
 if __name__ == "__main__":
-    p = predictor(exp_no=3)
+    p = predictor(exp_no=2)
     p.run_folds()

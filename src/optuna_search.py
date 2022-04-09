@@ -184,6 +184,7 @@ class OptunaOptimizer:
         save_models=True,
         aug_type="aug2",
         _dataset="ImageDataset",
+        use_cutmix = True,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -196,7 +197,7 @@ class OptunaOptimizer:
         self.save_models = save_models
         self._trial_score = None
         self._history = None
-        self.use_cutmix = False #--
+        self.use_cutmix = use_cutmix
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.metrics_list = [
             "accuracy",

@@ -25,6 +25,7 @@ class Agent:
         with_gpu=False,
         aug_type="Aug1",
         _dataset="ImageDataset",
+        use_cutmix = True,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -44,6 +45,7 @@ class Agent:
         self.with_gpu = True
         self.aug_type = aug_type
         self._dataset = _dataset
+        self.use_cutmix = use_cutmix
 
     def sanity_check(self):
         if "--|--" in [
@@ -111,6 +113,7 @@ class Agent:
             save_models=self.save_models,
             aug_type=self.aug_type,
             _dataset=self._dataset,
+            use_cutmix = self.use_cutmix,
         )
         self.study, random_state, seed_mean, seed_std = opt.run(
             my_folds, self.useful_features
@@ -144,6 +147,7 @@ class Agent:
             self.with_gpu,
             self.aug_type,
             self._dataset,
+            self.use_cutmix,
             self.useful_features,
             self.current_dict["current_level"],
             self.optimize_on,
@@ -208,6 +212,7 @@ if __name__ == "__main__":
 
     aug_type = "aug2"  # "aug1", "aug2", "aug3"
     _dataset = "DigitRecognizerDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset"
+    use_cutmix = True
     # -----------------------------------------------------------
 
     e = Agent(
@@ -221,6 +226,7 @@ if __name__ == "__main__":
         with_gpu=with_gpu,
         aug_type=aug_type,
         _dataset=_dataset,
+        use_cutmix = use_cutmix,
     )
     print("=" * 40)
     print("Useful_features:", useful_features)

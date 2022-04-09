@@ -29,7 +29,8 @@ from PIL import Image
 import random
 
 # ------------------------------
-
+from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
+from torch.optim import Adam, SGD
 
 class trainer_p1:
     def __init__(self, model, train_loader, valid_loader, optimizer, scheduler, use_cutmix):
@@ -44,6 +45,7 @@ class trainer_p1:
         self.use_cutmix = use_cutmix
 
     def loss_fn(self, targets, output):
+        targets  = targets.unsqueeze(1) # use it for conv
         return nn.BCEWithLogitsLoss()(output, targets)
 
     def scheduler_fn(self):
@@ -106,7 +108,7 @@ class trainer_p1:
         if self.use_cutmix == True:
             inputs, targets = self.cutmix_data(data)
             output = self.model(inputs)  # **data)
-            loss = self.loss_fn(targets, output)* lam + self.loss_fn(self.shuffled_targets, output)*(1- self.lam)
+            loss = self.loss_fn(targets, output)* self.lam + self.loss_fn(self.shuffled_targets, output)*(1- self.lam)
         else:
             output = self.model(data["image"])
             loss = self.loss_fn(data["targets"], output)
@@ -171,17 +173,38 @@ class p1_model(nn.Module):
     # basic pytorch model
     def __init__(self, no_features):
         super().__init__()
-        self.layer1 = nn.Linear(no_features, 32)
-        self.layer2 = nn.Linear(32, 16)
-        self.layer3 = nn.Linear(16, 1)
+        # self.layer0 = nn.Conv2d(in_channels = 3, out_channels = 50, kernel_size=3, padding=1)
+        # self.layer1 = nn.Linear(50, 32)
+        # self.layer2 = nn.Linear(32, 16)
+        # self.layer3 = nn.Linear(16, 1)
+        self.cnn_layers = Sequential(
+            # Defining a 2D convolution layer
+            Conv2d(1, 4, kernel_size=3, stride=1, padding=1),
+            BatchNorm2d(4),
+            ReLU(inplace=True),
+            MaxPool2d(kernel_size=2, stride=2),
+            # Defining another 2D convolution layer
+            Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
+            BatchNorm2d(4),
+            ReLU(inplace=True),
+            MaxPool2d(kernel_size=2, stride=2),
+        )
+        self.linear_layers = Sequential(
+            Linear(4 * 7 * 7, 1)
+        )
 
     def forward(self, data):
         # batch_size, no_featrues : xtrain.shape
-        # xtrain = data["image"]
-        xtrain = data
-        x = self.layer1(xtrain)
-        x = self.layer2(x)
-        x = self.layer3(x)
+        # use this if now using 1D array in starting
+        # xtrain = data
+        # x = self.layer1(xtrain)
+        # x = self.layer2(x)
+        # x = self.layer3(x)
+        # return x
+        x = data
+        x = self.cnn_layers(x)
+        x = x.view(x.size(0), -1)
+        x = self.linear_layers(x)
         return x
 
 
