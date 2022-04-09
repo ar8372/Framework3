@@ -184,7 +184,7 @@ class OptunaOptimizer:
         save_models=True,
         aug_type="aug2",
         _dataset="ImageDataset",
-        use_cutmix = True,
+        use_cutmix=True,
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -929,7 +929,12 @@ class OptunaOptimizer:
             threshold=1e-4,
         )
         return trainer_p1(
-            model, self.train_loader, self.valid_loader, optimizer, scheduler, self.use_cutmix
+            model,
+            self.train_loader,
+            self.valid_loader,
+            optimizer,
+            scheduler,
+            self.use_cutmix,
         )
 
     def _tez1(self, params, random_state):
@@ -1731,14 +1736,18 @@ class OptunaOptimizer:
                 # now implemented for pytorch
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
                 self.train_dataset = BengaliDataset(  # train_dataset
-                    csv=self.xtrain[self.filtered_features + [self.locker["target_name"]]],
+                    csv=self.xtrain[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     img_height=28,
                     img_width=28,
                     transform=self.train_aug,
                 )
 
                 self.valid_dataset = BengaliDataset(  # valid_dataset
-                    csv=self.xvalid[self.filtered_features + [self.locker["target_name"]]],
+                    csv=self.xvalid[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     img_height=28,
                     img_width=28,
                     transform=self.valid_aug,
@@ -1755,11 +1764,15 @@ class OptunaOptimizer:
             ]:
                 # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
-                    df=self.xtrain[self.filtered_features + [self.locker["target_name"]]],
+                    df=self.xtrain[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     augmentations=self.train_aug,
                 )
                 self.valid_dataset = DigitRecognizerDataset(
-                    df=self.xvalid[self.filtered_features + [self.locker["target_name"]]],
+                    df=self.xvalid[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     augmentations=self.valid_aug,
                 )
                 self.test_dataset = DigitRecognizerDataset(
@@ -1984,12 +1997,16 @@ class OptunaOptimizer:
             if self._dataset == "DigitRecognizerDataset":
                 # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
-                    df=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
+                    df=self.my_folds[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     augmentations=self.train_aug,
                 )
 
                 self.valid_dataset = DigitRecognizerDataset(
-                    df=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
+                    df=self.my_folds[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     augmentations=self.valid_aug,
                 )
                 self.test_dataset = DigitRecognizerDataset(
@@ -2001,14 +2018,18 @@ class OptunaOptimizer:
                 # now implemented for pytorch
                 # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
                 self.train_dataset = BengaliDataset(  # train_dataset
-                    csv=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
+                    csv=self.my_folds[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     img_height=28,
                     img_width=28,
                     transform=self.train_aug,
                 )
 
                 self.valid_dataset = BengaliDataset(  # valid_dataset
-                    csv=self.my_folds[self.filtered_features + [self.locker["target_name"]]],
+                    csv=self.my_folds[
+                        self.filtered_features + [self.locker["target_name"]]
+                    ],
                     img_height=28,
                     img_width=28,
                     transform=self.valid_aug,

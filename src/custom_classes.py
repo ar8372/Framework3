@@ -143,8 +143,8 @@ class DigitRecognizerDataset:
         image = np.expand_dims(image, axis=0)
 
         # experimenting this is just for p1 which takes 1D input
-        #image = image.reshape((-1))
-        #target = target.reshape((-1))
+        # image = image.reshape((-1))
+        # target = target.reshape((-1))
         return {
             "image": torch.tensor(image, dtype=torch.float),
             "targets": torch.tensor(target, dtype=torch.float),

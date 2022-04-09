@@ -47,7 +47,7 @@ class predictor(OptunaOptimizer):
             with_gpu=self.with_gpu,
             aug_type=self.aug_type,
             _dataset=self._dataset,
-            use_cutmix = self.use_cutmix
+            use_cutmix=self.use_cutmix,
         )
 
         # --- sanity check [new_feat, old_feat, feat_title]

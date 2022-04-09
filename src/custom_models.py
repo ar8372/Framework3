@@ -29,11 +29,25 @@ from PIL import Image
 import random
 
 # ------------------------------
-from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
+from torch.nn import (
+    Linear,
+    ReLU,
+    CrossEntropyLoss,
+    Sequential,
+    Conv2d,
+    MaxPool2d,
+    Module,
+    Softmax,
+    BatchNorm2d,
+    Dropout,
+)
 from torch.optim import Adam, SGD
 
+
 class trainer_p1:
-    def __init__(self, model, train_loader, valid_loader, optimizer, scheduler, use_cutmix):
+    def __init__(
+        self, model, train_loader, valid_loader, optimizer, scheduler, use_cutmix
+    ):
         self.model = model
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -45,7 +59,7 @@ class trainer_p1:
         self.use_cutmix = use_cutmix
 
     def loss_fn(self, targets, output):
-        targets  = targets.unsqueeze(1) # use it for conv
+        targets = targets.unsqueeze(1)  # use it for conv
         return nn.BCEWithLogitsLoss()(output, targets)
 
     def scheduler_fn(self):
@@ -58,7 +72,7 @@ class trainer_p1:
     def rand_bbox(self, size, lam):
         W = size[2]
         H = size[3]
-        cut_rat = np.sqrt(1. - lam)
+        cut_rat = np.sqrt(1.0 - lam)
         cut_w = np.int(W * cut_rat)
         cut_h = np.int(H * cut_rat)
 
@@ -85,7 +99,9 @@ class trainer_p1:
 
         bbx1, bby1, bbx2, bby2 = self.rand_bbox(inputs.size(), self.lam)
         inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[rand_index, :, bbx1:bbx2, bby1:bby2]
-        self.lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (inputs.size()[-1] * inputs.size()[-2]))
+        self.lam = 1 - (
+            (bbx2 - bbx1) * (bby2 - bby1) / (inputs.size()[-1] * inputs.size()[-2])
+        )
         return inputs, targets
 
     def train_one_epoch(self):
@@ -97,7 +113,6 @@ class trainer_p1:
             total_loss += loss
         return total_loss
 
-
     def train_one_step(self, data):
         self.optimizer.zero_grad()
 
@@ -108,7 +123,9 @@ class trainer_p1:
         if self.use_cutmix == True:
             inputs, targets = self.cutmix_data(data)
             output = self.model(inputs)  # **data)
-            loss = self.loss_fn(targets, output)* self.lam + self.loss_fn(self.shuffled_targets, output)*(1- self.lam)
+            loss = self.loss_fn(targets, output) * self.lam + self.loss_fn(
+                self.shuffled_targets, output
+            ) * (1 - self.lam)
         else:
             output = self.model(data["image"])
             loss = self.loss_fn(data["targets"], output)
@@ -168,7 +185,6 @@ class trainer_p1:
         torch.save(state_dict, path)
 
 
-
 class p1_model(nn.Module):
     # basic pytorch model
     def __init__(self, no_features):
@@ -189,9 +205,7 @@ class p1_model(nn.Module):
             ReLU(inplace=True),
             MaxPool2d(kernel_size=2, stride=2),
         )
-        self.linear_layers = Sequential(
-            Linear(4 * 7 * 7, 1)
-        )
+        self.linear_layers = Sequential(Linear(4 * 7 * 7, 1))
 
     def forward(self, data):
         # batch_size, no_featrues : xtrain.shape
