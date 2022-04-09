@@ -38,7 +38,7 @@ class trainer_p1:
         self.valid_loader = valid_loader
         self.optimizer = optimizer
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode="max", verbose=True, patience=7, factor=0.5
+            self.optimizer, mode="max", verbose=True, patience=7, factor=0.5
         )
         self.locc_fn = nn.CrossEntropyLoss()
 
@@ -57,8 +57,8 @@ class trainer_p1:
         total_loss = 0
         for batch_index, data in enumerate(self.train_loader):
             loss = self.train_one_step(data)
-            loss = loss_fn(data["y"], output)
-            train_loss += loss
+            #loss = self.loss_fn(data["targets"], output)
+            total_loss += loss
         return total_loss
 
     def train_one_step(self, data):
@@ -68,10 +68,10 @@ class trainer_p1:
             data[k] = v.to("cuda")
         # make sure forward function of model has same keys
         # dictinary is passed using **
-        output = self.model(**data)
-        loss = self.loss_fn(data["y"], output)
+        output = self.model( data["image"] ) #**data)
+        loss = self.loss_fn(data["targets"], output)
         #
-        self.scheduler.step()
+        #self.scheduler.step()
         loss.backward()
         self.optimizer.step()
 
@@ -82,15 +82,15 @@ class trainer_p1:
         for batch_index, data in enumerate(self.valid_loader):
             with torch.no_grad():
                 loss = self.validate_one_step(data)
-            train_loss += loss
+            total_loss += loss
         return total_loss
 
     def validate_one_step(self, data):
         for k, v in data.items():
             data[k] = v.to("cuda")
         # make sure forward function of model has same keys
-        output = self.model(**data)
-        loss = self.loss_fn(data["y"], output)
+        output = self.model( data["image"])  # **data)
+        loss = self.loss_fn(data["targets"], output)
         return loss
 
     def fit(self, n_iter):
@@ -103,7 +103,9 @@ class trainer_p1:
                 print(f"train loss {train_loss}, valid loss {valid_loss}")
 
     def predict_one_step(self, data):
-        output, _, _ = self.model(data)
+        for k, v in data.items():
+            data[k] = v.to("cuda")
+        output = self.model(data["image"])
         return output
 
     def predict(self, test_loader):
@@ -111,12 +113,15 @@ class trainer_p1:
 
         with torch.no_grad():
             for batch_index, data in enumerate(test_loader):
-                out = predict_one_step(data)
+                out = self.predict_one_step(data)
 
                 outputs.append(out)
         # outputs is list of tensors
         preds = torch.cat(outputs).view(-1)
         return preds
+    
+    def save(self, path):
+        print(f"not saving for now at {path}")
 
 
 class p1_model(nn.Module):
@@ -127,8 +132,10 @@ class p1_model(nn.Module):
         self.layer2 = nn.Linear(32, 16)
         self.layer3 = nn.Linear(16, 1)
 
-    def forward(self, xtrain):
+    def forward(self, data):
         # batch_size, no_featrues : xtrain.shape
+        #xtrain = data["image"]
+        xtrain = data
         x = self.layer1(xtrain)
         x = self.layer2(x)
         x = self.layer3(x)

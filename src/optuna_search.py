@@ -21,6 +21,7 @@ import timm
 import torch
 import torch.nn as nn
 from sklearn import metrics, model_selection
+from torch.utils.data import Dataset, DataLoader
 
 from tez import Tez, TezConfig
 from tez.callbacks import EarlyStopping
@@ -234,6 +235,7 @@ class OptunaOptimizer:
             "k3",
             "tez1",
             "tez2",
+            "p1",
         ]
         self._prep_list = ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"]
         self.prep_list = prep_list
@@ -802,6 +804,26 @@ class OptunaOptimizer:
             }
             return params
 
+        if model_name == "p1":
+            # -batch_size = 16
+            # -epochs = 5
+            # =====seed = 42
+            # ===target_size = 28
+            # -learning_rate = 0.002
+
+            params = {
+                "batch_size": trial.suggest_categorical(
+                    "batch_size", [16]
+                ),  # ,32,64, 128,256, 512]),
+                # "epochs": trial.suggest_int(
+                #     "epochs", 1, 2, step=1, log=False
+                # ),  # 55, step=5, log=False),  # 5,55
+                "epochs": trial.suggest_categorical("epochs", [1]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 2, 8),
+                "patience": trial.suggest_categorical("patience", [5]),
+            }
+            return params
+
         if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
                 columns=[
@@ -872,12 +894,46 @@ class OptunaOptimizer:
             return model
         if model_name == "p1":  # pytorch1
             # basic pytorch model
-            pass
+            return self._p1(params = params)
         else:
             raise Exception(f"{model_name} is invalid!")
 
-    def _p1(self, params, random_state):
-        model = p1_model(self.xtrain[0].shape)
+    def _p1(self, params=0, random_state=0):
+            self.learning_rate = params["learning_rate"]
+            model = p1_model(len(self.useful_features))
+            model.to("cuda")
+            # train_loader
+            self.train_loader = DataLoader(self.train_dataset,
+                                    shuffle=True,
+                                    num_workers=4,
+                                    batch_size=128
+                                )
+
+            self.valid_loader = DataLoader(self.valid_dataset,
+                                shuffle=False,
+                                num_workers=4,
+                                batch_size=128
+                                )
+
+            self.test_loader = DataLoader(self.test_dataset,
+                                shuffle=False,
+                                num_workers = 4, 
+                                batch_size=128)
+            optimizer = torch.optim.SGD(
+                    model.parameters(),
+                    lr= params["learning_rate"],
+                    momentum=0.9,
+                )
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    optimizer,
+                    factor=0.5,
+                    patience=2,
+                    verbose=True,
+                    mode="max",
+                    threshold=1e-4,
+                )
+            return trainer_p1(model, self.train_loader, self.valid_loader, 
+                    optimizer, scheduler)
 
     def _tez1(self, params, random_state):
         """
@@ -1282,7 +1338,7 @@ class OptunaOptimizer:
                 )  # 1 to make it perfectly divisible
 
             self._history = history.history
-        if self.model_name in ["tez1", "tez2"]:
+        if self.model_name in ["tez1", "tez2", "p1"]:
             model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
@@ -1335,6 +1391,9 @@ class OptunaOptimizer:
                     callbacks=[es],
                     config=config,
                 )
+            elif self.model_name == "p1":
+                model.fit(n_iter = 2)
+
             # self._history = history.history
             model.save(
                 model_path_s,
@@ -1370,6 +1429,15 @@ class OptunaOptimizer:
                         temp_preds = p
                     else:
                         temp_preds = np.vstack((temp_preds, p))
+            elif self.model_name == "p1":
+                valid_preds = model.predict(self.valid_loader)
+                valid_preds = valid_preds.to("cpu")
+                temp_preds = None
+                for p in valid_preds:
+                    if temp_preds is None:
+                        temp_preds = p
+                    else:
+                        temp_preds = np.vstack((temp_preds, p))
 
             self.valid_preds = np.argmax(temp_preds, axis=1)
 
@@ -1387,12 +1455,20 @@ class OptunaOptimizer:
                         self.test_dataset, batch_size=params["batch_size"], n_jobs=-1
                     )
                     temp_preds = None
-                    print("this is test pred shape")
                     for p in test_preds:
                         if temp_preds is None:
                             temp_preds = p
                         else:
                             temp_preds = np.vstack((temp_preds, p))
+                elif self.model_name == "p1":
+                    test_preds = model.predict(self.test_loader)
+                    test_preds = test_preds.to("cpu")
+                    temp_preds = None
+                    for p in test_preds:
+                        if temp_preds is None:
+                            temp_preds = p
+                        else:
+                            temp_preds = np.vstack((temp_preds, p))                    
 
                 self.test_preds = temp_preds.argmax(axis=1)
         elif self.locker["data_type"] == "tabular":
@@ -1694,10 +1770,6 @@ class OptunaOptimizer:
                     df=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
                 )
-                print("we are herej", self.test.shape)
-                print(
-                    self.test[self.useful_features + [self.locker["target_name"]]].shape
-                )
                 self.test_dataset = DigitRecognizerDataset(
                     df=self.test[self.useful_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
@@ -1926,12 +1998,6 @@ class OptunaOptimizer:
                 self.valid_dataset = DigitRecognizerDataset(
                     df=self.my_folds.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
-                )
-                print("here it is ")
-                print(
-                    self.test[
-                        self.useful_features + [self.locker["target_name"]]
-                    ].head()
                 )
                 self.test_dataset = DigitRecognizerDataset(
                     df=self.test[self.useful_features + [self.locker["target_name"]]],

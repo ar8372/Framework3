@@ -126,7 +126,6 @@ class DigitRecognizerDataset:
         with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
 
-        print(df.head())
         self.df = df
         self.targets = self.df[self.locker["target_name"]].values
         self.df = self.df.drop(columns=[self.locker["target_name"]])
@@ -138,13 +137,17 @@ class DigitRecognizerDataset:
         return len(self.df)
 
     def __getitem__(self, item):
-        targets = self.targets[item]
+        # item: index_no
+        target = self.targets[item]
         image = self.images[item]
         image = np.expand_dims(image, axis=0)
 
+        # experimenting
+        image = image.reshape((-1))
+        target = target.reshape((-1))
         return {
             "image": torch.tensor(image, dtype=torch.float),
-            "targets": torch.tensor(targets, dtype=torch.long),
+            "targets": torch.tensor(target, dtype=torch.float),
         }
 
 
