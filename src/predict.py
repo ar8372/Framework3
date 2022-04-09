@@ -35,11 +35,8 @@ class predictor(OptunaOptimizer):
         self.metrics_name = row_e.metrics_name.values[0]
         self.level_no = row_e.level_no.values[0]
         self.useful_features = row_e.features_list.values[0]
-        self.aug_type = row_e.aug_type[0]
-        self._dataset = row_e._dataset[0]
-        print(self.aug_type)
-        print(self._dataset)
-        print("working")
+        self.aug_type = row_e.aug_type.values[0]
+        self._dataset = row_e._dataset.values[0]
 
         super().__init__(
             model_name=self.model_name,
@@ -164,5 +161,5 @@ class predictor(OptunaOptimizer):
 
 
 if __name__ == "__main__":
-    p = predictor(exp_no=1)
+    p = predictor(exp_no=3)
     p.run_folds()

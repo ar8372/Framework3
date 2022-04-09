@@ -900,7 +900,7 @@ class OptunaOptimizer:
 
     def _p1(self, params=0, random_state=0):
             self.learning_rate = params["learning_rate"]
-            model = p1_model(len(self.useful_features))
+            model = p1_model(len(self.filtered_features))
             model.to("cuda")
             # train_loader
             self.train_loader = DataLoader(self.train_dataset,
@@ -1726,7 +1726,7 @@ class OptunaOptimizer:
             t = []
             for n in self.useful_features:
                 t += filter(lambda x: x.startswith(n), list(self.xtrain.columns))
-            self.useful_features = t
+            self.filtered_features = t
 
             if self._dataset in [
                 "BengaliDataset",
@@ -1746,12 +1746,8 @@ class OptunaOptimizer:
                     img_width=28,
                     transform=self.valid_aug,
                 )
-                print("we are herej")
-                print(
-                    len(self.test[self.useful_features + [self.locker["target_name"]]])
-                )
                 self.test_dataset = BengaliDataset(
-                    df=self.test[self.useful_features + [self.locker["target_name"]]],
+                    df=self.test[self.filtered_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     augmentations=self.valid_aug,
@@ -1765,13 +1761,12 @@ class OptunaOptimizer:
                     df=self.xtrain.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.train_aug,
                 )
-
                 self.valid_dataset = DigitRecognizerDataset(
                     df=self.xvalid.drop([self.locker["id_name"], "fold"], axis=1),
                     augmentations=self.valid_aug,
                 )
                 self.test_dataset = DigitRecognizerDataset(
-                    df=self.test[self.useful_features + [self.locker["target_name"]]],
+                    df=self.test[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
                 )
 
@@ -1981,6 +1976,7 @@ class OptunaOptimizer:
                 )
 
         elif self.locker["data_type"] == "image_df":
+            # here we create filtered_features from useful_features
             self.test = pd.read_csv(
                 f"../models_{self.locker['comp_name']}/" + "test.csv"
             )
@@ -2000,7 +1996,7 @@ class OptunaOptimizer:
                     augmentations=self.valid_aug,
                 )
                 self.test_dataset = DigitRecognizerDataset(
-                    df=self.test[self.useful_features + [self.locker["target_name"]]],
+                    df=self.test[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
                 )
 
@@ -2021,7 +2017,7 @@ class OptunaOptimizer:
                     transform=self.valid_aug,
                 )
                 self.test_dataset = BengaliDataset(
-                    df=self.test[self.useful_features + [self.locker["target_name"]]],
+                    df=self.test[self.filtered_features + [self.locker["target_name"]]],
                     img_height=28,
                     img_width=28,
                     augmentations=self.valid_aug,
