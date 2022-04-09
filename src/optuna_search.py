@@ -196,7 +196,7 @@ class OptunaOptimizer:
         self.save_models = save_models
         self._trial_score = None
         self._history = None
-        self.cutmix = False
+        self.use_cutmix = False #--
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
         self.metrics_list = [
             "accuracy",
@@ -928,7 +928,7 @@ class OptunaOptimizer:
             threshold=1e-4,
         )
         return trainer_p1(
-            model, self.train_loader, self.valid_loader, optimizer, scheduler
+            model, self.train_loader, self.valid_loader, optimizer, scheduler, self.use_cutmix
         )
 
     def _tez1(self, params, random_state):

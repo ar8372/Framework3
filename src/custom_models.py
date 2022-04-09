@@ -32,7 +32,7 @@ import random
 
 
 class trainer_p1:
-    def __init__(self, model, train_loader, valid_loader, optimizer, scheduler):
+    def __init__(self, model, train_loader, valid_loader, optimizer, scheduler, use_cutmix):
         self.model = model
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -41,6 +41,7 @@ class trainer_p1:
             self.optimizer, mode="max", verbose=True, patience=7, factor=0.5
         )
         self.locc_fn = nn.CrossEntropyLoss()
+        self.use_cutmix = use_cutmix
 
     def loss_fn(self, targets, output):
         return nn.BCEWithLogitsLoss()(output, targets)
@@ -52,6 +53,39 @@ class trainer_p1:
         learning_rate = 0.001
         pass
 
+    def rand_bbox(self, size, lam):
+        W = size[2]
+        H = size[3]
+        cut_rat = np.sqrt(1. - lam)
+        cut_w = np.int(W * cut_rat)
+        cut_h = np.int(H * cut_rat)
+
+        # uniform
+        cx = np.random.randint(W)
+        cy = np.random.randint(H)
+
+        bbx1 = np.clip(cx - cut_w // 2, 0, W)
+        bby1 = np.clip(cy - cut_h // 2, 0, H)
+        bbx2 = np.clip(cx + cut_w // 2, 0, W)
+        bby2 = np.clip(cy + cut_h // 2, 0, H)
+
+        return bbx1, bby1, bbx2, bby2
+
+    def cutmix_data(self, data):
+        inputs = data["image"]
+        targets = data["targets"]
+
+        self.lam = np.random.beta(1.0, 1.0)
+        rand_index = torch.randperm(inputs.size()[0])
+
+        target = data["targets"]
+        self.shuffled_targets = target[rand_index]
+
+        bbx1, bby1, bbx2, bby2 = self.rand_bbox(inputs.size(), self.lam)
+        inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[rand_index, :, bbx1:bbx2, bby1:bby2]
+        self.lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (inputs.size()[-1] * inputs.size()[-2]))
+        return inputs, targets
+
     def train_one_epoch(self):
         self.model.train()  # put model in train mode
         total_loss = 0
@@ -61,6 +95,7 @@ class trainer_p1:
             total_loss += loss
         return total_loss
 
+
     def train_one_step(self, data):
         self.optimizer.zero_grad()
 
@@ -68,9 +103,14 @@ class trainer_p1:
             data[k] = v.to("cuda")
         # make sure forward function of model has same keys
         # dictinary is passed using **
-        output = self.model(data["image"])  # **data)
-        loss = self.loss_fn(data["targets"], output)
-        #
+        if self.use_cutmix == True:
+            inputs, targets = self.cutmix_data(data)
+            output = self.model(inputs)  # **data)
+            loss = self.loss_fn(targets, output)* lam + self.loss_fn(self.shuffled_targets, output)*(1- self.lam)
+        else:
+            output = self.model(data["image"])
+            loss = self.loss_fn(data["targets"], output)
+
         # self.scheduler.step()
         loss.backward()
         self.optimizer.step()

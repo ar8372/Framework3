@@ -142,7 +142,7 @@ class DigitRecognizerDataset:
         image = self.images[item]
         image = np.expand_dims(image, axis=0)
 
-        # experimenting
+        # experimenting this is just for p1 which takes 1D input
         image = image.reshape((-1))
         target = target.reshape((-1))
         return {
@@ -151,6 +151,7 @@ class DigitRecognizerDataset:
         }
 
 
+# this is for keras cutmix
 class CutMixImageDataGenerator:
     def __init__(self, generator1, generator2, img_size, batch_size):
         self.batch_index = 0
