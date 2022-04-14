@@ -23,7 +23,7 @@ import torch.nn as nn
 from sklearn import metrics, model_selection
 from torch.utils.data import Dataset, DataLoader
 
-# use it only when using tez2 i.e latest version 
+# use it only when using tez2 i.e latest version
 # from tez import Tez, TezConfig
 # from tez.callbacks import EarlyStoppingf
 # from tez.utils import seed_everything
@@ -834,10 +834,10 @@ class OptunaOptimizer:
                 "epochs": trial.suggest_int(
                     "epochs", 20, 50, step=10, log=False
                 ),  # 55, step=5, log=False),  # 5,55
-                #"epochs": trial.suggest_categorical("epochs", [1]),
+                # "epochs": trial.suggest_categorical("epochs", [1]),
                 "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-                "patience": trial.suggest_categorical("patience", [3,5]),
-                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
+                "patience": trial.suggest_categorical("patience", [3, 5]),
+                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
             }
             return params
 
@@ -921,20 +921,29 @@ class OptunaOptimizer:
         model.to("cuda")
         # train_loader
         self.train_loader = DataLoader(
-            self.train_dataset, shuffle=True, num_workers=4, batch_size=params["batch_size"]
+            self.train_dataset,
+            shuffle=True,
+            num_workers=4,
+            batch_size=params["batch_size"],
         )
 
         self.valid_loader = DataLoader(
-            self.valid_dataset, shuffle=False, num_workers=4, batch_size=params["batch_size"]
+            self.valid_dataset,
+            shuffle=False,
+            num_workers=4,
+            batch_size=params["batch_size"],
         )
 
         self.test_loader = DataLoader(
-            self.test_dataset, shuffle=False, num_workers=4, batch_size=params["batch_size"]
+            self.test_dataset,
+            shuffle=False,
+            num_workers=4,
+            batch_size=params["batch_size"],
         )
         optimizer = torch.optim.SGD(
             model.parameters(),
-            lr= 10 ** ( -1 * params["learning_rate"] ),
-            momentum= params["momentum"] #0.9,
+            lr=10 ** (-1 * params["learning_rate"]),
+            momentum=params["momentum"],  # 0.9,
         )
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
@@ -2111,7 +2120,7 @@ class OptunaOptimizer:
 
         scores = []
         final_test_predictions = []
-        for i,rn in enumerate(random_list):
+        for i, rn in enumerate(random_list):
             print()
             print(f"Seed no: {i}, seed: {rn}")
             self._random_state = rn
