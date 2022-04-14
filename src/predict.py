@@ -71,10 +71,15 @@ class predictor(OptunaOptimizer):
         oof_prediction = {}
         test_predictions = []
 
+
+        print("Running folds:")
         for fold in range(5):
+            self.optimize_on = fold # setting on which to optimize
             # select data: xtrain xvalid etc
             self.run(my_folds, self.useful_features)
             scores.append(self.obj("--|--"))
+            
+
             oof_prediction.update(dict(zip(self.val_idx, self.valid_preds)))  # oof
             test_predictions.append(self.test_preds)
         # save oof predictions
@@ -163,5 +168,9 @@ class predictor(OptunaOptimizer):
 
 
 if __name__ == "__main__":
-    p = predictor(exp_no=2)
+    p = predictor(exp_no=2) # exp_4
     p.run_folds()
+
+    p = predictor(exp_no=3) # exp_4
+    p.run_folds()
+

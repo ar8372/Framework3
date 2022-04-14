@@ -137,7 +137,6 @@ class Agent:
         # what unifies it
         self.get_exp_no()
         # ExpNo- self.current_exp_no
-        self.current_exp_no += 1
         Table.loc[Table.shape[0], :] = [
             self.current_exp_no,
             self.model_name,
@@ -163,7 +162,8 @@ class Agent:
             None,
             "---",
         ]
-
+        
+        self.current_exp_no += 1
         # --------------- dump experiment no
         self.current_dict["current_exp_no"] = self.current_exp_no
         save_pickle(
@@ -203,7 +203,7 @@ if __name__ == "__main__":
         "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
     metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
-    n_trials = 2  # ------------> no of times to run optuna
+    n_trials = 5  # ------------> no of times to run optuna
     prep_list = [
         "Sd",
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list

@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
     ## mnist
     x.id_name = "ImageId"
-    x.target_name = "label"
+    x.target_name = "Label"
     x.comp_type = "multi_class"
     x.no_folds = 5
     x.data_type = "image_df"  # image_path, image_df, image_folder

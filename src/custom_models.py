@@ -59,8 +59,25 @@ class trainer_p1:
         self.use_cutmix = use_cutmix
 
     def loss_fn(self, targets, output):
-        targets = targets.unsqueeze(1)  # use it for conv
-        return nn.BCEWithLogitsLoss()(output, targets)
+        device = "cuda"
+        targets = targets.type(torch.LongTensor)
+        targets = targets.to(device)
+        output = output.to(device)
+    
+
+        return nn.CrossEntropyLoss()(output, targets)
+
+
+        # output is the prediction
+        # targets is the true label
+        output = torch.argmax(output, dim=1)
+        output = output.unsqueeze(1)
+        targets = targets.unsqueeze(1) # use it for conv make it 2D
+        print(output.shape, targets.shape)
+        
+        # For nn.CrossEntropyLoss the target has to be a single number from the interval [0, #classes]
+        return nn.CrossEntropyLoss()(output, targets)
+        #return nn.BCEWithLogitsLoss()(output, targets)
 
     def scheduler_fn(self):
         pass
@@ -137,6 +154,7 @@ class trainer_p1:
         return loss
 
     def validate_one_epoch(self):
+        self.model.eval() 
         total_loss = 0
         for batch_index, data in enumerate(self.valid_loader):
             with torch.no_grad():
@@ -149,6 +167,7 @@ class trainer_p1:
             data[k] = v.to("cuda")
         # make sure forward function of model has same keys
         output = self.model(data["image"])  # **data)
+
         loss = self.loss_fn(data["targets"], output)
         return loss
 
@@ -159,7 +178,7 @@ class trainer_p1:
             train_loss = self.train_one_epoch()
             valid_loss = self.validate_one_epoch()
             if epoch % 2 == 0:
-                print(f"train loss {train_loss}, valid loss {valid_loss}")
+                print(f"epoch {epoch}, train loss {train_loss}, valid loss {valid_loss}")
 
     def predict_one_step(self, data):
         for k, v in data.items():
@@ -174,9 +193,9 @@ class trainer_p1:
             for batch_index, data in enumerate(test_loader):
                 out = self.predict_one_step(data)
 
-                outputs.append(out)
-        # outputs is list of tensors
-        preds = torch.cat(outputs).view(-1)
+                outputs.append(out) # out.argmax(1) required when the final layer gives probabilites of classes and we want hard class
+        
+        preds = torch.cat(outputs) #.view(-1) view(-1) is needed when we want 1D array
         return preds
 
     def save(self, path):
@@ -187,6 +206,10 @@ class trainer_p1:
 
 class p1_model(nn.Module):
     # basic pytorch model
+    # conv2d(in_channels, out_channels): 
+    # in_channels:- no of channels in the input image 
+    # out_channel:- no of channels in the output image
+    # kernel_size:- size of convolving kernel 
     def __init__(self, no_features):
         super().__init__()
         # self.layer0 = nn.Conv2d(in_channels = 3, out_channels = 50, kernel_size=3, padding=1)
@@ -205,7 +228,9 @@ class p1_model(nn.Module):
             ReLU(inplace=True),
             MaxPool2d(kernel_size=2, stride=2),
         )
-        self.linear_layers = Sequential(Linear(4 * 7 * 7, 1))
+        self.linear_layers = Sequential(
+            Linear(4 * 7 * 7, 10)
+             )
 
     def forward(self, data):
         # batch_size, no_featrues : xtrain.shape
