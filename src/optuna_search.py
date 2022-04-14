@@ -1365,7 +1365,7 @@ class OptunaOptimizer:
                 )  # 1 to make it perfectly divisible
 
             self._history = history.history
-        if self.model_name in ["tez1", "tez2", "p1"]:
+        if self.model_name in ["tez1", "tez2", "p1"]: # pytorch
             model_path_es = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models_{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
