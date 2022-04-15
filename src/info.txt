@@ -1,7 +1,7 @@
 #First set ref.txt 
 
 # image_df: image pixels are stored as dataframe 
-STEPS:
+STEPS: 
 1> move train.csv ,test.csv, sample.csv to models_  [make name train,test,sample]
 2> decide: 
 id_name : as that of train id columns 
@@ -32,3 +32,5 @@ image2.jpeg
 4> run keys.py after setting appropriate name of variables
 5> run create_folds.py to create [my_folds.csv]
 
+
+# image folder
