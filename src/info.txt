@@ -1,7 +1,6 @@
 #First set ref.txt 
 
 # image_df: image pixels are stored as dataframe 
-
 STEPS: 
 1> move train.csv ,test.csv, sample.csv to models_  [make name train,test,sample]
 2> decide: 
