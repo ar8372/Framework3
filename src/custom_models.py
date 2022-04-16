@@ -247,6 +247,7 @@ class p1_model(nn.Module):
         return x
 
 
+# tez1
 class UModel(tez.Model):  # nn.Module): #tez.Model):
     def __init__(
         self,
@@ -333,7 +334,10 @@ class DigitRecognizerModel(nn.Module):
 
     def forward(self, image, targets=None):
         x = self.model(image)
-        if targets is not None:
+        if targets is not None: 
+            targets = targets.type(torch.LongTensor)
+            targets = targets.to("cuda")
+            #print(targets.device, x.device, "these are devices") # very strong sanity check
             loss = nn.CrossEntropyLoss()(x, targets)
             metrics = self.monitor_metrics(x, targets)
             return x, loss, metrics

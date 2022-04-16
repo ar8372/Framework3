@@ -24,9 +24,9 @@ from sklearn import metrics, model_selection
 from torch.utils.data import Dataset, DataLoader
 
 # use it only when using tez2 i.e latest version
-# from tez import Tez, TezConfig
-# from tez.callbacks import EarlyStoppingf
-# from tez.utils import seed_everything
+from tez import Tez, TezConfig
+from tez.callbacks import EarlyStopping
+from tez.utils import seed_everything
 
 """
 """
@@ -170,7 +170,10 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 """
 self._state = fold, opt, seed
 """
-
+# use this will pip install tez
+from tez import Tez, TezConfig
+from tez.callbacks import EarlyStopping
+from tez.utils import seed_everything
 
 class OptunaOptimizer:
     def __init__(
@@ -1000,7 +1003,7 @@ class OptunaOptimizer:
         self.train_dataset
         selt.valid_dataset
         """
-        print("params of tez1")
+        print("params of tez2")
         print(params)
         print("=" * 40)
         batch_size = params["batch_size"]
@@ -1434,7 +1437,6 @@ class OptunaOptimizer:
         tabular xvalid yvalid
 
         """
-
         metrics_name = self.metrics_name
         if self.locker["data_type"] in ["image_path", "image_df", "image_folder"]:
             # storage for oof and submission
@@ -1787,7 +1789,7 @@ class OptunaOptimizer:
                 )
 
             elif self._dataset in [
-                "DigitRecognizerDataset",
+                "DigitRecognizerDataset", 
             ]:
                 # DigitRecognizerDataset
                 self.train_dataset = DigitRecognizerDataset(
