@@ -24,9 +24,13 @@ from sklearn import metrics, model_selection
 from torch.utils.data import Dataset, DataLoader
 
 # use it only when using tez2 i.e latest version
-from tez import Tez, TezConfig
-from tez.callbacks import EarlyStopping
-from tez.utils import seed_everything
+# from tez import Tez, TezConfig
+# from tez.callbacks import EarlyStopping
+# from tez.utils import seed_everything
+# use this will pip install tez
+# from tez import Tez, TezConfig
+# from tez.callbacks import EarlyStopping
+# from tez.utils import seed_everything
 
 """
 """
@@ -170,10 +174,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 """
 self._state = fold, opt, seed
 """
-# use this will pip install tez
-from tez import Tez, TezConfig
-from tez.callbacks import EarlyStopping
-from tez.utils import seed_everything
+
 
 class OptunaOptimizer:
     def __init__(
@@ -985,7 +986,7 @@ class OptunaOptimizer:
         model_name = "resnet50"
         seed = random_state
         target_size = len(set(self.ytrain))
-        n_train_steps = int(len(self.train_image_paths) / batch_size * epochs)
+        n_train_steps = int(len(self.train_dataset) / batch_size * epochs)
 
         model = UModel(
             model_name=model_name,

@@ -197,7 +197,7 @@ if __name__ == "__main__":
     # in case of taking image path use ImageId columns
     useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
-    model_name = "p1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3", "tez1", "tez2", "p1" ]
+    model_name = "tez1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3", "tez1", "tez2", "p1" ]
     # --------------->["tez1"]
     comp_type = (
         "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     with_gpu = True
 
     aug_type = "aug2"  # "aug1", "aug2", "aug3"
-    _dataset = "DigitRecognizerDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset", "DigitRecognizerDatasetTez2"
+    _dataset = "ImageDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset", "DigitRecognizerDatasetTez2"
     use_cutmix = True
     # -----------------------------------------------------------
 

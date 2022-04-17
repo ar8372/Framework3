@@ -1,1 +1,1 @@
-mnist
+ultramnist
