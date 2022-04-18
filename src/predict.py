@@ -166,8 +166,8 @@ class predictor(OptunaOptimizer):
 
 
 if __name__ == "__main__":
-    p = predictor(exp_no=2)  # exp_4
+    p = predictor(exp_no=4)  # exp_4
     p.run_folds()
 
-    p = predictor(exp_no=3)  # exp_4
-    p.run_folds()
+    # p = predictor(exp_no=3)  # exp_4
+    # p.run_folds()
