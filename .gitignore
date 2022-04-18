@@ -155,9 +155,11 @@ cython_debug/
 scratch_pad.txt
 input/
 models/
+configs/
 notebooks/
 models*
 input*  
+configs*
 #*input ignores all files whoose name starts with input
 
 # data files
