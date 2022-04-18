@@ -137,6 +137,9 @@ class Agent:
         # what unifies it
         self.get_exp_no()
         # ExpNo- self.current_exp_no
+        print("="*30)
+        print(f"Current Exp no: {self.current_exp_no}")
+        print("="*30)
         Table.loc[Table.shape[0], :] = [
             self.current_exp_no,
             self.model_name,
