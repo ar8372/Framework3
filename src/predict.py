@@ -22,8 +22,8 @@ class predictor(OptunaOptimizer):
             for i in x:
                 self.comp_name = i
         x.close()
-        self.Table = load_pickle(f"../models_{self.comp_name}/Table.pkl")
-        self.locker = load_pickle(f"../models_{self.comp_name}/locker.pkl")
+        self.Table = load_pickle(f"../models-{self.comp_name}/Table.pkl")
+        self.locker = load_pickle(f"../models-{self.comp_name}/locker.pkl")
 
         row_e = self.Table[self.Table.exp_no == self.exp_no]
         self.model_name = row_e.model_name.values[0]
@@ -53,7 +53,7 @@ class predictor(OptunaOptimizer):
         # --- sanity check [new_feat, old_feat, feat_title]
         # ---------------
         self.feat_dict = load_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl"
+            f"../models-{self.locker['comp_name']}/features_dict.pkl"
         )
         new_features = [f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"]
         useful_features = self.useful_features
@@ -64,9 +64,9 @@ class predictor(OptunaOptimizer):
 
     def run_folds(self):
         self._state = "fold"
-        image_path = f'../input_{self.locker["comp_name"]}/' + "train_img/"
-        my_folds = pd.read_csv(f"../models_{self.comp_name}/my_folds.csv")
-        test = pd.read_csv(f"../models_{self.comp_name}/test.csv")
+        image_path = f'../input-{self.locker["comp_name"]}/' + "train_img/"
+        my_folds = pd.read_csv(f"../models-{self.comp_name}/my_folds.csv")
+        test = pd.read_csv(f"../models-{self.comp_name}/test.csv")
         scores = []
         oof_prediction = {}
         test_predictions = []
@@ -94,13 +94,13 @@ class predictor(OptunaOptimizer):
             f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
         ]
         my_folds.to_csv(
-            f"../models_{self.locker['comp_name']}/my_folds.csv", index=False
+            f"../models-{self.locker['comp_name']}/my_folds.csv", index=False
         )
         # save temp predictions
         test[
             f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
         ] = stats.mode(np.column_stack(test_predictions), axis=1)[0]
-        test.to_csv(f"../models_{self.comp_name}/test.csv", index=False)
+        test.to_csv(f"../models-{self.comp_name}/test.csv", index=False)
 
         # ---------------
         new_features = [f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"]
@@ -112,11 +112,11 @@ class predictor(OptunaOptimizer):
         feat_no = self.current_dict["current_feature_no"]
         level_no = self.current_dict["current_level"]
         save_pickle(
-            f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict
+            f"../models-{self.locker['comp_name']}/current_dict.pkl", self.current_dict
         )
         # -----------------------------dump feature dictionary
         feat_dict = load_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl"
+            f"../models-{self.locker['comp_name']}/features_dict.pkl"
         )
         feat_dict[f"l_{level_no}_f_{feat_no}"] = [
             new_features,
@@ -124,7 +124,7 @@ class predictor(OptunaOptimizer):
             f"exp_{self.exp_no}",
         ]
         save_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl", feat_dict
+            f"../models-{self.locker['comp_name']}/features_dict.pkl", feat_dict
         )
         # -----------------------
         print("New features create:- ")
@@ -141,7 +141,7 @@ class predictor(OptunaOptimizer):
         self.Table.loc[self.Table.exp_no == self.exp_no, "pblb_all_fold"] = None
         # pblb to be updated mannually
         # ---------------- dump table
-        save_pickle(f"../models_{self.locker['comp_name']}/Table.pkl", self.Table)
+        save_pickle(f"../models-{self.locker['comp_name']}/Table.pkl", self.Table)
 
     def isRepetition(self, gen_features, old_features, feat_title):
         # self.curr

@@ -76,7 +76,7 @@ class BengaliDataset(Dataset):
             for i in x:
                 comp_name = i
         x.close()
-        with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
+        with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
 
         self.csv = csv.reset_index()
@@ -91,7 +91,7 @@ class BengaliDataset(Dataset):
     def __get__(self, index):
         img_id = self.img_ids[idx]
         img = joblib.load(
-            f"../input_{self.locker['comp_name']}/train_images/{img_id}.pkl"
+            f"../input-{self.locker['comp_name']}/train_images/{img_id}.pkl"
         )
 
         # reshape
@@ -123,7 +123,7 @@ class DigitRecognizerDataset:
             for i in x:
                 comp_name = i
         x.close()
-        with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
+        with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
 
         self.df = df

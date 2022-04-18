@@ -13,7 +13,7 @@ with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
     for i in x:
         comp_name = i
 x.close()
-with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
+with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
     a = pickle.load(f)
 """
 
@@ -22,10 +22,10 @@ if __name__ == "__main__":
         for i in x:
             comp_name = i
     x.close()
-    with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
+    with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
         a = pickle.load(f)
 
-    df = pd.read_csv(f"../models_{comp_name}/train.csv")
+    df = pd.read_csv(f"../models-{comp_name}/train.csv")
     df["fold"] = -1
 
     df = df.sample(frac=1).reset_index(drop=True)
@@ -42,17 +42,17 @@ if __name__ == "__main__":
         df.loc[val_idx, "fold"] = fold
 
     if a["data_type"] in ["image_path", "image_df"]:
-        df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
+        df.to_csv(f"../models-{comp_name}/my_folds.csv", index=False)
         useful_features = [a["id_name"]]
-        with open(f"../models_{a['comp_name']}/useful_features_l_1.pkl", "wb") as f:
+        with open(f"../models-{a['comp_name']}/useful_features_l_1.pkl", "wb") as f:
             pickle.dump(useful_features, f)
     elif a["data_type"] == "tabular":
-        df.to_csv(f"../models_{comp_name}/my_folds.csv", index=False)
-        test = pd.read_csv(f"../input_{comp_name}/test.csv")
-        test.to_csv(f"../models_{comp_name}/test.csv", index=False)
+        df.to_csv(f"../models-{comp_name}/my_folds.csv", index=False)
+        test = pd.read_csv(f"../input-{comp_name}/test.csv")
+        test.to_csv(f"../models-{comp_name}/test.csv", index=False)
 
         useful_features = test.drop(a["id_name"], axis=1).columns.tolist()
-        with open(f"../models_{a['comp_name']}/useful_features_l_1.pkl", "wb") as f:
+        with open(f"../models-{a['comp_name']}/useful_features_l_1.pkl", "wb") as f:
             pickle.dump(useful_features, f)
 
     # --------------------------------dump current
@@ -60,12 +60,12 @@ if __name__ == "__main__":
     current_dict["current_level"] = 1
     current_dict["current_feature_no"] = 0
     current_dict["current_exp_no"] = 0
-    with open(f"../models_{a['comp_name']}/current_dict.pkl", "wb") as f:
+    with open(f"../models-{a['comp_name']}/current_dict.pkl", "wb") as f:
         pickle.dump(current_dict, f)
     # --------------------------------dump features_dict
     feat_dict = defaultdict()
     feat_dict["l_1_f_0"] = [useful_features, 0, "base"]
-    with open(f"../models_{a['comp_name']}/features_dict.pkl", "wb") as f:
+    with open(f"../models-{a['comp_name']}/features_dict.pkl", "wb") as f:
         pickle.dump(feat_dict, f)
     # ---------------------------------dump Table
     Table = pd.DataFrame(
@@ -95,6 +95,6 @@ if __name__ == "__main__":
             "notes",
         ]
     )
-    with open(f"../models_{a['comp_name']}/Table.pkl", "wb") as f:
+    with open(f"../models-{a['comp_name']}/Table.pkl", "wb") as f:
         pickle.dump(Table, f)
     # -------------------------------------------

@@ -18,7 +18,7 @@ class features:
             for i in x:
                 comp_name = i
         x.close()
-        a = load_pickle(f"../models_{comp_name}/locker.pkl")
+        a = load_pickle(f"../models-{comp_name}/locker.pkl")
         # --------------------------------------
         self.locker = a
         # -------------------------------------
@@ -26,12 +26,12 @@ class features:
         self.current_dict = None
         self.get_feat_no()  # load level_no and current_feature_no
         self.useful_features = self.load_pickle(
-            f"../models_{self.locker['comp_name']}/useful_features_l{self.level_no}.pkl"
+            f"../models-{self.locker['comp_name']}/useful_features_l{self.level_no}.pkl"
         )
         self.my_folds = pd.read_csv(
-            f"../models_{self.locker['comp_name']}/my_folds.csv"
+            f"../models-{self.locker['comp_name']}/my_folds.csv"
         )
-        self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/test.csv")
+        self.test = pd.read_csv(f"../models-{self.locker['comp_name']}/test.csv")
 
     def change_level(self, new_val="--|--"):
         if new_val != "--|--":
@@ -40,7 +40,7 @@ class features:
             self.level_no += 1
         self.current_dict["current_level"] = self.level_no
         save_pickle(
-            f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict
+            f"../models-{self.locker['comp_name']}/current_dict.pkl", self.current_dict
         )
 
     def display_features_generated(self):
@@ -48,7 +48,7 @@ class features:
         # Key:- f"l{self.level_no}_f{feat_no}"
         # value:- [created, from , info]
         self.feat_dict = load_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl"
+            f"../models-{self.locker['comp_name']}/features_dict.pkl"
         )
         for key, value in self.feat_dict.items():
             print(key, f"{value[-1]} :-")
@@ -67,7 +67,7 @@ class features:
     def get_feat_no(self):
         # exp_no, current_level, current_feature_no
         self.current_dict = load_pickle(
-            f"../models_{self.locker['comp_name']}/current_dict.pkl"
+            f"../models-{self.locker['comp_name']}/current_dict.pkl"
         )
         self.level_no = int(self.current_dict["current_level"])
         self.current_feature_no = int(self.current_dict["current_feature_no"])
@@ -97,14 +97,14 @@ class features:
         feat_title = "create_statistical_features"
 
         self.my_folds = pd.read_csv(
-            f"../models_{self.locker['comp_name']}/my_folds.csv"
+            f"../models-{self.locker['comp_name']}/my_folds.csv"
         )
-        self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/test.csv")
+        self.test = pd.read_csv(f"../models-{self.locker['comp_name']}/test.csv")
         if useful_features == "--|--":
             useful_features = self.useful_features
         self.get_feat_no()  # --updated self.current_feature_no to the latest feat no
         self.feat_dict = load_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl"
+            f"../models-{self.locker['comp_name']}/features_dict.pkl"
         )
         feat_no = self.current_feature_no + 1
         # ------------------------------------------
@@ -199,20 +199,20 @@ class features:
 
         # -----------------------------dump data
         self.my_folds.to_csv(
-            f"../models_{self.locker['comp_name']}/my_folds.csv", index=False
+            f"../models-{self.locker['comp_name']}/my_folds.csv", index=False
         )
-        self.test.to_csv(f"../models_{self.locker['comp_name']}/test.csv", index=False)
+        self.test.to_csv(f"../models-{self.locker['comp_name']}/test.csv", index=False)
 
         # -----------------------------dump current dict
         self.current_feature_no = feat_no
         self.current_dict["current_level"] = self.level_no
         self.current_dict["current_feature_no"] = self.current_feature_no
         save_pickle(
-            f"../models_{self.locker['comp_name']}/current_dict.pkl", self.current_dict
+            f"../models-{self.locker['comp_name']}/current_dict.pkl", self.current_dict
         )
         # -----------------------------dump feature dictionary
         feat_dict = load_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl"
+            f"../models-{self.locker['comp_name']}/features_dict.pkl"
         )
         feat_dict[f"l_{self.level_no}_f_{feat_no}"] = [
             new_features,
@@ -220,7 +220,7 @@ class features:
             feat_title,
         ]
         save_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl", feat_dict
+            f"../models-{self.locker['comp_name']}/features_dict.pkl", feat_dict
         )
         print("New features create:- ")
         print(new_features)
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         for i in x:
             comp_name = i
     x.close()
-    with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
+    with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
         a = pickle.load(f)
     # ----------------------------------------------------------
     # -----------------------------------------------------------

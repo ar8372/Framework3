@@ -16,30 +16,30 @@ class Storage:
             for i in x:
                 comp_name = i
         x.close()
-        with open(f"../models_{comp_name}/locker.pkl", "rb") as f:
+        with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
         # ----------------------------current dict
         self.current_dict = self.load_pickle(
-            f"../models_{self.locker['comp_name']}/current_dict.pkl"
+            f"../models-{self.locker['comp_name']}/current_dict.pkl"
         )
         # -----------------------------features dict
         self.features_dict = self.load_pickle(
-            f"../models_{self.locker['comp_name']}/features_dict.pkl"
+            f"../models-{self.locker['comp_name']}/features_dict.pkl"
         )
         # ----------------------------base features
         self.useful_features_l1 = self.load_pickle(
-            f"../models_{self.locker['comp_name']}/useful_features_l_1.pkl"
+            f"../models-{self.locker['comp_name']}/useful_features_l_1.pkl"
         )
         # -----------------------------Table
-        self.Table = self.load_pickle(f"../models_{self.locker['comp_name']}/Table.pkl")
+        self.Table = self.load_pickle(f"../models-{self.locker['comp_name']}/Table.pkl")
         # ------------------------------my folds
         self.my_folds = pd.read_csv(
-            f"../models_{self.locker['comp_name']}/my_folds.csv"
+            f"../models-{self.locker['comp_name']}/my_folds.csv"
         )
         # ------------------------------ test
         self.test = None
         if self.locker["data_type"] == "tabular":
-            self.test = pd.read_csv(f"../models_{self.locker['comp_name']}/test.csv")
+            self.test = pd.read_csv(f"../models-{self.locker['comp_name']}/test.csv")
         # ---------------------------------container
         self.names = [
             "locker",
@@ -83,7 +83,7 @@ class Storage:
     def get_log_table(self, exp_no):
         # -------------------------------log table
         log_table = self.load_pickle(
-            f"../models_{self.locker['comp_name']}/log_exp_{exp_no}.pkl"
+            f"../models-{self.locker['comp_name']}/log_exp_{exp_no}.pkl"
         )
         return log_table
 
