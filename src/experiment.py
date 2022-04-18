@@ -31,8 +31,8 @@ class Agent:
             for i in x:
                 comp_name = i
         x.close()
-        self.locker = load_pickle(f"../models-{comp_name}/locker.pkl")
-        self.current_dict = load_pickle(f"../models-{comp_name}/current_dict.pkl")
+        self.locker = load_pickle(f"../configs/configs-{comp_name}/locker.pkl")
+        self.current_dict = load_pickle(f"../configs/configs-{comp_name}/current_dict.pkl")
         # ----------------------------------------------------------
         self.useful_features = useful_features
         self.model_name = model_name
@@ -101,7 +101,7 @@ class Agent:
             self._dataset = _dataset
 
         self.sanity_check()
-        my_folds = pd.read_csv(f"../models-{self.locker['comp_name']}/my_folds.csv")
+        my_folds = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/my_folds.csv")
         opt = OptunaOptimizer(
             model_name=self.model_name,
             comp_type=self.comp_type,
@@ -127,12 +127,12 @@ class Agent:
     def get_exp_no(self):
         # exp_no, current_level
         self.current_dict = load_pickle(
-            f"../models-{self.locker['comp_name']}/current_dict.pkl"
+            f"../configs/configs-{self.locker['comp_name']}/current_dict.pkl"
         )
         self.current_exp_no = int(self.current_dict["current_exp_no"])
 
     def _save_models(self, study, random_state, seed_mean, seed_std):
-        Table = load_pickle(f"../models-{self.locker['comp_name']}/Table.pkl")
+        Table = load_pickle(f"../configs/configs-{self.locker['comp_name']}/Table.pkl")
         Table = pd.DataFrame(Table)
         # what unifies it
         self.get_exp_no()
@@ -167,10 +167,10 @@ class Agent:
         # --------------- dump experiment no
         self.current_dict["current_exp_no"] = self.current_exp_no
         save_pickle(
-            f"../models-{self.locker['comp_name']}/current_dict.pkl", self.current_dict
+            f"../configs/configs-{self.locker['comp_name']}/current_dict.pkl", self.current_dict
         )
         # ---------------- dump table
-        save_pickle(f"../models-{self.locker['comp_name']}/Table.pkl", Table)
+        save_pickle(f"../configs/configs-{self.locker['comp_name']}/Table.pkl", Table)
 
     def show_variables(self):
         print()

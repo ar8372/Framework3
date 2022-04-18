@@ -80,7 +80,7 @@ class KeyMaker:
             for i in x:
                 comp_name = i
         x.close()
-        with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
+        with open(f"../configs/configs-{comp_name}/locker.pkl", "rb") as f:
             a = pickle.load(f)
         self.random_state = a["random_state"]
         self.target_name = a["target_name"]
@@ -122,7 +122,7 @@ class KeyMaker:
         self.locker["no_folds"] = self.no_folds
         self.locker["data_type"] = self.data_type
 
-        with open(f"../models-{a['comp_name']}/locker.pkl", "wb") as f:
+        with open(f"../configs/configs-{a['comp_name']}/locker.pkl", "wb") as f:
             pickle.dump(self.locker, f)
 
     def show_stored_keys(self):
@@ -130,7 +130,7 @@ class KeyMaker:
             for i in x:
                 comp_name = i
         x.close()
-        with open(f"../models-{comp_name}/locker.pkl", "rb") as f:
+        with open(f"../configs/configs-{comp_name}/locker.pkl", "rb") as f:
             a = pickle.load(f)
         for k, v in a.items():
             print(f"{k}:", v)

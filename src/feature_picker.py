@@ -17,13 +17,13 @@ class Picker:
             for i in x:
                 comp_name = i
         x.close()
-        self.locker = self.load_pickle(f"../models-{comp_name}/locker.pkl")
+        self.locker = self.load_pickle(f"../configs/configs-{comp_name}/locker.pkl")
         # ----------------------------------------------------------
         self.list_levels = ["1"]
         self.list_features = ["0"]
         self.list_feat_title = []
         self.feat_dict = self.load_pickle(
-            f"../models-{self.locker['comp_name']}/features_dict.pkl"
+            f"../configs/configs-{self.locker['comp_name']}/features_dict.pkl"
         )
 
     def show_variables(self):

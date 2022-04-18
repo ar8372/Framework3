@@ -195,9 +195,9 @@ class OptunaOptimizer:
             for i in x:
                 comp_name = i
         x.close()
-        self.locker = load_pickle(f"../models-{comp_name}/locker.pkl")
+        self.locker = load_pickle(f"../configs/configs-{comp_name}/locker.pkl")
         self.current_dict = load_pickle(
-            f"../models-{self.locker['comp_name']}/current_dict.pkl"
+            f"../configs/configs-{self.locker['comp_name']}/current_dict.pkl"
         )
         self.save_models = save_models
         self._trial_score = None
@@ -836,7 +836,7 @@ class OptunaOptimizer:
                     "batch_size", [16, 32, 128, 512]
                 ),  # ,32,64, 128,256, 512]),
                 "epochs": trial.suggest_int(
-                    "epochs", 20, 50, step=10, log=False
+                    "epochs", 1,3, step=1, log=False
                 ),  # 55, step=5, log=False),  # 5,55
                 # "epochs": trial.suggest_categorical("epochs", [1]),
                 "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
@@ -1370,8 +1370,8 @@ class OptunaOptimizer:
 
             self._history = history.history
         if self.model_name in ["tez1", "tez2", "p1"]: # pytorch
-            model_path_es = f"../models-{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
-            model_path_s = f"../models-{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
+            model_path_es = f"../models/models-{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
+            model_path_s = f"../models/models-{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
                 model_path_es = model_path_es + f"_seed_{self._random_state}"
                 model_path_s = model_path_s + f"_seed_{self._random_state}"
@@ -1640,15 +1640,15 @@ class OptunaOptimizer:
             self.valid_aug = A.Compose([ToTensor()])
 
         self.sample = pd.read_csv(
-            f"../models-{self.locker['comp_name']}/" + "sample.csv"
+            f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
         )
-        self.test = pd.read_csv(f"../models-{self.locker['comp_name']}/" + "test.csv")
+        self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/" + "test.csv")
         self.test[self.locker["target_name"]] = 0.0
 
         # => datasets
         if self.locker["data_type"] == "image_path":
-            image_path = f"../input-{self.locker['comp_name']}/" + "train_img/"
-            test_path = f"../input-{self.locker['comp_name']}/" + "test_img/"
+            image_path = f"../input/input-{self.locker['comp_name']}/" + "train_img/"
+            test_path = f"../input/input-{self.locker['comp_name']}/" + "test_img/"
             if self.model_name in ["tez1", "tez2"]:
                 # now implemented for pytorch
 
@@ -1679,7 +1679,7 @@ class OptunaOptimizer:
                 self.test_image_paths = [
                     os.path.join(
                         test_path, str(x)
-                    )  # f"../input-{self.locker['comp_name']}/" + "test_img/" + x
+                    )  # f"../input/input-{self.locker['comp_name']}/" + "test_img/" + x
                     for x in self.sample[self.locker["id_name"]].values
                 ]
                 # fake targets
@@ -1754,7 +1754,7 @@ class OptunaOptimizer:
         elif self.locker["data_type"] == "image_df":
             # # it is not good to use whole image everytime
             # # create a seperate test_df and sample_df aka test to store test set
-            # self.test = pd.read_csv(f"../models-{self.locker['comp_name']}/" + "test_df.csv")
+            # self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/" + "test_df.csv")
             t = []
             for n in self.useful_features:
                 t += filter(lambda x: x.startswith(n), list(self.xtrain.columns))
@@ -1872,7 +1872,7 @@ class OptunaOptimizer:
                     "current_exp_no"
                 ]  # optuna is called once in each exp so c+1 will be correct
                 save_pickle(
-                    f"../models-{self.locker['comp_name']}/log_exp_{c+1}.pkl",
+                    f"../configs/configs-{self.locker['comp_name']}/log_exp_{c+1}.pkl",
                     self._log_table,
                 )
             print("=" * 40)
@@ -1897,14 +1897,14 @@ class OptunaOptimizer:
         """
         # --> test set
         self.sample = pd.read_csv(
-            f"../models-{self.locker['comp_name']}/" + "sample.csv"
+            f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
         )
-        self.test = pd.read_csv(f"../models-{self.locker['comp_name']}/" + "test.csv")
+        self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/" + "test.csv")
         self.test[self.locker["target_name"]] = 0.0
 
         if self.locker["data_type"] == "image_path":
-            image_path = f"../input-{self.locker['comp_name']}/" + "train_img/"
-            test_path = f"../input-{self.locker['comp_name']}/" + "test_img/"
+            image_path = f"../input/input-{self.locker['comp_name']}/" + "train_img/"
+            test_path = f"../input/input-{self.locker['comp_name']}/" + "test_img/"
             if self.locker["dataset"] in ["tez1", "tez2"]:
                 # now implemented for pytorch
 
@@ -1936,7 +1936,7 @@ class OptunaOptimizer:
                 self.test_image_paths = [
                     os.path.join(
                         test_path, str(x)
-                    )  # f"../input-{self.locker['comp_name']}/" + "test_img/" + x
+                    )  # f"../input/input-{self.locker['comp_name']}/" + "test_img/" + x
                     for x in self.sample[self.locker["id_name"]].values
                 ]
                 # fake targets
@@ -2023,7 +2023,7 @@ class OptunaOptimizer:
         elif self.locker["data_type"] == "image_df":
             # here we create filtered_features from useful_features
             self.test = pd.read_csv(
-                f"../models-{self.locker['comp_name']}/" + "test.csv"
+                f"../configs/configs-{self.locker['comp_name']}/" + "test.csv"
             )
             self.yvalid = self.my_folds[self.locker["target_name"]]
             self.ytrain = self.my_folds[self.locker["target_name"]]
@@ -2132,14 +2132,14 @@ class OptunaOptimizer:
             final_test_predictions.append(self.test_preds)
         self.sample[self.locker["target_name"]] = np.array(final_test_predictions[0])
         self.sample.to_csv(
-            f"../models-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_single.csv",
+            f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_single.csv",
             index=False,
         )
         self.sample[self.locker["target_name"]] = stats.mode(
             np.column_stack(final_test_predictions), axis=1
         )[0]
         self.sample.to_csv(
-            f"../models-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_all.csv",
+            f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_all.csv",
             index=False,
         )
         return np.mean(scores), np.std(scores)
