@@ -29,16 +29,29 @@ class out:
         else:
             row_e = self.Table[self.Table.exp_no == self.exp_no]
         self.exp_no = row_e.exp_no.values[0]
+        self.level_no = row_e.level_no.values[0]
         # found the row 
         
         try:
-            self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.Table[self.Table.exp_no == self.exp_no].level_no.values[0]}_e_{self.exp_no}"].values.astype(int)
+            # fold
+            self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values.astype(int)
             self.sample.to_csv(f"../working/sub_exp_{self.exp_no}_fold.csv", index=False)
+
+            # seed all 
+            d1 = pd.read_csv(f"../configs/configs-{self.comp_name}/sub_seed_exp_{self.exp_no}_l_{self.level_no}_all.csv")
+            d1.to_csv(f"../working/sub_seed_exp_{self.exp_no}_l_{self.level_no}_all.csv", index=False)
+
+            # seed single
+            d1 = pd.read_csv(f"../configs/configs-{self.comp_name}/sub_seed_exp_{self.exp_no}_l_{self.level_no}_single.csv")
+            d1.to_csv(f"../working/sub_seed_exp_{self.exp_no}_l_{self.level_no}_single.csv", index=False)
+
             print(self.sample[self.locker["target_name"]].value_counts())
             print()
-            print(sample.head(2))
+            print(self.sample.head(2))
         except:
             raise Exception(f"exp_no {self.exp_no} not found!")
+
+        
 
 
 
