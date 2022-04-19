@@ -157,9 +157,11 @@ input/
 models/
 configs/
 notebooks/
+working/
 models*
 input*  
 configs*
+working*
 #*input ignores all files whoose name starts with input
 
 # data files
