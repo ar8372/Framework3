@@ -43,6 +43,8 @@ from torch.nn import (
 )
 from torch.optim import Adam, SGD
 
+# -----------------
+import pretrainedmodels
 
 class trainer_p1:
     def __init__(
@@ -205,6 +207,54 @@ class trainer_p1:
         self.model = self.model.cuda()
         torch.save(state_dict, path)
 
+class pretrained_models(nn.Module):
+    # basic pytorch model
+    # conv2d(in_channels, out_channels):
+    # in_channels:- no of channels in the input image
+    # out_channel:- no of channels in the output image
+    # kernel_size:- size of convolving kernel
+    def __init__(self, no_features):
+        super().__init__()
+        model_name = 'resnet34'
+        self.model = pretrainedmodels.__dict__[model_name](pretrained="imagenet")
+        # adding a head
+        in_features = self.model.last_linear.in_features 
+        self.model.last_linear = torch.nn.Linear(in_features, 10)
+        # self.layer0 = nn.Conv2d(in_channels = 3, out_channels = 50, kernel_size=3, padding=1)
+        # self.layer1 = nn.Linear(50, 32)
+        # self.layer2 = nn.Linear(32, 16)
+        # self.layer3 = nn.Linear(16, 1)
+
+        # self.cnn_layers = Sequential(
+        #     # Defining a 2D convolution layer
+        #     Conv2d(1, 4, kernel_size=3, stride=1, padding=1),
+        #     BatchNorm2d(4),
+        #     ReLU(inplace=True),
+        #     MaxPool2d(kernel_size=2, stride=2),
+        #     # Defining another 2D convolution layer
+        #     Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
+        #     BatchNorm2d(4),
+        #     ReLU(inplace=True),
+        #     MaxPool2d(kernel_size=2, stride=2),
+        # )
+        # self.linear_layers = Sequential(Linear(4 * 7 * 7, 10))
+
+    def forward(self, data):
+        # batch_size, no_featrues : xtrain.shape
+        # use this if now using 1D array in starting
+        # xtrain = data
+        # x = self.layer1(xtrain)
+        # x = self.layer2(x)
+        # x = self.layer3(x)
+        # return x
+        
+        x = data
+        return self.model(x)
+
+        # x = self.cnn_layers(x)
+        # x = x.view(x.size(0), -1)
+        # x = self.linear_layers(x)
+        # return x
 
 class p1_model(nn.Module):
     # basic pytorch model

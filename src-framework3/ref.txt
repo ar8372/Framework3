@@ -1,1 +1,1 @@
-bengali
+mnist

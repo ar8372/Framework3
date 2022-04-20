@@ -115,6 +115,7 @@ class Agent:
             _dataset=self._dataset,
             use_cutmix=self.use_cutmix,
         )
+        print(f"Total no of trials: {self.n_trials}")
         self.study, random_state, seed_mean, seed_std = opt.run(
             my_folds, self.useful_features
         )
@@ -200,13 +201,14 @@ if __name__ == "__main__":
     # in case of taking image path use ImageId columns
     useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
-    model_name = "p1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" , "k1", "k2", "k3", "tez1", "tez2", "p1" ]
-    # --------------->["tez1"]
+    model_name = "pretrained"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
+    # --------------->["k1", "k2", "k3", "tez1", "tez2", "p1" ,"pretrained"]
+
     comp_type = (
         "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
     metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
-    n_trials = 50  # ------------> no of times to run optuna
+    n_trials = 2  # ------------> no of times to run optuna
     prep_list = [
         "Sd",
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list

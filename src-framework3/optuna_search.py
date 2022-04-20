@@ -242,6 +242,7 @@ class OptunaOptimizer:
             "tez1",
             "tez2",
             "p1",
+            "pretrained",
         ]
         self._prep_list = ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"]
         self.prep_list = prep_list
@@ -845,6 +846,41 @@ class OptunaOptimizer:
             # }
             return params
 
+        if model_name == "pretrained":
+            # -batch_size = 16
+            # -epochs = 5
+            # =====seed = 42
+            # ===target_size = 28
+            # -learning_rate = 0.002
+
+            params = {
+                "batch_size": trial.suggest_categorical(
+                    "batch_size", [16, 32, 128, 512]
+                ),  # ,32,64, 128,256, 512]),
+                "epochs": trial.suggest_int(
+                    "epochs", 5, 55, step=5, log=False
+                ),  # 55, step=5, log=False),  # 5,55
+                #"epochs": trial.suggest_categorical("epochs", [1]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
+                "patience": trial.suggest_categorical("patience", [3,5]),
+                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
+            }
+
+            # Demo
+            # params = {
+            #     "batch_size": trial.suggest_categorical(
+            #         "batch_size", [16, 32, 128, 512]
+            #     ),  # ,32,64, 128,256, 512]),
+            #     "epochs": trial.suggest_int(
+            #         "epochs", 1,3, step=1, log=False
+            #     ),  # 55, step=5, log=False),  # 5,55
+            #     # "epochs": trial.suggest_categorical("epochs", [1]),
+            #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
+            #     "patience": trial.suggest_categorical("patience", [3, 5]),
+            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            # }
+            return params
+
         if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
                 columns=[
@@ -916,8 +952,57 @@ class OptunaOptimizer:
         if model_name == "p1":  # pytorch1
             # basic pytorch model
             return self._p1(params=params)
+        if model_name == "pretrained": # pytorch 
+            return self._pretrained(params=params)
         else:
             raise Exception(f"{model_name} is invalid!")
+
+    def _pretrained(self, params):
+        self.learning_rate = 10 ** (-1 * params["learning_rate"])
+        model = pretrained_models(len(self.filtered_features))
+        model.to("cuda")
+        # train_loader
+        self.train_loader = DataLoader(
+            self.train_dataset,
+            shuffle=True,
+            num_workers=4,
+            batch_size=params["batch_size"],
+        )
+
+        self.valid_loader = DataLoader(
+            self.valid_dataset,
+            shuffle=False,
+            num_workers=4,
+            batch_size=params["batch_size"],
+        )
+
+        self.test_loader = DataLoader(
+            self.test_dataset,
+            shuffle=False,
+            num_workers=4,
+            batch_size=params["batch_size"],
+        )
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=10 ** (-1 * params["learning_rate"]),
+            momentum=params["momentum"],  # 0.9,
+        )
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            factor=0.5,
+            patience=params["patience"],
+            verbose=True,
+            mode="max",
+            threshold=1e-4,
+        )
+        return trainer_p1(
+            model,
+            self.train_loader,
+            self.valid_loader,
+            optimizer,
+            scheduler,
+            self.use_cutmix,
+        )
 
     def _p1(self, params=0, random_state=0):
         self.learning_rate = 10 ** (-1 * params["learning_rate"])
@@ -1369,7 +1454,7 @@ class OptunaOptimizer:
                 )  # 1 to make it perfectly divisible
 
             self._history = history.history
-        if self.model_name in ["tez1", "tez2", "p1"]: # pytorch
+        if self.model_name in ["tez1", "tez2", "p1", "pretrained"]: # pytorch
             model_path_es = f"../models/models-{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_es"  # 'model_es_s' + str(CFG.img_size) + '_f' +str(fold) + '.bin',
             model_path_s = f"../models/models-{self.locker['comp_name']}/model_exp_{self.current_dict['current_exp_no'] + 1}_f_{self.optimize_on}_s"
             if self._state == "seed":
@@ -1459,7 +1544,7 @@ class OptunaOptimizer:
                         temp_preds = p
                     else:
                         temp_preds = np.vstack((temp_preds, p))
-            elif self.model_name == "p1":
+            elif self.model_name in ["p1", "pretrained"]:
                 valid_preds = model.predict(self.valid_loader)
                 valid_preds = valid_preds.to("cpu")
                 temp_preds = None
@@ -1490,7 +1575,7 @@ class OptunaOptimizer:
                             temp_preds = p
                         else:
                             temp_preds = np.vstack((temp_preds, p))
-                elif self.model_name == "p1":
+                elif self.model_name in ["p1", "pretrained"]:
                     test_preds = model.predict(self.test_loader)
                     test_preds = test_preds.to("cpu")
                     temp_preds = None
