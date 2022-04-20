@@ -818,32 +818,32 @@ class OptunaOptimizer:
             # ===target_size = 28
             # -learning_rate = 0.002
 
-            params = {
-                "batch_size": trial.suggest_categorical(
-                    "batch_size", [16, 32, 128, 512]
-                ),  # ,32,64, 128,256, 512]),
-                "epochs": trial.suggest_int(
-                    "epochs", 5, 55, step=5, log=False
-                ),  # 55, step=5, log=False),  # 5,55
-                #"epochs": trial.suggest_categorical("epochs", [1]),
-                "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-                "patience": trial.suggest_categorical("patience", [3,5]),
-                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
-            }
-
-            # Demo
             # params = {
             #     "batch_size": trial.suggest_categorical(
             #         "batch_size", [16, 32, 128, 512]
             #     ),  # ,32,64, 128,256, 512]),
             #     "epochs": trial.suggest_int(
-            #         "epochs", 1,3, step=1, log=False
+            #         "epochs", 5, 55, step=5, log=False
             #     ),  # 55, step=5, log=False),  # 5,55
-            #     # "epochs": trial.suggest_categorical("epochs", [1]),
+            #     #"epochs": trial.suggest_categorical("epochs", [1]),
             #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-            #     "patience": trial.suggest_categorical("patience", [3, 5]),
-            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            #     "patience": trial.suggest_categorical("patience", [3,5]),
+            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
             # }
+
+            # Demo
+            params = {
+                "batch_size": trial.suggest_categorical(
+                    "batch_size", [16, 32, 128, 512]
+                ),  # ,32,64, 128,256, 512]),
+                "epochs": trial.suggest_int(
+                    "epochs", 1,3, step=1, log=False
+                ),  # 55, step=5, log=False),  # 5,55
+                # "epochs": trial.suggest_categorical("epochs", [1]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
+                "patience": trial.suggest_categorical("patience", [3, 5]),
+                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            }
             return params
 
         if model_name == "pretrained":
@@ -858,7 +858,7 @@ class OptunaOptimizer:
                     "batch_size", [16, 32, 128, 512]
                 ),  # ,32,64, 128,256, 512]),
                 "epochs": trial.suggest_int(
-                    "epochs", 5, 55, step=5, log=False
+                    "epochs", 5, 6, step=1, log=False
                 ),  # 55, step=5, log=False),  # 5,55
                 #"epochs": trial.suggest_categorical("epochs", [1]),
                 "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
@@ -872,14 +872,14 @@ class OptunaOptimizer:
             #         "batch_size", [16, 32, 128, 512]
             #     ),  # ,32,64, 128,256, 512]),
             #     "epochs": trial.suggest_int(
-            #         "epochs", 1,3, step=1, log=False
+            #         "epochs", 5,6, step=1, log=False
             #     ),  # 55, step=5, log=False),  # 5,55
             #     # "epochs": trial.suggest_categorical("epochs", [1]),
             #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
             #     "patience": trial.suggest_categorical("patience", [3, 5]),
             #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
             # }
-            return params
+            # return params
 
         if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
@@ -1507,7 +1507,7 @@ class OptunaOptimizer:
                     callbacks=[es],
                     config=config,
                 )
-            elif self.model_name == "p1":
+            elif self.model_name in ["p1", "pretrained"]:
                 model.fit(n_iter=params["epochs"])
 
             # self._history = history.history
@@ -1883,16 +1883,19 @@ class OptunaOptimizer:
                         self.filtered_features + [self.locker["target_name"]]
                     ],
                     augmentations=self.train_aug,
+                    model_name= self.model_name,
                 )
                 self.valid_dataset = DigitRecognizerDataset(
                     df=self.xvalid[
                         self.filtered_features + [self.locker["target_name"]]
                     ],
                     augmentations=self.valid_aug,
+                    model_name= self.model_name,
                 )
                 self.test_dataset = DigitRecognizerDataset(
                     df=self.test[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
+                    model_name= self.model_name,
                 )
 
                 # nn.Crossentropy requires target to be single not from interval [0, #classes]
@@ -2121,6 +2124,7 @@ class OptunaOptimizer:
                         self.filtered_features + [self.locker["target_name"]]
                     ],
                     augmentations=self.train_aug,
+                    model_name= self.model_name,
                 )
 
                 self.valid_dataset = DigitRecognizerDataset(
@@ -2128,10 +2132,12 @@ class OptunaOptimizer:
                         self.filtered_features + [self.locker["target_name"]]
                     ],
                     augmentations=self.valid_aug,
+                    model_name= self.model_name
                 )
                 self.test_dataset = DigitRecognizerDataset(
                     df=self.test[self.filtered_features + [self.locker["target_name"]]],
                     augmentations=self.valid_aug,
+                    model_name= self.model_name
                 )
 
             elif self._dataset == "BengaliDataset":

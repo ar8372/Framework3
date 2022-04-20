@@ -208,7 +208,7 @@ if __name__ == "__main__":
         "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
     metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
-    n_trials = 2  # ------------> no of times to run optuna
+    n_trials = 10  # ------------> no of times to run optuna
     prep_list = [
         "Sd",
     ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list

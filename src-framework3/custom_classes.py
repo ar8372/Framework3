@@ -116,9 +116,9 @@ class BengaliDataset(Dataset):
         return img, np.array([target_1, target_2, target_3])
 
 
-#  tez2
+# tez2 1 channel pretrained 3channel models
 class DigitRecognizerDataset:
-    def __init__(self, df, augmentations):
+    def __init__(self, df, augmentations, model_name): # temp adding model name
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
@@ -132,6 +132,7 @@ class DigitRecognizerDataset:
         self.augmentations = augmentations
 
         self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28, 28))
+        self.model_name = model_name 
 
     def __len__(self):
         return len(self.df)
@@ -140,7 +141,17 @@ class DigitRecognizerDataset:
         # item: index_no
         target = self.targets[item]
         image = self.images[item]
-        image = np.expand_dims(image, axis=0)
+        if self.model_name == "pretrained":
+            image = 255- image 
+            image = image[:, :, np.newaxis]
+            image = np.repeat(image, 3, 2)
+            image=  torch.tensor(image, dtype=torch.float)
+            image = torch.permute(image,(2,1,0)) 
+            # pytorch expects batch size * no of channels * height * weidth\
+
+
+        else:
+            image = np.expand_dims(image, axis=0)
 
         # experimenting this is just for p1 which takes 1D input
         # image = image.reshape((-1))
