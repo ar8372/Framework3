@@ -147,7 +147,7 @@ class trainer_p1:
             output = self.model(data["image"])
             loss = self.loss_fn(data["targets"], output)
 
-        # self.scheduler.step()
+        self.scheduler.step() # add scheduler
         loss.backward()
         self.optimizer.step()
 

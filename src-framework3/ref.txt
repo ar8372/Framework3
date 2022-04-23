@@ -1,1 +1,1 @@
-twistmnist
+mnist
