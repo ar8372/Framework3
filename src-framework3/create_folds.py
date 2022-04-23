@@ -28,7 +28,8 @@ if __name__ == "__main__":
     df = pd.read_csv(f"../configs/configs-{comp_name}/train.csv")
     df["fold"] = -1
 
-    df = df.sample(frac=1).reset_index(drop=True)
+
+    #df = df.sample(frac=1).reset_index(drop=True) # use later as it changes index
     kf = model_selection.StratifiedKFold(
         n_splits=a["no_folds"], shuffle=True, random_state=23
     )

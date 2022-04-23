@@ -872,14 +872,15 @@ class OptunaOptimizer:
             #         "batch_size", [16, 32, 128, 512]
             #     ),  # ,32,64, 128,256, 512]),
             #     "epochs": trial.suggest_int(
-            #         "epochs", 5,6, step=1, log=False
+            #         "epochs", 1,2, step=1, log=False
             #     ),  # 55, step=5, log=False),  # 5,55
             #     # "epochs": trial.suggest_categorical("epochs", [1]),
             #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
             #     "patience": trial.suggest_categorical("patience", [3, 5]),
             #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
             # }
-            # return params
+
+            return params
 
         if model_name == "keras":  # demo
             self.Table = pd.DataFrame(
@@ -943,12 +944,6 @@ class OptunaOptimizer:
             return self._tez1(params, random_state=self._random_state)
         if model_name == "tez2":
             return self._tez2(params, random_state=self._random_state)
-        if model_name == "kaggletv":
-            _model_name = "resnet34"
-            model = pretrainedmodels.__dict__[_model_name](pretrained="imagenet")
-            model = model.cuda()
-            optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-            return model
         if model_name == "p1":  # pytorch1
             # basic pytorch model
             return self._p1(params=params)

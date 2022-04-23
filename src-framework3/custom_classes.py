@@ -131,7 +131,12 @@ class DigitRecognizerDataset:
         self.df = self.df.drop(columns=[self.locker["target_name"]])
         self.augmentations = augmentations
 
-        self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28, 28))
+        
+        if self.locker["comp_name"] == "twistmnist":
+            self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28,50))
+            self.images = self.images[:, :, -28:] # remove the 1's
+        else:
+            self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28, 28))
         self.model_name = model_name 
 
     def __len__(self):

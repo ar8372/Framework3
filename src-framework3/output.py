@@ -34,15 +34,26 @@ class out:
         
         try:
             # fold
-            self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values.astype(int)
+            if self.locker["comp_name"] == "twistmnist":
+                self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values.astype(int) + 10
+            else:
+                self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values.astype(int)
             self.sample.to_csv(f"../working/sub_exp_{self.exp_no}_fold.csv", index=False)
 
             # seed all 
             d1 = pd.read_csv(f"../configs/configs-{self.comp_name}/sub_seed_exp_{self.exp_no}_l_{self.level_no}_all.csv")
+            if self.locker["comp_name"] == "twistmnist":
+                d1[self.locker["target_name"]] = d1[self.locker["target_name"]] + 10
+            else:
+                d1[self.locker["target_name"]] = d1[self.locker["target_name"]]
             d1.to_csv(f"../working/sub_seed_exp_{self.exp_no}_l_{self.level_no}_all.csv", index=False)
 
             # seed single
             d1 = pd.read_csv(f"../configs/configs-{self.comp_name}/sub_seed_exp_{self.exp_no}_l_{self.level_no}_single.csv")
+            if self.locker["comp_name"] == "twistmnist":
+                d1[self.locker["target_name"]] = d1[self.locker["target_name"]] + 10 # twistmnist
+            else:
+                d1[self.locker["target_name"]] = d1[self.locker["target_name"]]
             d1.to_csv(f"../working/sub_seed_exp_{self.exp_no}_l_{self.level_no}_single.csv", index=False)
 
             print(self.sample[self.locker["target_name"]].value_counts())

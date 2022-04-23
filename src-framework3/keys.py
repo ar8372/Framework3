@@ -144,12 +144,12 @@ class KeyMaker:
 
 if __name__ == "__main__":
     x = KeyMaker()
-    # ultramnist
-    x.id_name = "id"
-    x.target_name = "digit_sum"
-    x.comp_type = "multi_class"
-    x.no_folds = 5
-    x.data_type = "image_path"
+    # # ultramnist
+    # x.id_name = "id"
+    # x.target_name = "digit_sum"
+    # x.comp_type = "multi_class"
+    # x.no_folds = 5
+    # x.data_type = "image_path"
 
     ## mnist
     # x.id_name = "ImageId"
@@ -157,6 +157,13 @@ if __name__ == "__main__":
     # x.comp_type = "multi_class"
     # x.no_folds = 5
     # x.data_type = "image_df"  # image_path, image_df, image_folder
+
+    # twistmnist
+    x.id_name = "image_id"
+    x.target_name = "label"
+    x.comp_type = "multi_class"
+    x.no_folds = 5
+    x.data_type = "image_df"
 
 
     x.update()
