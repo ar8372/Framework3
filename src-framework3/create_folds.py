@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn import model_selection
+from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
+
 import os
 import sys
 import pickle
@@ -28,19 +30,27 @@ if __name__ == "__main__":
     df = pd.read_csv(f"../configs/configs-{comp_name}/train.csv")
     df["fold"] = -1
 
-
     #df = df.sample(frac=1).reset_index(drop=True) # use later as it changes index
-    kf = model_selection.StratifiedKFold(
-        n_splits=a["no_folds"], shuffle=True, random_state=23
-    )
+    # do it when you don't have id column or do it before creating Id columns
+    if a['comp_type'] == "multi_label":
+        #df = df.sample(fracc=1).reset_index(drop=True)
+        mskf = MultilabelStratifiedKFold(n_splits=a["no_folds"],
+            shuffle=True, random_state=23 )
+        for fold, (train_idx, val_idx) in enumerate(mskf.split(df[a["id_name"]].values, df[a["target_name"]].values )):
+            print(len(train_idx), len(val_idx))
+            df.loc[val_idx, "fold"] = fold
+    else:
+        #df = df.sample(frac=1).reset_index(drop=True) # use later as it changes index
+        kf = model_selection.StratifiedKFold(
+            n_splits=a["no_folds"], shuffle=True, random_state=23
+        )
+        target_name = a["target_name"]
+        for fold, (train_idx, val_idx) in enumerate(
+            kf.split(X=df, y=df[target_name].values)
+        ):
+            print(len(train_idx), len(val_idx))
 
-    target_name = a["target_name"]
-    for fold, (train_idx, val_idx) in enumerate(
-        kf.split(X=df, y=df[target_name].values)
-    ):
-        print(len(train_idx), len(val_idx))
-
-        df.loc[val_idx, "fold"] = fold
+            df.loc[val_idx, "fold"] = fold
 
     if a["data_type"] in ["image_path", "image_df"]:
         df.to_csv(f"../configs/configs-{comp_name}/my_folds.csv", index=False)

@@ -17,6 +17,7 @@ sample: ImageId, Label
 # image_path: there is train.csv and sample.csv folder which contains image name 
 and there are image folders
 initially>
+(before putting image ID column do sample(frac=1))
 train.csv: image_id, target 
 sample.csv: image_id, fake_target
 target_name >> sample target name 

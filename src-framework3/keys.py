@@ -159,12 +159,17 @@ if __name__ == "__main__":
     # x.data_type = "image_df"  # image_path, image_df, image_folder
 
     # twistmnist
-    x.id_name = "image_id"
-    x.target_name = "label"
-    x.comp_type = "multi_class"
-    x.no_folds = 5
-    x.data_type = "image_df"
+    # x.id_name = "image_id"
+    # x.target_name = "label"
+    # x.comp_type = "multi_class"
+    # x.no_folds = 5
+    # x.data_type = "image_df"
 
-
+    # bengaliai
+    x.id_name = "row_id"
+    x.target_name = ['grapheme_root','vowel_diacritic','consonant_diacritic']
+    x.comp_type = "multi_label"
+    x.no_folds = 5 
+    x.data_type = "image_path"
     x.update()
     # # x.show_stored_keys()
