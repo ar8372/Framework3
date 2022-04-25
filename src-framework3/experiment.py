@@ -201,7 +201,7 @@ if __name__ == "__main__":
     # in case of taking image path use ImageId columns
     useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
-    model_name = "pretrained"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
+    model_name = "p1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
     # --------------->["k1", "k2", "k3", "tez1", "tez2", "p1" ,"pretrained"]
 
     comp_type = (

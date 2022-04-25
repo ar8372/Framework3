@@ -174,6 +174,8 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 """
 self._state = fold, opt, seed
 """
+##----------------
+from torchcontrib.optim import SWA
 
 
 class OptunaOptimizer:
@@ -818,32 +820,32 @@ class OptunaOptimizer:
             # ===target_size = 28
             # -learning_rate = 0.002
 
-            # params = {
-            #     "batch_size": trial.suggest_categorical(
-            #         "batch_size", [16, 32, 128, 512]
-            #     ),  # ,32,64, 128,256, 512]),
-            #     "epochs": trial.suggest_int(
-            #         "epochs", 5, 55, step=5, log=False
-            #     ),  # 55, step=5, log=False),  # 5,55
-            #     #"epochs": trial.suggest_categorical("epochs", [1]),
-            #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-            #     "patience": trial.suggest_categorical("patience", [3,5]),
-            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
-            # }
-
-            # Demo
             params = {
                 "batch_size": trial.suggest_categorical(
                     "batch_size", [16, 32, 128, 512]
                 ),  # ,32,64, 128,256, 512]),
                 "epochs": trial.suggest_int(
-                    "epochs", 1,3, step=1, log=False
+                    "epochs", 20, 55, step=10, log=False
                 ),  # 55, step=5, log=False),  # 5,55
-                # "epochs": trial.suggest_categorical("epochs", [1]),
+                #"epochs": trial.suggest_categorical("epochs", [1]),
                 "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-                "patience": trial.suggest_categorical("patience", [3, 5]),
-                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+                "patience": trial.suggest_categorical("patience", [3,5]),
+                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
             }
+
+            # Demo
+            # params = {
+            #     "batch_size": trial.suggest_categorical(
+            #         "batch_size", [16, 32, 128, 512]
+            #     ),  # ,32,64, 128,256, 512]),
+            #     "epochs": trial.suggest_int(
+            #         "epochs", 1,3, step=1, log=False
+            #     ),  # 55, step=5, log=False),  # 5,55
+            #     # "epochs": trial.suggest_categorical("epochs", [1]),
+            #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
+            #     "patience": trial.suggest_categorical("patience", [3, 5]),
+            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            # }
             return params
 
         if model_name == "pretrained":
@@ -858,7 +860,7 @@ class OptunaOptimizer:
                     "batch_size", [16, 32, 128, 512]
                 ),  # ,32,64, 128,256, 512]),
                 "epochs": trial.suggest_int(
-                    "epochs", 5, 6, step=1, log=False
+                    "epochs", 12,25, step=5, log=False
                 ),  # 55, step=5, log=False),  # 5,55
                 #"epochs": trial.suggest_categorical("epochs", [1]),
                 "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
@@ -982,6 +984,9 @@ class OptunaOptimizer:
             lr=10 ** (-1 * params["learning_rate"]),
             momentum=params["momentum"],  # 0.9,
         )
+        # base_opt = torch.optim.Adam(model.parameters(), lr=0.001)
+        # optimizer = SWA(base_opt, swa_start=10, swa_freq=2, swa_lr=0.0005)
+
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             factor=0.5,
@@ -1029,6 +1034,9 @@ class OptunaOptimizer:
             lr=10 ** (-1 * params["learning_rate"]),
             momentum=params["momentum"],  # 0.9,
         )
+        # base_opt = torch.optim.Adam(model.parameters(), lr=0.001)
+        # optimizer = SWA(base_opt, swa_start=10, swa_freq=2, swa_lr=0.0005)
+
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             factor=0.5,
@@ -1616,7 +1624,7 @@ class OptunaOptimizer:
             rg = RegressionMetrics()
             score = rg(self.metrics_name, self.yvalid, self.valid_preds)
 
-        if self._state != "fold":
+        if self._state == "opt":
             # Let's save these values
             self._trial_score = score  # save it to save in log_table because params don't contain our metrics score
             self.save_logs(params)
@@ -1958,6 +1966,8 @@ class OptunaOptimizer:
                     f"../configs/configs-{self.locker['comp_name']}/log_exp_{c+1}.pkl",
                     self._log_table,
                 )
+                self._log_table = None
+                
             print("=" * 40)
             print("Best parameters found:")
             print(study.best_trial.value)

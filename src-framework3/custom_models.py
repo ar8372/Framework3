@@ -147,7 +147,7 @@ class trainer_p1:
             output = self.model(data["image"])
             loss = self.loss_fn(data["targets"], output)
 
-        self.scheduler.step() # add scheduler
+        
         loss.backward()
         self.optimizer.step()
 
@@ -181,6 +181,7 @@ class trainer_p1:
                 print(
                     f"epoch {epoch}, train loss {train_loss}, valid loss {valid_loss}"
                 )
+        #self.optimizer.swap_swa_sgd() ## Here
 
     def predict_one_step(self, data):
         for k, v in data.items():
