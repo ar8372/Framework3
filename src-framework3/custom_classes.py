@@ -13,6 +13,12 @@ import torch
 import os
 import sys
 import pickle
+import joblib
+import imageio
+import cv2
+import os.path
+import albumentations
+from PIL import Image
 
 
 class TabularDataset:
@@ -71,7 +77,7 @@ class TextDataset:
 
 
 class BengaliDataset(Dataset):
-    def __init__(self, csv, img_height, img_width, transform):
+    def __init__(self, paths,targets, img_height, img_width, transform):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
@@ -79,22 +85,28 @@ class BengaliDataset(Dataset):
         with open(f"../configs/configs-{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
 
-        self.csv = csv.reset_index()
-        self.img_ids = csv[self.locker["id_name"]]
+        #self.csv = csv.reset_index()
+        self.paths = paths
+        self.targets = targets
+        self.img_ids = self.paths #csv[self.locker["id_name"]]
         self.img_height = img_height
         self.img_width = img_width
         self.transform = transform
 
     def __len__(self):
-        return len(self.csv)
+        #return len(self.csv)
+        return len(self.paths)
 
-    def __get__(self, index):
-        img_id = self.img_ids[idx]
-        img = joblib.load(
-            f"../input/input-{self.locker['comp_name']}/train_images/{img_id}.pkl"
-        )
+    def __getitem__(self, idx):
+        path = self.paths[idx]
+        img = Image.open(f"{path}.png")
+        img = np.array(img)
+        # img = joblib.load(
+        #     f"../input/input-{self.locker['comp_name']}/train_images/{img_id}.pkl"
+        # )
 
-        # reshape
+        # reshape 137, 236
+        # new dataset 128,128
         img = img.reshape(self.img_height, self.img_width).astype(np.uint8)
         img = 255 - img  #
 
@@ -104,16 +116,34 @@ class BengaliDataset(Dataset):
         # np.repeat(item, no_times, along axis)
         # it repeats item along an axis
         # duplicates whole image 3 times to create RGB channels
-        img = img[img, 3, 2]
+        #img = img[img, 3, 2] 
+        img =  np.repeat(img, 3, 2)
+        # or
+        # most of the models take RGB image convert PIL grayscale to "RGB"
+        # img = Image.fromarray(image).convert("RGB")
 
         if self.transform is not None:
-            img = self.transfrom(image=img)["image"]
-        target_list = self.locker["target_name"]
-        target_1 = self.csv.iloc[index][target_list[0]]
-        target_2 = self.csv.iloc[index][target_list[1]]
-        target_3 = self.csv.iloc[index][target_list[2]]
+            img = self.transform(image=img)["image"]
 
-        return img, np.array([target_1, target_2, target_3])
+        img=  torch.tensor(img, dtype=torch.float)
+        img = torch.permute(img,(2,1,0)) 
+
+        target_list = self.locker["target_name"]
+        # target_1 = self.csv.iloc[index][target_list[0]].values
+        # target_2 = self.csv.iloc[index][target_list[1]].values
+        # target_3 = self.csv.iloc[index][target_list[2]].values
+        target_1 = self.targets[idx, 0] #.iloc[index][target_list[0]].values
+        target_2 = self.targets[idx, 1] #.iloc[index][target_list[1]].values
+        target_3 = self.targets[idx, 2] #.iloc[index][target_list[2]].values
+
+        return {
+            "image" : torch.tensor(img, dtype=torch.float),
+            "grapheme_root": torch.tensor(target_1, dtype=torch.long),
+            "vowel_diacritic": torch.tensor(target_2, dtype=torch.long),
+            "consonant_diacritic": torch.tensor(target_3, dtype=torch.long),
+        }
+
+        #return img, np.array([target_1, target_2, target_3])
 
 
 # tez2 1 channel pretrained 3channel models
@@ -152,6 +182,8 @@ class DigitRecognizerDataset:
             image = np.repeat(image, 3, 2)
             image=  torch.tensor(image, dtype=torch.float)
             image = torch.permute(image,(2,1,0)) 
+            # or
+            # image = np.transpose(iamge, (2,0,1)).astype(np.float32)
             # pytorch expects batch size * no of channels * height * weidth\
 
 

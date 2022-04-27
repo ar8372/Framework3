@@ -1726,6 +1726,22 @@ class OptunaOptimizer:
         elif self.aug_type == "aug3":
             self.train_aug = A.Compose([Rotate(20), ToTensor()])
             self.valid_aug = A.Compose([ToTensor()])
+        # abhishek bengaliai video
+        elif self.aug_type == "aug4":
+            # valid
+            self.valid_aug = albumentations.compose([
+                albumentations.Resize(img_height , img_width, alway_apply=True),
+                albumentations.Normalize(mean, std, always_apply=True)
+            ])
+            # train
+            self.train_aug = albumentations.compose([
+                albumentations.Resize(img_height , img_width, alway_apply=True),
+                albumentations.ShiftScaleRotate(
+                    shift_limit=0.0625, 
+                    scale_limit=5,
+                    p=0.9),
+                albumentations.Normalize(mean, std, always_apply=True)
+            ])
 
         self.sample = pd.read_csv(
             f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
@@ -1737,7 +1753,7 @@ class OptunaOptimizer:
         if self.locker["data_type"] == "image_path":
             image_path = f"../input/input-{self.locker['comp_name']}/" + "train_img/"
             test_path = f"../input/input-{self.locker['comp_name']}/" + "test_img/"
-            if self.model_name in ["tez1", "tez2"]:
+            if self.model_name in ["tez1", "tez2", "pretrained"]:
                 # now implemented for pytorch
 
                 # use pytorch
@@ -1749,20 +1765,6 @@ class OptunaOptimizer:
                     os.path.join(image_path, str(x))
                     for x in self.xvalid[self.locker["id_name"]].values
                 ]
-
-                # imageDataset
-                self.train_dataset = ImageDataset(  # train_dataset
-                    image_paths=self.train_image_paths,
-                    targets=self.ytrain,
-                    augmentations=self.train_aug,
-                )
-
-                self.valid_dataset = ImageDataset(  # valid_dataset
-                    image_paths=self.valid_image_paths,
-                    targets=self.yvalid,
-                    augmentations=self.valid_aug,
-                )
-
                 # ------------------  prep test dataset
                 self.test_image_paths = [
                     os.path.join(
@@ -1774,11 +1776,48 @@ class OptunaOptimizer:
                 self.test_targets = self.sample[
                     self.locker["target_name"]
                 ].values  # dfx_te.digit_sum.values
-                self.test_dataset = ImageDataset(
-                    image_paths=self.test_image_paths,
-                    targets=self.test_targets,
-                    augmentations=self.valid_aug,
-                )
+                #==========================================>
+
+                if self._dataset in [
+                    "BengaliDataset", 
+                ]:
+                    # BengaliDataset
+                    self.train_dataset = BengaliDataset(  # train_dataset
+                        image_paths=self.train_image_paths,
+                        targets=self.ytrain,
+                        augmentations=self.train_aug,
+                    )
+
+                    self.valid_dataset = BengaliDataset(  # valid_dataset
+                        image_paths=self.valid_image_paths,
+                        targets=self.yvalid,
+                        augmentations=self.valid_aug,
+                    )
+
+                    self.test_dataset = BengaliDataset(
+                        image_paths=self.test_image_paths,
+                        targets=self.test_targets,
+                        augmentations=self.valid_aug,
+                    )
+                else:
+                    # imageDataset
+                    self.train_dataset = ImageDataset(  # train_dataset
+                        image_paths=self.train_image_paths,
+                        targets=self.ytrain,
+                        augmentations=self.train_aug,
+                    )
+
+                    self.valid_dataset = ImageDataset(  # valid_dataset
+                        image_paths=self.valid_image_paths,
+                        targets=self.yvalid,
+                        augmentations=self.valid_aug,
+                    )
+
+                    self.test_dataset = ImageDataset(
+                        image_paths=self.test_image_paths,
+                        targets=self.test_targets,
+                        augmentations=self.valid_aug,
+                    )
 
             elif self.model_name in ["k1", "k2", "k3"]:
                 # now implemented for keras
