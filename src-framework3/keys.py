@@ -166,7 +166,7 @@ if __name__ == "__main__":
     # x.data_type = "image_df"
 
     # bengaliai
-    x.id_name = "row_id"
+    x.id_name = "image_id"
     x.target_name = ['grapheme_root','vowel_diacritic','consonant_diacritic']
     x.comp_type = "multi_label"
     x.no_folds = 5 

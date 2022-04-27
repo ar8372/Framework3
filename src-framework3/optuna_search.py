@@ -1729,18 +1729,18 @@ class OptunaOptimizer:
         # abhishek bengaliai video
         elif self.aug_type == "aug4":
             # valid
-            self.valid_aug = albumentations.compose([
-                albumentations.Resize(img_height , img_width, alway_apply=True),
-                albumentations.Normalize(mean, std, always_apply=True)
+            self.valid_aug = albumentations.Compose([
+                albumentations.Resize(128 , 128, always_apply=True),
+                albumentations.Normalize((0.485,0.456,0.406), (9,0.224,0.225), always_apply=True)
             ])
             # train
-            self.train_aug = albumentations.compose([
-                albumentations.Resize(img_height , img_width, alway_apply=True),
+            self.train_aug = albumentations.Compose([
+                albumentations.Resize(128 , 128, always_apply=True),
                 albumentations.ShiftScaleRotate(
                     shift_limit=0.0625, 
                     scale_limit=5,
                     p=0.9),
-                albumentations.Normalize(mean, std, always_apply=True)
+                albumentations.Normalize((0.485,0.456,0.406), (9,0.224,0.225), always_apply=True)
             ])
 
         self.sample = pd.read_csv(

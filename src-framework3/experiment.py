@@ -201,7 +201,7 @@ if __name__ == "__main__":
     # in case of taking image path use ImageId columns
     useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
-    model_name = "p1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
+    model_name = "pretrained"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
     # --------------->["k1", "k2", "k3", "tez1", "tez2", "p1" ,"pretrained"]
 
     comp_type = (
@@ -215,9 +215,9 @@ if __name__ == "__main__":
     optimize_on = 0  # fold on which optimize
     with_gpu = True
 
-    aug_type = "aug2"  # "aug1", "aug2", "aug3"
-    _dataset = "DigitRecognizerDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset", "DigitRecognizerDatasetTez2"
-    use_cutmix = True
+    aug_type = "aug4"  # "aug1", "aug2", "aug3", "aug4"
+    _dataset = "BengaliDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset", "DigitRecognizerDatasetTez2"
+    use_cutmix = False
     # -----------------------------------------------------------
 
     e = Agent(
