@@ -199,13 +199,14 @@ if __name__ == "__main__":
     )
     # in case of taking image from dataframe use name which is in all cols like pixel
     # in case of taking image path use ImageId columns
+    # useful especially in case of image_df
     useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
     # ==========================================================
     model_name = "pretrained"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
     # --------------->["k1", "k2", "k3", "tez1", "tez2", "p1" ,"pretrained"]
 
     comp_type = (
-        "multi_label"  # -------->["regression", "2class","multi_class", "multi_label"]
+        "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
     metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
     n_trials = 2  # ------------> no of times to run optuna
@@ -215,8 +216,8 @@ if __name__ == "__main__":
     optimize_on = 0  # fold on which optimize
     with_gpu = True
 
-    aug_type = "aug4"  # "aug1", "aug2", "aug3", "aug4"
-    _dataset = "BengaliDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset", "DigitRecognizerDatasetTez2"
+    aug_type = "aug2"  # "aug1", "aug2", "aug3", "aug4"
+    _dataset = "DigitRecognizerDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset", "DigitRecognizerDatasetTez2"
     use_cutmix = False
     # -----------------------------------------------------------
 

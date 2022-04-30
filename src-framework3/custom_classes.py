@@ -77,7 +77,7 @@ class TextDataset:
 
 
 class BengaliDataset(Dataset):
-    def __init__(self, paths,targets, img_height, img_width, transform):
+    def __init__(self, image_paths,targets, img_height, img_width, transform):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
@@ -86,7 +86,7 @@ class BengaliDataset(Dataset):
             self.locker = pickle.load(f)
 
         #self.csv = csv.reset_index()
-        self.paths = paths
+        self.paths = image_paths
         self.targets = targets
         self.img_ids = self.paths #csv[self.locker["id_name"]]
         self.img_height = img_height
@@ -99,8 +99,12 @@ class BengaliDataset(Dataset):
 
     def __getitem__(self, idx):
         path = self.paths[idx]
-        img = Image.open(f"{path}.png")
+        path = f"{path}.png"
+        #print("Found", path)
+        #img = Image.open(path)
+        img  = Image.open(r"../input/input-bengaliai/train_images/Train_10.png")
         img = np.array(img)
+        #print("Found-->")
         # img = joblib.load(
         #     f"../input/input-{self.locker['comp_name']}/train_images/{img_id}.pkl"
         # )

@@ -82,8 +82,14 @@ class predictor(OptunaOptimizer):
             self.run(my_folds, self.useful_features)
             scores.append(self.obj("--|--"))
 
+            if self.locker["comp_type"] == "multi_label":
+                # 3 to 1 so elongate
+                self.test_preds = coln_3_1(self.test_preds)
+                self.valid_preds = coln_3_1(self.valid_preds)
+
             oof_prediction.update(dict(zip(self.val_idx, self.valid_preds)))  # oof
             test_predictions.append(self.test_preds)
+
         # save oof predictions
         temp_valid_predictions = pd.DataFrame.from_dict(
             oof_prediction, orient="index"
@@ -92,14 +98,16 @@ class predictor(OptunaOptimizer):
             f"{self.locker['id_name']}",
             f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}",
         ]
-        my_folds[
-            f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
-        ] = temp_valid_predictions[
-            f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
-        ]
-        my_folds.to_csv(
-            f"../configs/configs-{self.locker['comp_name']}/my_folds.csv", index=False
-        )
+        if self.locker["comp_type"] != "multi_label":
+            # stop my_folds for now
+            my_folds[
+                f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
+            ] = temp_valid_predictions[
+                f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
+            ]
+            my_folds.to_csv(
+                f"../configs/configs-{self.locker['comp_name']}/my_folds.csv", index=False
+            )
         # save temp predictions
         test[
             f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"

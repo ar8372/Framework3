@@ -176,7 +176,8 @@ self._state = fold, opt, seed
 """
 ##----------------
 from torchcontrib.optim import SWA
-
+import torch.nn as nn
+from model_dispatcher import MODEL_DISPATCHER
 
 class OptunaOptimizer:
     def __init__(
@@ -820,32 +821,32 @@ class OptunaOptimizer:
             # ===target_size = 28
             # -learning_rate = 0.002
 
-            params = {
-                "batch_size": trial.suggest_categorical(
-                    "batch_size", [16, 32, 128, 512]
-                ),  # ,32,64, 128,256, 512]),
-                "epochs": trial.suggest_int(
-                    "epochs", 20, 55, step=10, log=False
-                ),  # 55, step=5, log=False),  # 5,55
-                #"epochs": trial.suggest_categorical("epochs", [1]),
-                "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-                "patience": trial.suggest_categorical("patience", [3,5]),
-                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
-            }
-
-            # Demo
             # params = {
             #     "batch_size": trial.suggest_categorical(
             #         "batch_size", [16, 32, 128, 512]
             #     ),  # ,32,64, 128,256, 512]),
             #     "epochs": trial.suggest_int(
-            #         "epochs", 1,3, step=1, log=False
+            #         "epochs", 20, 55, step=10, log=False
             #     ),  # 55, step=5, log=False),  # 5,55
-            #     # "epochs": trial.suggest_categorical("epochs", [1]),
+            #     #"epochs": trial.suggest_categorical("epochs", [1]),
             #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-            #     "patience": trial.suggest_categorical("patience", [3, 5]),
-            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            #     "patience": trial.suggest_categorical("patience", [3,5]),
+            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
             # }
+
+            # Demo
+            params = {
+                "batch_size": trial.suggest_categorical(
+                    "batch_size", [16, 32, 128, 512]
+                ),  # ,32,64, 128,256, 512]),
+                "epochs": trial.suggest_int(
+                    "epochs", 1,3, step=1, log=False
+                ),  # 55, step=5, log=False),  # 5,55
+                # "epochs": trial.suggest_categorical("epochs", [1]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
+                "patience": trial.suggest_categorical("patience", [3, 5]),
+                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            }
             return params
 
         if model_name == "pretrained":
@@ -855,33 +856,35 @@ class OptunaOptimizer:
             # ===target_size = 28
             # -learning_rate = 0.002
 
-            params = {
-                "batch_size": trial.suggest_categorical(
-                    "batch_size", [16, 32, 128, 512]
-                ),  # ,32,64, 128,256, 512]),
-                "epochs": trial.suggest_int(
-                    "epochs", 12,25, step=5, log=False
-                ),  # 55, step=5, log=False),  # 5,55
-                #"epochs": trial.suggest_categorical("epochs", [1]),
-                "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-                "patience": trial.suggest_categorical("patience", [3,5]),
-                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
-            }
-
-            # Demo
             # params = {
             #     "batch_size": trial.suggest_categorical(
             #         "batch_size", [16, 32, 128, 512]
             #     ),  # ,32,64, 128,256, 512]),
             #     "epochs": trial.suggest_int(
-            #         "epochs", 1,2, step=1, log=False
+            #         "epochs", 12,25, step=5, log=False
             #     ),  # 55, step=5, log=False),  # 5,55
-            #     # "epochs": trial.suggest_categorical("epochs", [1]),
+            #     #"epochs": trial.suggest_categorical("epochs", [1]),
             #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-            #     "patience": trial.suggest_categorical("patience", [3, 5]),
-            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            #     "patience": trial.suggest_categorical("patience", [3,5]),
+            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
             # }
 
+            # Demo
+            params = {
+                "batch_size": trial.suggest_categorical(
+                    "batch_size", [16, 32, 128, 512]
+                ),  # ,32,64, 128,256, 512]),
+                "epochs": trial.suggest_int(
+                    "epochs", 1,2, step=1, log=False
+                ),  # 55, step=5, log=False),  # 5,55
+                # "epochs": trial.suggest_categorical("epochs", [1]),
+                "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
+                "patience": trial.suggest_categorical("patience", [3, 5]),
+                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            }
+
+            print("finding params")
+            print(params)
             return params
 
         if model_name == "keras":  # demo
@@ -956,7 +959,8 @@ class OptunaOptimizer:
 
     def _pretrained(self, params):
         self.learning_rate = 10 ** (-1 * params["learning_rate"])
-        model = pretrained_models(len(self.filtered_features))
+        #model = pretrained_models(len(self.filtered_features))
+        model= MODEL_DISPATCHER["resnet34"](pretrained=False) # supports all image size 
         model.to("cuda")
         # train_loader
         self.train_loader = DataLoader(
@@ -987,6 +991,8 @@ class OptunaOptimizer:
         # base_opt = torch.optim.Adam(model.parameters(), lr=0.001)
         # optimizer = SWA(base_opt, swa_start=10, swa_freq=2, swa_lr=0.0005)
 
+        # in torch some scheduler step after every epoch,
+        # some after every batch
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             factor=0.5,
@@ -995,6 +1001,9 @@ class OptunaOptimizer:
             mode="max",
             threshold=1e-4,
         )
+        if torch.cuda.device_count() > 1:
+            model = nn.DataParallel(model)
+
         return trainer_p1(
             model,
             self.train_loader,
@@ -1006,7 +1015,7 @@ class OptunaOptimizer:
 
     def _p1(self, params=0, random_state=0):
         self.learning_rate = 10 ** (-1 * params["learning_rate"])
-        model = p1_model(len(self.filtered_features))
+        model = p1_model()
         model.to("cuda")
         # train_loader
         self.train_loader = DataLoader(
@@ -1549,15 +1558,24 @@ class OptunaOptimizer:
                         temp_preds = np.vstack((temp_preds, p))
             elif self.model_name in ["p1", "pretrained"]:
                 valid_preds = model.predict(self.valid_loader)
-                valid_preds = valid_preds.to("cpu")
-                temp_preds = None
-                for p in valid_preds:
-                    if temp_preds is None:
-                        temp_preds = p
-                    else:
-                        temp_preds = np.vstack((temp_preds, p))
-
-            self.valid_preds = np.argmax(temp_preds, axis=1)
+                #valid_preds = valid_preds.to("cpu")
+                if self.locker["comp_type"] == "multi_label":
+                    temp_preds = [None, None, None] 
+                else:
+                    temp_preds = [None]
+                for i,n in enumerate(temp_preds):
+                    valid_preds[i] = valid_preds[i].to("cpu")
+                    for p in valid_preds[i]:
+                        if temp_preds[i] is None:
+                            temp_preds[i] = p
+                        else:
+                            temp_preds[i] = np.vstack((temp_preds[i], p))
+            # for now done only for pretrained part
+            self.valid_preds = [np.argmax(temp_pred, axis=1) for temp_pred in temp_preds]
+            print("Cal valid preds")
+            print(self.valid_preds[0][:3])
+            print(self.valid_preds[1][:3])
+            print(self.valid_preds[2][:3])
 
             if (
                 self._state == "seed" or self._state == "fold"
@@ -1580,15 +1598,32 @@ class OptunaOptimizer:
                             temp_preds = np.vstack((temp_preds, p))
                 elif self.model_name in ["p1", "pretrained"]:
                     test_preds = model.predict(self.test_loader)
-                    test_preds = test_preds.to("cpu")
-                    temp_preds = None
-                    for p in test_preds:
-                        if temp_preds is None:
-                            temp_preds = p
-                        else:
-                            temp_preds = np.vstack((temp_preds, p))
+                    #test_preds = test_preds.to("cpu")
+                    if self.locker["comp_type"] == "multi_label":
+                        temp_preds = [None, None, None] 
+                    else:
+                        temp_preds = [None]
+                    for i,n in enumerate(temp_preds):
+                        test_preds[i] = test_preds[i].to("cpu")
+                        for p in test_preds[i]:
+                            if temp_preds[i] is None:
+                                temp_preds[i] = p
+                            else:
+                                temp_preds[i] = np.vstack((temp_preds[i], p))
+                
+                    # temp_preds = None
+                    # for p in test_preds:
+                    #     if temp_preds is None:
+                    #         temp_preds = p
+                    #     else:
+                    #         temp_preds = np.vstack((temp_preds, p))
 
-                self.test_preds = temp_preds.argmax(axis=1)
+                #self.test_preds = temp_preds.argmax(axis=1)
+                self.test_preds = [temp_pred.argmax(axis=1) for temp_pred in temp_preds]
+                print("Cal test preds")
+                print(self.test_preds[0][:3])
+                print(self.test_preds[1][:3])
+                print(self.test_preds[2][:3])
 
         elif self.locker["data_type"] == "tabular":
             if metrics_name in [
@@ -1618,7 +1653,13 @@ class OptunaOptimizer:
         ]:
             # Classification
             cl = ClassificationMetrics()
-            score = cl(self.metrics_name, self.yvalid, self.valid_preds)
+            if self.locker["comp_type"] == "multi_label":
+                s1 = cl(self.metrics_name, self.yvalid[:,0], self.valid_preds[0][:]) 
+                s2 = cl(self.metrics_name, self.yvalid[:,1], self.valid_preds[1][:]) 
+                s3 = cl(self.metrics_name, self.yvalid[:,2], self.valid_preds[2][:]) 
+                score = (s1+s2+s3)/3
+            else:
+                score = cl(self.metrics_name, self.yvalid, self.valid_preds)
         elif self.metrics_name in ["mae", "mse", "rmse", "msle", "rmsle", "r2"]:
             # Regression
             rg = RegressionMetrics()
@@ -1663,7 +1704,6 @@ class OptunaOptimizer:
         target_name = self.locker["target_name"]
         self.ytrain = self.xtrain[target_name].values
         self.yvalid = self.xvalid[target_name].values
-
         """
         image_df : image is stored in dataframe 
         image_path: image path is there in dataframe 
@@ -1743,17 +1783,17 @@ class OptunaOptimizer:
                 albumentations.Normalize((0.485,0.456,0.406), (9,0.224,0.225), always_apply=True)
             ])
 
-        self.sample = pd.read_csv(
-            f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
-        )
+        # self.sample = pd.read_csv(
+        #     f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
+        # )
         self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/" + "test.csv")
         self.test[self.locker["target_name"]] = 0.0
-
+        self.sample = self.test.copy() # temp
         # => datasets
         if self.locker["data_type"] == "image_path":
-            image_path = f"../input/input-{self.locker['comp_name']}/" + "train_img/"
-            test_path = f"../input/input-{self.locker['comp_name']}/" + "test_img/"
-            if self.model_name in ["tez1", "tez2", "pretrained"]:
+            image_path = f"../input/input-{self.locker['comp_name']}/" + "train_images/"
+            test_path = f"../input/input-{self.locker['comp_name']}/" + "test_images/"
+            if self.model_name in ["tez1", "tez2", "pretrained", "p1"]:
                 # now implemented for pytorch
 
                 # use pytorch
@@ -1765,14 +1805,34 @@ class OptunaOptimizer:
                     os.path.join(image_path, str(x))
                     for x in self.xvalid[self.locker["id_name"]].values
                 ]
+
+                # new 
+
                 # ------------------  prep test dataset
+                # self.test_image_paths = [
+                #     os.path.join(
+                #         test_path, str(x)
+                #     )  # f"../input/input-{self.locker['comp_name']}/" + "test_img/" + x
+                #     for x in self.sample[self.locker["id_name"]].values
+                # ]
+                # fake targets
+
+                # correctly defince sample
+                new_list = [] # do this to maintain order
+                for i in self.sample[self.locker["id_name"]]:
+                    if i not in new_list:
+                        new_list.append(i)
+
+                self.sample = pd.DataFrame( new_list, columns=[self.locker["id_name"]])
+                self.sample[self.locker["target_name"]] = 0 
+
                 self.test_image_paths = [
                     os.path.join(
                         test_path, str(x)
                     )  # f"../input/input-{self.locker['comp_name']}/" + "test_img/" + x
                     for x in self.sample[self.locker["id_name"]].values
                 ]
-                # fake targets
+                
                 self.test_targets = self.sample[
                     self.locker["target_name"]
                 ].values  # dfx_te.digit_sum.values
@@ -1781,24 +1841,33 @@ class OptunaOptimizer:
                 if self._dataset in [
                     "BengaliDataset", 
                 ]:
+                    print("Entered here", self._dataset)
                     # BengaliDataset
                     self.train_dataset = BengaliDataset(  # train_dataset
                         image_paths=self.train_image_paths,
                         targets=self.ytrain,
-                        augmentations=self.train_aug,
+                        img_height = 128,
+                        img_width = 128,
+                        transform=self.train_aug,
                     )
 
                     self.valid_dataset = BengaliDataset(  # valid_dataset
                         image_paths=self.valid_image_paths,
                         targets=self.yvalid,
-                        augmentations=self.valid_aug,
+                        img_height = 128,
+                        img_width = 128,
+                        transform=self.valid_aug,
                     )
-
                     self.test_dataset = BengaliDataset(
                         image_paths=self.test_image_paths,
                         targets=self.test_targets,
-                        augmentations=self.valid_aug,
+                        img_height = 128,
+                        img_width = 128,
+                        transform=self.valid_aug,
                     )
+                    print(self.train_dataset)
+                    print(self.valid_dataset)
+                    print(self.test_dataset)
                 else:
                     # imageDataset
                     self.train_dataset = ImageDataset(  # train_dataset
@@ -2028,58 +2097,101 @@ class OptunaOptimizer:
         Use full train set and test set. call it train and valid
         """
         # --> test set
-        self.sample = pd.read_csv(
-            f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
-        )
         self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/" + "test.csv")
         self.test[self.locker["target_name"]] = 0.0
 
+        # if not multi_label
+        self.sample = pd.read_csv(
+            f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
+        )
+        # if self.locker["comp_type"] == "multi_label":
+        #     self.sample = self.test.copy() # temp
+        # else:
+        #     self.sample = pd.read_csv(
+        #         f"../configs/configs-{self.locker['comp_name']}/" + "sample.csv"
+        #     )
+
         if self.locker["data_type"] == "image_path":
             image_path = f"../input/input-{self.locker['comp_name']}/" + "train_img/"
-            test_path = f"../input/input-{self.locker['comp_name']}/" + "test_img/"
-            if self.locker["dataset"] in ["tez1", "tez2"]:
+            #test_path = f"../input/input-{self.locker['comp_name']}/" + "test_img/"
+            if self.model_name in ["tez1", "tez2","pretrained"]:
                 # now implemented for pytorch
-
+                print("one")
                 # use pytorch
                 self.train_image_paths = [
                     os.path.join(image_path, str(x))
                     for x in self.my_folds[self.locker["id_name"]].values  # =>
                 ]
+                print("two")
                 self.valid_image_paths = [
                     os.path.join(image_path, str(x))
                     for x in self.my_folds[self.locker["id_name"]].values  # =>
                 ]
-                self.ytrain = self.my_folds[target_name].values  # =>
-                self.yvalid = self.my_folds[target_name].values  # =>
-                # imageDataset
-                self.train_dataset = ImageDataset(  # train_dataset
-                    image_paths=self.train_image_paths,
-                    targets=self.ytrain,
-                    augmentations=self.aug,
-                )
-
-                self.valid_dataset = ImageDataset(  # valid_dataset
-                    image_paths=self.valid_image_paths,
-                    targets=self.yvalid,
-                    augmentations=self.aug,
-                )
-
+                print("three")
+                self.ytrain = self.my_folds[self.locker['target_name']].values  # =>
+                self.yvalid = self.my_folds[self.locker['target_name']].values  # =>
                 # ------------------  prep test dataset
-                self.test_image_paths = [
-                    os.path.join(
-                        test_path, str(x)
-                    )  # f"../input/input-{self.locker['comp_name']}/" + "test_img/" + x
-                    for x in self.sample[self.locker["id_name"]].values
-                ]
+                # self.test_image_paths = [
+                #     os.path.join(
+                #         test_path, str(x)
+                #     )  # f"../input/input-{self.locker['comp_name']}/" + "test_img/" + x
+                #     for x in self.sample[self.locker["id_name"]].values
+                # ]
+                print("four")
                 # fake targets
-                self.test_targets = self.sample[
-                    self.locker["target_name"]
-                ].values  # dfx_te.digit_sum.values
-                self.test_dataset = ImageDataset(
-                    image_paths=self.test_image_paths,
-                    targets=self.test_targets,
-                    augmentations=self.aug,
-                )
+                # self.test_targets = self.sample[
+                #     self.locker["target_name"]
+                # ].values  # dfx_te.digit_sum.values
+                print("five")
+                if self._dataset in [
+                    "BengaliDataset",
+                ]:
+                    self.train_dataset = BengaliDataset(  # train_dataset
+                        image_paths=self.train_image_paths,
+                        targets=self.ytrain,
+                        img_height = 128,
+                        img_width = 128,
+                        transform=self.train_aug,
+                    )
+                    print("six")
+                    self.valid_dataset = BengaliDataset(  # train_dataset
+                        image_paths=self.valid_image_paths,
+                        targets=self.yvalid,
+                        img_height = 128,
+                        img_width = 128,
+                        transform=self.valid_aug,
+                    )
+                    print("seven")
+                    # already defined
+                    # self.test_dataset = BengaliDataset(  # train_dataset
+                    #     image_paths=self.test_image_paths,
+                    #     targets=self.test_targets,
+                    #     img_height = 128,
+                    #     img_width = 128,
+                    #     transform=self.valid_aug,
+                    # )
+                    print("eight")
+                    # now implemented for pytorch
+                    # Can make our own custom dataset.. Note tez has dataloader inside the model so don't make
+                else:
+                    # imageDataset
+                    self.train_dataset = ImageDataset(  # train_dataset
+                        image_paths=self.train_image_paths,
+                        targets=self.ytrain,
+                        augmentations=self.aug,
+                    )
+
+                    self.valid_dataset = ImageDataset(  # valid_dataset
+                        image_paths=self.valid_image_paths,
+                        targets=self.yvalid,
+                        augmentations=self.aug,
+                    )
+
+                    # self.test_dataset = ImageDataset(
+                    #     image_paths=self.test_image_paths,
+                    #     targets=self.test_targets,
+                    #     augmentations=self.aug,
+                    # )
             elif self.model_name in ["k1", "k2", "k3"]:
                 # now implemented for keras
                 # use keras flow_from_dataframe
@@ -2257,26 +2369,52 @@ class OptunaOptimizer:
                 self.yvalid = np_utils.to_categorical(self.yvalid)
 
         scores = []
-        final_test_predictions = []
+        if self.locker["comp_type"] == "multi_label":
+            final_test_predictions = [[], [],[]]
+        else:
+            final_test_predictions = []
         for i, rn in enumerate(random_list):
             print()
             print(f"Seed no: {i}, seed: {rn}")
             self._random_state = rn
             # run an algorithm for 100 times
             scores.append(self.obj("--no-trial--"))
-            final_test_predictions.append(self.test_preds)
-        self.sample[self.locker["target_name"]] = np.array(final_test_predictions[0])
-        self.sample.to_csv(
-            f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_single.csv",
-            index=False,
-        )
-        self.sample[self.locker["target_name"]] = stats.mode(
-            np.column_stack(final_test_predictions), axis=1
-        )[0]
-        self.sample.to_csv(
-            f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_all.csv",
-            index=False,
-        )
+            for i,f in enumerate(final_test_predictions):
+                final_test_predictions[i].append(self.test_preds[i])
+
+        if self.locker["comp_type"] == "multi_label":
+            # convert multi column target to single column 
+            # input=> 3 columns , output=> 1 column
+            single_column = [np.array(f[0]) for f in final_test_predictions]
+            multiple_columns = [stats.mode(np.column_stack(f), axis=1 )[0] for f in final_test_predictions]
+
+            sample_real = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/sample.csv")
+            sample_real["target"] = coln_3_1(single_column)
+            sample_real.to_csv(
+                f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_single.csv",
+                index=False,
+            )
+
+            sample_real["target"] = coln_3_1(multiple_columns)
+            sample_real.to_csv(
+                f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_all.csv",
+                index=False,
+            )
+        else:
+            self.sample[self.locker["target_name"]] = [np.array(f[0]) for f in final_test_predictions]
+            self.sample.to_csv(
+                f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_single.csv",
+                index=False,
+            )
+            self.sample[self.locker["target_name"]] = [stats.mode(
+                np.column_stack(f), axis=1
+            )[0] for f in final_test_predictions]
+            
+            self.sample.to_csv(
+                f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_all.csv",
+                index=False,
+            )
+
         return np.mean(scores), np.std(scores)
 
 
