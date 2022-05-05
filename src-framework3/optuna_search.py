@@ -821,32 +821,32 @@ class OptunaOptimizer:
             # ===target_size = 28
             # -learning_rate = 0.002
 
-            # params = {
-            #     "batch_size": trial.suggest_categorical(
-            #         "batch_size", [16, 32, 128, 512]
-            #     ),  # ,32,64, 128,256, 512]),
-            #     "epochs": trial.suggest_int(
-            #         "epochs", 20, 55, step=10, log=False
-            #     ),  # 55, step=5, log=False),  # 5,55
-            #     #"epochs": trial.suggest_categorical("epochs", [1]),
-            #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-            #     "patience": trial.suggest_categorical("patience", [3,5]),
-            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
-            # }
-
-            # Demo
             params = {
                 "batch_size": trial.suggest_categorical(
                     "batch_size", [16, 32, 128, 512]
                 ),  # ,32,64, 128,256, 512]),
                 "epochs": trial.suggest_int(
-                    "epochs", 1,3, step=1, log=False
+                    "epochs", 20, 55, step=10, log=False
                 ),  # 55, step=5, log=False),  # 5,55
-                # "epochs": trial.suggest_categorical("epochs", [1]),
+                #"epochs": trial.suggest_categorical("epochs", [1]),
                 "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
-                "patience": trial.suggest_categorical("patience", [3, 5]),
-                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+                "patience": trial.suggest_categorical("patience", [3,5]),
+                "momentum": trial.suggest_uniform("momentum", 0.2, 0.9)
             }
+
+            # Demo
+            # params = {
+            #     "batch_size": trial.suggest_categorical(
+            #         "batch_size", [16, 32, 128, 512]
+            #     ),  # ,32,64, 128,256, 512]),
+            #     "epochs": trial.suggest_int(
+            #         "epochs", 1,3, step=1, log=False
+            #     ),  # 55, step=5, log=False),  # 5,55
+            #     # "epochs": trial.suggest_categorical("epochs", [1]),
+            #     "learning_rate": trial.suggest_uniform("learning_rate", 1, 8),
+            #     "patience": trial.suggest_categorical("patience", [3, 5]),
+            #     "momentum": trial.suggest_uniform("momentum", 0.2, 0.9),
+            # }
             return params
 
         if model_name == "pretrained":

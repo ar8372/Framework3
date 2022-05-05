@@ -86,10 +86,15 @@ class predictor(OptunaOptimizer):
                 # 3 to 1 so elongate
                 self.test_preds = coln_3_1(self.test_preds)
                 self.valid_preds = coln_3_1(self.valid_preds)
+            else:
+                self.valid_preds = self.valid_preds[0]
+                self.test_preds = self.test_preds[0]
 
             oof_prediction.update(dict(zip(self.val_idx, self.valid_preds)))  # oof
             test_predictions.append(self.test_preds)
-
+        """
+        Note: for multi_label we can't save oof in my_folds.csv since multiple target columns are flattened to create submission file.
+        """
         # save oof predictions
         temp_valid_predictions = pd.DataFrame.from_dict(
             oof_prediction, orient="index"
