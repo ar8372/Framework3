@@ -1572,10 +1572,11 @@ class OptunaOptimizer:
                             temp_preds[i] = np.vstack((temp_preds[i], p))
             # for now done only for pretrained part
             self.valid_preds = [np.argmax(temp_pred, axis=1) for temp_pred in temp_preds]
-            print("Cal valid preds")
-            print(self.valid_preds[0][:3])
-            print(self.valid_preds[1][:3])
-            print(self.valid_preds[2][:3])
+            if self.locker["comp_type"] == "multi_label":
+                print("Cal valid preds")
+                print(self.valid_preds[0][:3])
+                print(self.valid_preds[1][:3])
+                print(self.valid_preds[2][:3])
 
             if (
                 self._state == "seed" or self._state == "fold"
@@ -1620,10 +1621,11 @@ class OptunaOptimizer:
 
                 #self.test_preds = temp_preds.argmax(axis=1)
                 self.test_preds = [temp_pred.argmax(axis=1) for temp_pred in temp_preds]
-                print("Cal test preds")
-                print(self.test_preds[0][:3])
-                print(self.test_preds[1][:3])
-                print(self.test_preds[2][:3])
+                if self.locker["comp_type"] == "multi_label":
+                    print("Cal test preds")
+                    print(self.test_preds[0][:3])
+                    print(self.test_preds[1][:3])
+                    print(self.test_preds[2][:3])
 
         elif self.locker["data_type"] == "tabular":
             if metrics_name in [
@@ -1659,7 +1661,7 @@ class OptunaOptimizer:
                 s3 = cl(self.metrics_name, self.yvalid[:,2], self.valid_preds[2][:]) 
                 score = (s1+s2+s3)/3
             else:
-                score = cl(self.metrics_name, self.yvalid, self.valid_preds)
+                score = cl(self.metrics_name, self.yvalid, self.valid_preds[0][:])
         elif self.metrics_name in ["mae", "mse", "rmse", "msle", "rmsle", "r2"]:
             # Regression
             rg = RegressionMetrics()
@@ -2372,7 +2374,7 @@ class OptunaOptimizer:
         if self.locker["comp_type"] == "multi_label":
             final_test_predictions = [[], [],[]]
         else:
-            final_test_predictions = []
+            final_test_predictions = [[]]
         for i, rn in enumerate(random_list):
             print()
             print(f"Seed no: {i}, seed: {rn}")
@@ -2401,14 +2403,14 @@ class OptunaOptimizer:
                 index=False,
             )
         else:
-            self.sample[self.locker["target_name"]] = [np.array(f[0]) for f in final_test_predictions]
+            self.sample[self.locker["target_name"]] = [np.array(f[0]) for f in final_test_predictions][0]
             self.sample.to_csv(
                 f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_single.csv",
                 index=False,
             )
             self.sample[self.locker["target_name"]] = [stats.mode(
                 np.column_stack(f), axis=1
-            )[0] for f in final_test_predictions]
+            )[0] for f in final_test_predictions][0]
             
             self.sample.to_csv(
                 f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_all.csv",

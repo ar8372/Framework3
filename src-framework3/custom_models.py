@@ -276,7 +276,7 @@ class trainer_p1:
 
             preds = torch.cat(outputs)  # .view(-1) view(-1) is needed when we want 1D array
             
-        return preds
+        return [preds] # make output as list of arrays for one d output make it a list of one element
 
     def save(self, path):
         state_dict = self.model.cpu().state_dict()

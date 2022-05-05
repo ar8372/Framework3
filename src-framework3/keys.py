@@ -152,11 +152,11 @@ if __name__ == "__main__":
     # x.data_type = "image_path"
 
     ## mnist
-    x.id_name = "ImageId"
-    x.target_name = "Label"
-    x.comp_type = "multi_class"
-    x.no_folds = 5
-    x.data_type = "image_df"  # image_path, image_df, image_folder
+    # x.id_name = "ImageId"
+    # x.target_name = "Label"
+    # x.comp_type = "multi_class"
+    # x.no_folds = 5
+    # x.data_type = "image_df"  # image_path, image_df, image_folder
 
     # twistmnist
     # x.id_name = "image_id"
@@ -171,5 +171,13 @@ if __name__ == "__main__":
     # x.comp_type = "multi_label"
     # x.no_folds = 5 
     # x.data_type = "image_path"
+
+    # tmay
+    x.id_name = "id"
+    x.target_name = "target"
+    x.comp_type = "binary"
+    x.no_folds = 5
+    x.data_type = "tabular"
+
     x.update()
     # # x.show_stored_keys()
