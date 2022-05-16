@@ -32,6 +32,8 @@ class predictor(OptunaOptimizer):
             row_e = self.Table[self.Table.exp_no == self.exp_no]
         self.model_name = row_e.model_name.values[0]
         self.params = row_e.bp.values[0]
+        if self.model_name == "lgr":
+            del self.params["c"]
         self._random_state = row_e.random_state.values[0]
         self.with_gpu = row_e.with_gpu.values[0]
         self.features_list = row_e.features_list.values[0]
@@ -89,7 +91,9 @@ class predictor(OptunaOptimizer):
             else:
                 self.valid_preds = self.valid_preds[0]
                 self.test_preds = self.test_preds[0]
-
+            print(self.valid_preds.shape)
+            print(self.test_preds.shape)
+            print("done")
             oof_prediction.update(dict(zip(self.val_idx, self.valid_preds)))  # oof
             test_predictions.append(self.test_preds)
         """

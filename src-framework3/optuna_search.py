@@ -1646,6 +1646,7 @@ class OptunaOptimizer:
                     self.valid_preds = model.predict(self.xvalid)
             else:
                 self.valid_preds = model.predict(self.xvalid)
+            self.valid_preds = [self.valid_preds] # list of predictions maintain to sink with multilabel
             
             if (
                 self._state == "seed" or self._state == "fold"
@@ -1694,7 +1695,7 @@ class OptunaOptimizer:
                 score = (s1+s2+s3)/3
             elif self.metrics_name in ["auc","log_loss"]:
                 # then y proba can't be None 
-                score = cl(self.metrics_name, self.yvalid, "y_pred_dummy", self.valid_preds)
+                score = cl(self.metrics_name, self.yvalid, "y_pred_dummy", self.valid_preds[0])
             else:
                 print(self.metrics_name)
                 print(self.yvalid[:5])
@@ -2065,6 +2066,8 @@ class OptunaOptimizer:
             self.xtrain = self.xtrain[self.useful_features]
             self.xvalid = self.xvalid[self.useful_features]
 
+            self.xtest = self.test[self.useful_features]
+
             prep_dict = {
                 "SiMe": SimpleImputer(strategy="mean"),
                 "SiMd": SimpleImputer(strategy="median"),
@@ -2077,6 +2080,7 @@ class OptunaOptimizer:
                     sc = prep_dict[f]
                     self.xtrain = sc.fit_transform(self.xtrain)
                     self.xvalid = sc.transform(self.xvalid)
+                    self.xtest = sc.transform(self.xtest)
                 elif f == "Lg":
                     self.xtrain = pd.DataFrame(
                         self.xtrain, columns=self.useful_features
@@ -2084,10 +2088,14 @@ class OptunaOptimizer:
                     self.xvalid = pd.DataFrame(
                         self.xvalid, columns=self.useful_features
                     )
+                    self.xtest = pd.DataFrame(
+                        self.xtest, columns=self.useful_features
+                    )
                     # xtest = pd.DataFrame(xtest, columns=useful_features)
                     for col in self.useful_features:
                         self.xtrain[col] = np.log1p(self.xtrain[col])
                         self.xvalid[col] = np.log1p(self.xvalid[col])
+                        self.xtest[col] = np.log1p(self.xtest[col])
                         # xtest[col] = np.log1p(xtest[col])
                 else:
                     raise Exception(f"scaler {f} is invalid!")
