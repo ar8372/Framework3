@@ -1633,20 +1633,6 @@ class OptunaOptimizer:
             else:
                 self.valid_preds = model.predict(self.xvalid)
 
-            # if metrics_name in [
-            #     "auc",
-            #     "loglos",
-            #     "auc_tf",
-            # ]:
-            #     # special case
-            #     # check
-            #     if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
-            #         self.valid_preds = model.predict_proba(self.xvalid)[:, 1]
-            #     else:
-            #         self.valid_preds = model.predict(self.xvalid)
-            # else:
-            #     self.valid_preds = model.predict(self.xvalid)
-
             self.valid_preds = [self.valid_preds] # list of predictions maintain to sink with multilabel
             
             if (
@@ -1658,12 +1644,6 @@ class OptunaOptimizer:
                     temp_preds = [None, None, None] 
                 else:
                     temp_preds = [None]
-
-                # if metrics_name in [
-                #     "auc",
-                #     "loglos",
-                #     "auc_tf",
-                # ]:
                 # special case
                 if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
                     temp_preds[0] = model.predict_proba(self.xtest)[:, 1]
