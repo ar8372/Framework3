@@ -175,7 +175,7 @@ if __name__ == "__main__":
     # tmay
     x.id_name = "id"
     x.target_name = "target"
-    x.comp_type = "binary"
+    x.comp_type = "2class"
     x.no_folds = 5
     x.data_type = "tabular"
 

@@ -188,7 +188,7 @@ if __name__ == "__main__":
     list_levels = ["1"]  # ---------------> ["1","2"]
     list_features = ["0", "1", "2"]  # ---------------> ["0","1","2"]
     list_feat_title = [
-        "create_statistical_features"
+        "base"
     ]  # ---------------->["base", "create_statistical_features"]
     # ---------------------------------------------------------
     p = Picker()
@@ -200,15 +200,17 @@ if __name__ == "__main__":
     # in case of taking image from dataframe use name which is in all cols like pixel
     # in case of taking image path use ImageId columns
     # useful especially in case of image_df
-    useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
+    #useful_features = ["pixel"]  # ["ImageId"]  # ["SibSp", "Parch", "Pclass"]
+    # all except f_27
+    useful_features = ['f_00', 'f_01', 'f_02', 'f_03', 'f_04', 'f_05', 'f_06', 'f_07', 'f_08', 'f_09', 'f_10', 'f_11', 'f_12', 'f_13', 'f_14', 'f_15', 'f_16', 'f_17', 'f_18', 'f_19', 'f_20', 'f_21', 'f_22', 'f_23', 'f_24', 'f_25', 'f_26', 'f_28', 'f_29', 'f_30']
     # ==========================================================
-    model_name = "p1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
+    model_name = "lgr"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
     # --------------->["k1", "k2", "k3", "tez1", "tez2", "p1" ,"pretrained"]
 
     comp_type = (
-        "multi_class"  # -------->["regression", "2class","multi_class", "multi_label"]
+        "2class"  # -------->["regression", "2class","multi_class", "multi_label"]
     )
-    metrics_name = "accuracy"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
+    metrics_name = "auc"  # --------->["accuracy","f1","recall","precision", "auc", "logloss","auc_tf","mae","mse","rmse","msle","rmsle","r2"]
     n_trials = 2  # ------------> no of times to run optuna
     prep_list = [
         "Sd",

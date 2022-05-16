@@ -909,7 +909,10 @@ class OptunaOptimizer:
         # ["lgr","lir","xgbc","xgbr"]
         model_name = self.model_name
         self._random_state = self.generate_random_no()
+        print("DDD")
         if model_name == "lgr":
+            print("HERE:=====================")
+            print(params)
             return LogisticRegression(**params, random_state=self._random_state)
         if model_name == "lir":
             return LinearRegression(**params, random_state=self._random_state)
@@ -1403,9 +1406,12 @@ class OptunaOptimizer:
 
         if self._state == "seed" or self._state == "fold":
             params = self.params
+            print("thsi is params")
+            print(params)
         else:
             params = self.get_params(trial)
         model = self.get_model(params)
+        print("Got model")
 
         # fit xtrain
         # ----------------------------------------------------------------------------
@@ -1640,6 +1646,32 @@ class OptunaOptimizer:
                     self.valid_preds = model.predict(self.xvalid)
             else:
                 self.valid_preds = model.predict(self.xvalid)
+            
+            if (
+                self._state == "seed" or self._state == "fold"
+            ):  # so create test prediction
+                # produce predictions - test data
+
+                if self.locker["comp_type"] == "multi_label":
+                    temp_preds = [None, None, None] 
+                else:
+                    temp_preds = [None]
+
+                if metrics_name in [
+                    "auc",
+                    "loglos",
+                    "auc_tf",
+                ]:
+                    # special case
+                    if self.comp_type == "2class":
+                        temp_preds[0] = model.predict_proba(self.xtest)[:, 1]
+                    else:
+                        temp_preds[0] = model.predict(self.xtest)
+                else:
+                    temp_preds[0] = model.predict(self.xtest)
+                self.test_preds = temp_preds  
+
+
         else:
             raise Exception(f"metrics not set yet of type {self.locker['data_type']}")
 
@@ -1660,7 +1692,14 @@ class OptunaOptimizer:
                 s2 = cl(self.metrics_name, self.yvalid[:,1], self.valid_preds[1][:]) 
                 s3 = cl(self.metrics_name, self.yvalid[:,2], self.valid_preds[2][:]) 
                 score = (s1+s2+s3)/3
+            elif self.metrics_name in ["auc","log_loss"]:
+                # then y proba can't be None 
+                score = cl(self.metrics_name, self.yvalid, "y_pred_dummy", self.valid_preds)
             else:
+                print(self.metrics_name)
+                print(self.yvalid[:5])
+                print(self.valid_preds[:5])
+                print()
                 score = cl(self.metrics_name, self.yvalid, self.valid_preds[0][:])
         elif self.metrics_name in ["mae", "mse", "rmse", "msle", "rmsle", "r2"]:
             # Regression
@@ -2085,6 +2124,9 @@ class OptunaOptimizer:
             print(study.best_trial.params)
             print("=" * 40)
             # later put conditions on whether to put seed or not
+            del self.params["c"]
+            print("c removed:")
+            print(self.params)
             seed_mean, seed_std = self._seed_it()  # generate seeds
             return study, self._random_state, seed_mean, seed_std
 
@@ -2337,6 +2379,8 @@ class OptunaOptimizer:
             self.yvalid = self.my_folds[self.locker["target_name"]]
             self.ytrain = self.my_folds[self.locker["target_name"]]
 
+            self.xtest = self.test[self.useful_features]
+
             prep_dict = {
                 "SiMe": SimpleImputer(strategy="mean"),
                 "SiMd": SimpleImputer(strategy="median"),
@@ -2349,6 +2393,8 @@ class OptunaOptimizer:
                     sc = prep_dict[f]
                     self.xtrain = sc.fit_transform(self.xtrain)
                     self.xvalid = sc.transform(self.xvalid)
+
+                    self.xtest = sc.transform(self.xtest)
                 elif f == "Lg":
                     self.xtrain = pd.DataFrame(
                         self.xtrain, columns=self.useful_features
@@ -2356,10 +2402,15 @@ class OptunaOptimizer:
                     self.xvalid = pd.DataFrame(
                         self.xvalid, columns=self.useful_features
                     )
+                    self.xtest = pd.DataFrame(
+                        self.xtest, columns=self.useful_features
+                    )
                     # xtest = pd.DataFrame(xtest, columns=useful_features)
                     for col in self.useful_features:
                         self.xtrain[col] = np.log1p(self.xtrain[col])
                         self.xvalid[col] = np.log1p(self.xvalid[col])
+
+                        self.xtest[col] = np.log1p(self.xtest[col])
                         # xtest[col] = np.log1p(xtest[col])
                 else:
                     raise Exception(f"scaler {f} is invalid!")
