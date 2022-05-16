@@ -91,9 +91,6 @@ class predictor(OptunaOptimizer):
             else:
                 self.valid_preds = self.valid_preds[0]
                 self.test_preds = self.test_preds[0]
-            print(self.valid_preds.shape)
-            print(self.test_preds.shape)
-            print("done")
             oof_prediction.update(dict(zip(self.val_idx, self.valid_preds)))  # oof
             test_predictions.append(self.test_preds)
         """

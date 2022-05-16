@@ -909,10 +909,7 @@ class OptunaOptimizer:
         # ["lgr","lir","xgbc","xgbr"]
         model_name = self.model_name
         self._random_state = self.generate_random_no()
-        print("DDD")
         if model_name == "lgr":
-            print("HERE:=====================")
-            print(params)
             return LogisticRegression(**params, random_state=self._random_state)
         if model_name == "lir":
             return LinearRegression(**params, random_state=self._random_state)
@@ -1406,12 +1403,9 @@ class OptunaOptimizer:
 
         if self._state == "seed" or self._state == "fold":
             params = self.params
-            print("thsi is params")
-            print(params)
         else:
             params = self.get_params(trial)
         model = self.get_model(params)
-        print("Got model")
 
         # fit xtrain
         # ----------------------------------------------------------------------------
@@ -1634,18 +1628,25 @@ class OptunaOptimizer:
                     print(self.test_preds[2][:3])
 
         elif self.locker["data_type"] == "tabular":
-            if metrics_name in [
-                "auc",
-                "loglos",
-                "auc_tf",
-            ]:
-                # special case
-                if self.comp_type == "2class":
-                    self.valid_preds = model.predict_proba(self.xvalid)[:, 1]
-                else:
-                    self.valid_preds = model.predict(self.xvalid)
+            if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
+                self.valid_preds = model.predict_proba(self.xvalid)[:, 1]
             else:
                 self.valid_preds = model.predict(self.xvalid)
+
+            # if metrics_name in [
+            #     "auc",
+            #     "loglos",
+            #     "auc_tf",
+            # ]:
+            #     # special case
+            #     # check
+            #     if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
+            #         self.valid_preds = model.predict_proba(self.xvalid)[:, 1]
+            #     else:
+            #         self.valid_preds = model.predict(self.xvalid)
+            # else:
+            #     self.valid_preds = model.predict(self.xvalid)
+
             self.valid_preds = [self.valid_preds] # list of predictions maintain to sink with multilabel
             
             if (
@@ -1658,18 +1659,18 @@ class OptunaOptimizer:
                 else:
                     temp_preds = [None]
 
-                if metrics_name in [
-                    "auc",
-                    "loglos",
-                    "auc_tf",
-                ]:
-                    # special case
-                    if self.comp_type == "2class":
-                        temp_preds[0] = model.predict_proba(self.xtest)[:, 1]
-                    else:
-                        temp_preds[0] = model.predict(self.xtest)
+                # if metrics_name in [
+                #     "auc",
+                #     "loglos",
+                #     "auc_tf",
+                # ]:
+                # special case
+                if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
+                    temp_preds[0] = model.predict_proba(self.xtest)[:, 1]
                 else:
                     temp_preds[0] = model.predict(self.xtest)
+                # else:
+                #     temp_preds[0] = model.predict(self.xtest)
                 self.test_preds = temp_preds  
 
 
@@ -2132,9 +2133,8 @@ class OptunaOptimizer:
             print(study.best_trial.params)
             print("=" * 40)
             # later put conditions on whether to put seed or not
-            del self.params["c"]
-            print("c removed:")
-            print(self.params)
+            if self.model_name == "lgr":
+                del self.params["c"]
             seed_mean, seed_std = self._seed_it()  # generate seeds
             return study, self._random_state, seed_mean, seed_std
 
