@@ -493,7 +493,7 @@ class OptunaOptimizer:
                 ),
                 "verbose": False,
             }
-            if with_gpu == True:
+            if self.with_gpu == True:
                 params.update(
                     {
                         "task_type": trial.suggest_categorical("task_type", ["GPU"]),
@@ -659,7 +659,7 @@ class OptunaOptimizer:
                     "feature_fraction", 0.2, 0.95, step=0.1
                 ),
             }
-            if with_gpu == True:
+            if self.with_gpu == True:
                 params.update(
                     {
                         "device_type": trial.suggest_categorical(
@@ -690,7 +690,7 @@ class OptunaOptimizer:
                 ),
                 "objective": trial.suggest_categorical("objective", ["regression"]),
             }
-            if with_gpu == True:
+            if self.with_gpu == True:
                 params.update(
                     {
                         "device_type": trial.suggest_categorical(
