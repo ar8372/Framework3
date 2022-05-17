@@ -108,7 +108,7 @@ class predictor(OptunaOptimizer):
         # if regression problem then rank it 
         if self.locker["comp_type"] in ["regression", "2class"]:
             temp_valid_predictions[f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"] = [stats.rankdata(f) for f in temp_valid_predictions[f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"]]
-            final_test_predictions = [stats.rankdata(f) for f in final_test_predictions]
+            final_test_predictions = [stats.rankdata(f) for f in test_predictions]
         
         # save oof predictions
         if self.locker["comp_type"] != "multi_label":
