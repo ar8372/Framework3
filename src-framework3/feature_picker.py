@@ -19,8 +19,8 @@ class Picker:
         x.close()
         self.locker = self.load_pickle(f"../configs/configs-{comp_name}/locker.pkl")
         # ----------------------------------------------------------
-        self.list_levels = ["1"]
-        self.list_features = ["0"]
+        self.list_levels = []
+        self.list_features = []
         self.list_feat_title = []
         self.feat_dict = self.load_pickle(
             f"../configs/configs-{self.locker['comp_name']}/features_dict.pkl"
@@ -110,9 +110,9 @@ class Picker:
 
 if __name__ == "__main__":
     p = Picker()
-    p.list_levels = ["1"]
-    p.list_features = ["1", "2", "0"]
-    # p.list_feat_title = ["base"]
+    #p.list_levels = ["1"]
+    #p.list_features = ["1", "2", "0"]
+    p.list_feat_title = ["unique_characters"]
     print(p.find_keys())
     print()
-    # print(p.find_features())
+    print(p.find_features())

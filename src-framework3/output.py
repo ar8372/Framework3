@@ -38,8 +38,8 @@ class out:
                 self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values.astype(int) + 10
             else:
                 self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values
-            else: # use it when want hard class
-                self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values.astype(int)
+            # else: # use it when want hard class
+            #     self.sample[self.locker["target_name"]] = self.test[f"pred_l_{self.level_no}_e_{self.exp_no}"].values.astype(int)
             self.sample.to_csv(f"../working/sub_exp_{self.exp_no}_fold.csv", index=False)
 
             # seed all 

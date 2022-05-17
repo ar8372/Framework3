@@ -2122,7 +2122,7 @@ class OptunaOptimizer:
         print("SEEDING")
         self._state = "seed"
         self.generate_random_no()
-        no_seeds = 3
+        no_seeds = 5
         random_list = np.random.randint(1, 1000, no_seeds)  # 100
         print(f"Running {no_seeds} seeds!")
         """
@@ -2423,6 +2423,15 @@ class OptunaOptimizer:
             for i,f in enumerate(final_test_predictions):
                 final_test_predictions[i].append(self.test_preds[i])
 
+        # if regression problem then rank it 
+        if self.locker["comp_type"] in ["regression", "2class"]:
+            # no oof while creating seed submissions
+            #temp_valid_prediction[f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"] = [stats.rankdata(f) for f in temp_valid_prediction[f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"]]
+            # [[p1, p2, p3]]
+            for i,f in enumerate(final_test_predictions):
+                final_test_predictions[i]= [stats.rankdata(f) for f in final_test_predictions[i]] 
+        
+
         if self.locker["comp_type"] == "multi_label":
             # convert multi column target to single column 
             # input=> 3 columns , output=> 1 column
@@ -2447,9 +2456,14 @@ class OptunaOptimizer:
                 f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_single.csv",
                 index=False,
             )
-            self.sample[self.locker["target_name"]] = [stats.mode(
-                np.column_stack(f), axis=1
-            )[0] for f in final_test_predictions][0]
+            # mode is good for classification proble but not for regression problem
+            if self.locker["comp_type"] in ["regression", "2class"]:
+                # so we will use regression methods 
+                for i,f in enumerate(final_test_predictions):
+                    final_test_predictions[i]= [0.2*f for f in final_test_predictions[i]] 
+                self.sample[self.locker["target_name"]] = np.sum(np.array(final_test_predictions[0]), axis=0)
+            else:
+                self.sample[self.locker["target_name"]] = [stats.mode(np.column_stack(f), axis=1)[0] for f in final_test_predictions][0]
             
             self.sample.to_csv(
                 f"../configs/configs-{self.locker['comp_name']}/sub_seed_exp_{self.current_dict['current_exp_no']}_l_{self.current_dict['current_level']}_all.csv",

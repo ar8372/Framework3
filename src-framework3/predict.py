@@ -93,6 +93,7 @@ class predictor(OptunaOptimizer):
                 self.test_preds = self.test_preds[0]
             oof_prediction.update(dict(zip(self.val_idx, self.valid_preds)))  # oof
             test_predictions.append(self.test_preds)
+
         """
         Note: for multi_label we can't save oof in my_folds.csv since multiple target columns are flattened to create submission file.
         """
@@ -104,8 +105,15 @@ class predictor(OptunaOptimizer):
             f"{self.locker['id_name']}",
             f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}",
         ]
+        # if regression problem then rank it 
+        if self.locker["comp_type"] in ["regression", "2class"]:
+            temp_valid_predictions[f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"] = [stats.rankdata(f) for f in temp_valid_predictions[f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"]]
+            final_test_predictions = [stats.rankdata(f) for f in final_test_predictions]
+        
+        # save oof predictions
         if self.locker["comp_type"] != "multi_label":
-            # stop my_folds for now
+            # stop my_folds for now 
+            # for regression problem we can do scipy.stats.rankdata(f) for combined 5 fold predictions we should do because we are doing same for test set
             my_folds[
                 f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
             ] = temp_valid_predictions[
@@ -114,10 +122,16 @@ class predictor(OptunaOptimizer):
             my_folds.to_csv(
                 f"../configs/configs-{self.locker['comp_name']}/my_folds.csv", index=False
             )
-        # save temp predictions
-        test[
-            f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
-        ] = stats.mode(np.column_stack(test_predictions), axis=1)[0]
+
+        # save test predictions
+        # mode is good for classification problem but not for regression problem
+        if self.locker["comp_type"] in ["regression", "2class"]:
+            # so we will use regression methods [ for now using 0.2]
+            test[f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"] = [np.sum([0.2*i for i in f], axis=0) for f in [final_test_predictions]][0]
+        else:
+            test[
+                f"pred_l_{self.current_dict['current_level']}_e_{self.exp_no}"
+            ] = stats.mode(np.column_stack(test_predictions), axis=1)[0]
         test.to_csv(f"../configs/configs-{self.comp_name}/test.csv", index=False)
 
         # ---------------
