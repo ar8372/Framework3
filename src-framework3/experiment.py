@@ -26,6 +26,7 @@ class Agent:
         aug_type="Aug1",
         _dataset="ImageDataset",
         use_cutmix=True,
+        note = "---",
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
@@ -42,10 +43,11 @@ class Agent:
         self.prep_list = prep_list
         self.optimize_on = optimize_on
         self.save_models = True
-        self.with_gpu = True
+        self.with_gpu = with_gpu
         self.aug_type = aug_type
         self._dataset = _dataset
         self.use_cutmix = use_cutmix
+        self.note = note 
 
     def sanity_check(self):
         if "--|--" in [
@@ -60,6 +62,7 @@ class Agent:
             self.with_gpu,
             self.aug_type,
             self._dataset,
+            self.note,
         ]:
             raise Exception("Found --|--- while sanity check!")
 
@@ -164,7 +167,7 @@ class Agent:
             None,
             None,
             None,
-            "---",
+            self.note,
         ]
 
         self.current_exp_no += 1
@@ -222,7 +225,7 @@ if __name__ == "__main__":
     _dataset = "DigitRecognizerDataset"  # "BengaliDataset", "ImageDataset", "DigitRecognizerDataset", "DigitRecognizerDatasetTez2"
     use_cutmix = False
     # -----------------------------------------------------------
-
+    note = "catboostregressor"
     e = Agent(
         useful_features=useful_features,
         model_name=model_name,
@@ -235,6 +238,7 @@ if __name__ == "__main__":
         aug_type=aug_type,
         _dataset=_dataset,
         use_cutmix=use_cutmix,
+        note = note,
     )
     print("=" * 40)
     print("Useful_features:", useful_features)

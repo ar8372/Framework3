@@ -923,6 +923,8 @@ class OptunaOptimizer:
             return Lasso(**params, random_state=self._random_state)
         if model_name == "knnc":
             return KNeighborsClassifier(**params)
+        if model_name == "cbc":
+            return CatBoostClassifier(**params, random_state= self._random_state)
         if model_name == "dtc":
             return DecisionTreeClassifier(**params, random_state=self._random_state)
         if model_name == "adbc":
@@ -2101,7 +2103,7 @@ class OptunaOptimizer:
                     "current_exp_no"
                 ]  # optuna is called once in each exp so c+1 will be correct
                 save_pickle(
-                    f"../configs/configs-{self.locker['comp_name']}/log_exp_{c+1}.pkl",
+                    f"../configs/configs-{self.locker['comp_name']}/log_exp_{c}.pkl",
                     self._log_table,
                 )
                 self._log_table = None
