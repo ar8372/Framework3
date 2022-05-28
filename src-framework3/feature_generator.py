@@ -283,6 +283,61 @@ class features:
         print("New features create:- ")
         print(new_features)
 
+    def create_interaction_features(self, useful_features="--|--"):
+        feat_title = "interaction_features"
+
+        self.my_folds = pd.read_csv(
+            f"../configs/configs-{self.locker['comp_name']}/my_folds.csv"
+        )
+        self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/test.csv")
+        if useful_features == "--|--":
+            useful_features = self.useful_features
+        self.get_feat_no()  # --updated self.current_feature_no to the latest feat no
+        self.feat_dict = load_pickle(
+            f"../configs/configs-{self.locker['comp_name']}/features_dict.pkl"
+        )
+        feat_no = self.current_feature_no + 1
+        # ------------------------------------------
+        # From https://www.kaggle.com/ambrosm/tpsmay22-eda-which-makes-sense
+        new_features = ['i_02_21', 'i_05_22', 'i_00_01_26']
+        # -------------------------------------------------
+        self.isRepetition(
+            new_features, useful_features, feat_title
+        )  # check for duplicate process
+        # -------------------------------------------------
+        for df in [self.test, self.my_folds]:
+            df['i_02_21'] = (df.f_21 + df.f_02 > 5.2).astype(int) - (df.f_21 + df.f_02 < -5.3).astype(int)
+            df['i_05_22'] = (df.f_22 + df.f_05 > 5.1).astype(int) - (df.f_22 + df.f_05 < -5.4).astype(int)
+            i_00_01_26 = df.f_00 + df.f_01 + df.f_26
+            df['i_00_01_26'] = (i_00_01_26 > 5.0).astype(int) - (i_00_01_26 < -5.0).astype(int)
+
+        # -----------------------------dump data
+        self.my_folds.to_csv(
+            f"../configs/configs-{self.locker['comp_name']}/my_folds.csv", index=False
+        )
+        self.test.to_csv(f"../configs/configs-{self.locker['comp_name']}/test.csv", index=False)
+
+        # -----------------------------dump current dict
+        self.current_feature_no = feat_no
+        self.current_dict["current_level"] = self.level_no
+        self.current_dict["current_feature_no"] = self.current_feature_no
+        save_pickle(
+            f"../configs/configs-{self.locker['comp_name']}/current_dict.pkl", self.current_dict
+        )
+        # -----------------------------dump feature dictionary
+        feat_dict = load_pickle(
+            f"../configs/configs-{self.locker['comp_name']}/features_dict.pkl"
+        )
+        feat_dict[f"l_{self.level_no}_f_{feat_no}"] = [
+            new_features,
+            useful_features,
+            feat_title,
+        ]
+        save_pickle(
+            f"../configs/configs-{self.locker['comp_name']}/features_dict.pkl", feat_dict
+        )
+        print("New features create:- ")
+        print(new_features)
 
 if __name__ == "__main__":
     with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
@@ -296,7 +351,8 @@ if __name__ == "__main__":
     ft = features()
     #ft.create_statistical_features(["Age", "SibSp", "Parch"])  # ------------
     #ft.create_unique_characters()
+    #ft.create_interaction_features()
 
     ft.display_features_generated()
     print("===================")
-    ft.show_variables()
+    #ft.show_variables()

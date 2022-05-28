@@ -207,7 +207,7 @@ if __name__ == "__main__":
     # all except f_27
     useful_features = ['f_00', 'f_01', 'f_02', 'f_03', 'f_04', 'f_05', 'f_06', 'f_07', 'f_08', 'f_09', 'f_10', 'f_11', 'f_12', 'f_13', 'f_14', 'f_15', 'f_16', 'f_17', 'f_18', 'f_19', 'f_20', 'f_21', 'f_22', 'f_23', 'f_24', 'f_25', 'f_26', 'f_28', 'f_29', 'f_30']
     # ==========================================================
-    model_name = "xgbr"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
+    model_name = "k1"  # -------->["lgr","lir","xgbc","xgbr","cbc","mlpc", "rg", "ls","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "lgbmr", "rfc" ,
     # --------------->["k1", "k2", "k3", "tez1", "tez2", "p1" ,"pretrained"]
 
     comp_type = (
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     n_trials = 5  # ------------> no of times to run optuna
     prep_list = [
         "Sd",
-    ]  # ------> ["SiMe", "SiMd", "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list
+    ]  # ------> ["SiMe", "SiMd",~ "SiMo", "Mi", "Ro", "Sd", "Lg"] <= _prep_list
     optimize_on = 0  # fold on which optimize
     with_gpu = True
 

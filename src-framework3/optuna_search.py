@@ -1127,9 +1127,9 @@ class OptunaOptimizer:
         model = Tez(model)
         return model
 
-    def _k1(self, params):
+    def _k1(self, params, random_state):
         # simple model
-        model = Sequential()
+        model = keras.Sequential()
         model.add(BatchNormalization())
         model.add(Dense(32, activation="relu"))
         model.add(Dense(32, activation="relu"))
@@ -1211,7 +1211,7 @@ class OptunaOptimizer:
 
         return model
 
-    def _k2(self, params):
+    def _k2(self, params, random_state):
         # cone model
         model = Sequential()
         model.add(BatchNormalization())
@@ -1300,7 +1300,7 @@ class OptunaOptimizer:
 
         return model
 
-    def _k3(self, params):
+    def _k3(self, params, random_state):
         # cone model
         model = Sequential()
         model.add(BatchNormalization())
@@ -1424,9 +1424,9 @@ class OptunaOptimizer:
             )
         if self.model_name in ["k1", "k2", "k3"]:  # keras
             # ------------------------- general for all keras model
-            stop = EarlyStopping(monitor="accuracy", mode="max", patience=50, verbose=1)
+            # stop = EarlyStopping(monitor="accuracy", mode="max", patience=50 ) #, verbose=1)
             checkpoint = ModelCheckpoint(
-                filepath="./",  # to work on this part
+                filepath= f"../models/models-{self.locker['comp_name']}/", #  "./",  # to work on this part
                 save_weights_only=True,
                 monitor="val_accuracy",
                 mode="max",
@@ -1449,7 +1449,7 @@ class OptunaOptimizer:
                     epochs=params["epochs"],
                     shuffle=True,
                     validation_split=0.15,
-                    callbacks=[stop, checkpoint, reduce_lr],
+                    callbacks=[ checkpoint, reduce_lr], #[stop, checkpoint, reduce_lr],
                 )
             if self.locker["data_type"] == "image":
                 history = model.fit(
@@ -1461,7 +1461,7 @@ class OptunaOptimizer:
                     verbose=2,
                     validatioin_data=self.valid_dataset,
                     validation_step=8,
-                    callbacks=[stop, checkpoint, reduce_lr],
+                    callbacks= [stop, checkpoint, reduce_lr],
                 )
                 model.evaluate_generator(
                     generator=self.valid_dataset, steps=1
@@ -1630,7 +1630,7 @@ class OptunaOptimizer:
                     print(self.test_preds[2][:3])
 
         elif self.locker["data_type"] == "tabular":
-            if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
+            if self.comp_type in  ["2class", "multi_class", "multi_label"]  and self.model_name in ["xgbc","cbc","mlpc","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "rfc" ]: # self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
                 self.valid_preds = model.predict_proba(self.xvalid)[:, 1]
             else:
                 self.valid_preds = model.predict(self.xvalid)
@@ -1647,7 +1647,7 @@ class OptunaOptimizer:
                 else:
                     temp_preds = [None]
                 # special case
-                if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
+                if self.comp_type in  ["2class", "multi_class", "multi_label"] and self.model_name in ["xgbc","cbc","mlpc","knnc", "dtc", "adbc", "gbmc" ,"hgbc", "lgbmc", "rfc" ]: # self.model_name not in ["xgbr","lgr","lir", "lgbmr"]:
                     temp_preds[0] = model.predict_proba(self.xtest)[:, 1]
                 else:
                     temp_preds[0] = model.predict(self.xtest)
@@ -2101,7 +2101,7 @@ class OptunaOptimizer:
                 # let's save logs
                 c = self.current_dict[
                     "current_exp_no"
-                ]  # optuna is called once in each exp so c+1 will be correct
+                ]  # optuna is called once in each exp so c will be correct
                 save_pickle(
                     f"../configs/configs-{self.locker['comp_name']}/log_exp_{c}.pkl",
                     self._log_table,
