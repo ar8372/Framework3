@@ -25,7 +25,7 @@ Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
     <img src="resources/5.png" />
 </p>
 
-### 2.Automates Hyperparameter tuning, experimentation, creating OOF predictions and TEST predictions.<br>
+### 2.Automates Hyperparameter tuning, experimentation, OOF and TEST predictions.<br>
 Demo: https://www.kaggle.com/code/raj401/inference-mnist
 ```
 !python experiment.py
