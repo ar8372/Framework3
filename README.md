@@ -18,7 +18,7 @@ I have tried to make this pipeline not too abstract, thus all the controls will 
 </p>
 
 > Visualize how various algorithms [here ```optuna```] does hyperparameter tuning through various trials.<br>
-Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
+ Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
 
 <p>
     <img src="resources/4.png" width="800" height="400" />
@@ -28,14 +28,14 @@ Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
 </p>
 
 ### 2.Automates Hyperparameter tuning, experimentation, OOF and TEST predictions.<br>
-Demo: https://www.kaggle.com/code/raj401/inference-mnist
+> Demo: https://www.kaggle.com/code/raj401/inference-mnist
 ```
 !python experiment.py
 !python predict.py
 !python output.py
 ```
 ### 3.Maintains a table of all the experiments.<br>
-Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
+> Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
 <p>
     <img src="resources/6.png" />
 </p>
