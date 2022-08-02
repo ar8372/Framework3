@@ -32,6 +32,10 @@ Demo: https://www.kaggle.com/code/raj401/inference-mnist
 !python predict.py
 !python output.py
 ```
+### 3.Maintains a table of all the experiments.
+<p>
+    <img src="resources/6.png" />
+</p>
 
 # How to use it
 ## Environment setup
