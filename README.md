@@ -1,6 +1,39 @@
 ### [Framework3]
 # Machine Learning Pipeline
-The Pipeline is quite modular in nature following py37 guidelines. This pipeline has used Object Oriented Programming which makes it quite robust and easy to debug.
+The Pipeline is quite modular in nature following ```py37``` guidelines. This pipeline uses ```OOPs``` concepts which makes it quite robust and easy to debug.
+## Features 
+### 1.Visualize Experimentations
+> Visualize effect of various feature groups and and preprocessing techniques on the score.
+
+<p>
+    <img src="resources/1.png" width="800" height="400" />
+</p>
+<p>
+    <img src="resources/2.png" width="800" height="400" />
+</p>
+<p>
+    <img src="resources/3.png" width="800" height="400" />
+</p>
+
+> Visualize how various algorithms [here ```optuna```] does hyperparameter tuning through various trials.<br>
+Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
+
+<p>
+    <img src="resources/4.png" width="800" height="400" />
+</p>
+<p>
+    <img src="resources/5.png" />
+</p>
+
+### 2.Automates Hyperparameter tuning, experimentation, creating OOF predictions and TEST predictions.<br>
+Demo: https://www.kaggle.com/code/raj401/inference-mnist
+```
+!python experiment.py
+!python predict.py
+!python output.py
+```
+
+# How to use it
 ## Environment setup
 Change your working directory to `src_framework3`. 
 ```
@@ -138,21 +171,4 @@ id_name >> sample id name
 
 ##### [Case3] Image Folder ..[work in progress..]
 
-# Features 
-## Visualize Experimentations
-### 
-<p>
-    <img src="resources/1.png" width="500" height="200" />
-</p>
-<p>
-    <img src="resources/2.png" width="500" height="200" />
-</p>
-<p>
-    <img src="resources/3.png" width="500" height="200" />
-</p>
-<p>
-    <img src="resources/4.png" width="500" height="200" />
-</p>
-<p>
-    <img src="resources/5.png" width="500" height="200" />
-</p>
+
