@@ -1,6 +1,6 @@
 ### [Framework3]
 # Machine Learning Pipeline
-The Pipeline is quite modular in nature following ```py37``` guidelines. This pipeline uses ```OOPs``` concepts which makes it quite robust and easy to debug.
+The Pipeline is quite modular in nature following ```py37``` guidelines. It uses ```OOPs``` concepts which makes it quite robust and easy to debug.
 
 I have tried to make this pipeline not too abstract, thus all the controls will be in hand of the user. It will just help automate repetative tasks like creating folds, creating OOF and TEST predictions from an experiment.
 ## Features 
