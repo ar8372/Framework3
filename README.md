@@ -39,6 +39,7 @@ I have tried to make this pipeline not too abstract, thus all the controls will 
 <p>
     <img src="resources/6.png" />
 </p>
+### 4.Automatic Submit prediction to Kaggle and maintain a log of all the scores .<br>
 
 # How to use it
 ## Environment setup
