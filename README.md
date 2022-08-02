@@ -140,4 +140,19 @@ id_name >> sample id name
 
 # Features 
 ## Visualize Experimentations
-
+### 
+<p>
+    <img src="resources/1.png" width="500" height="200" />
+</p>
+<p>
+    <img src="resources/2.png" width="500" height="200" />
+</p>
+<p>
+    <img src="resources/3.png" width="500" height="200" />
+</p>
+<p>
+    <img src="resources/4.png" width="500" height="200" />
+</p>
+<p>
+    <img src="resources/5.png" width="500" height="200" />
+</p>
