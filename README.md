@@ -34,7 +34,8 @@ Demo: https://www.kaggle.com/code/raj401/inference-mnist
 !python predict.py
 !python output.py
 ```
-### 3.Maintains a table of all the experiments.
+### 3.Maintains a table of all the experiments.<br>
+Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
 <p>
     <img src="resources/6.png" />
 </p>
