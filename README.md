@@ -46,6 +46,27 @@ I have tried to make this pipeline not too abstract, thus all the controls will 
 
 # How to use it
 ## Environment setup
+### Folder Structure
+> It allows working on different competitions together. Here example: ```tmay``` and ```amex```
+```
+Framework3/
+|
+├── configs/
+|     |__ configs_tmay/
+|     |__ configs_amex/
+|
+├── input/
+|     |__ input_tmay/
+|     |__ input_amex/
+|
+├── models/
+|     |__ models_tmay/
+|     |__ models_amex/
+|
+├── src_framework3/
+|
+└── working/
+```
 Change your working directory to `src_framework3`. 
 ```
 src_framework3
