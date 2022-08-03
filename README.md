@@ -33,9 +33,9 @@ I have tried to make this pipeline not too abstract, thus all the controls will 
 ### 2.Automates Hyperparameter tuning, experimentation, OOF and TEST predictions.<br>
 > Demo: https://www.kaggle.com/code/raj401/inference-mnist
 ```
-!python experiment.py
-!python predict.py
-!python output.py
+!python experiment.py  # find optimal hyperparameters
+!python predict.py     # creates OOF and TEST predictions
+!python output.py      # creates submission.csv file
 ```
 ### 3.Maintains a table of all the experiments.<br>
 > Demo: https://www.kaggle.com/code/raj401/eda-experiments-tmay
@@ -56,16 +56,16 @@ I have tried to make this pipeline not too abstract, thus all the controls will 
 Framework3/
 |
 ├── configs/
-|     |__ configs_tmay/
-|     |__ configs_amex/
+|     |__ configs-tmay/
+|     |__ configs-amex/
 |
 ├── input/
-|     |__ input_tmay/
-|     |__ input_amex/
+|     |__ input-tmay/
+|     |__ input-amex/
 |
 ├── models/
-|     |__ models_tmay/
-|     |__ models_amex/
+|     |__ models-tmay/
+|     |__ models-amex/
 |
 ├── src_framework3/
 |
