@@ -95,7 +95,7 @@ src_framework3
 ```
 ### Dependencies
 Install below libraries manually or run command `sh run.sh`.<br>
-Note: to run the `sh` script make sure your current working directory is `ars_src`
+Note: to run the `sh` script make sure your current working directory is `src_framework3`
 ```
 pip install optuna
 pip install catboost
