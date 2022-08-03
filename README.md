@@ -2,7 +2,7 @@
 # Machine Learning Pipeline
 The Pipeline is quite modular in nature following ```py37``` guidelines. It uses ```OOPs``` concepts which makes it quite robust and easy to debug.
 
-I have tried to make this pipeline not too abstract, thus all the controls will be in hand of the user. It will just help automate repetitive tasks like creating folds, creating OOF and TEST predictions from an experiment.
+I have tried to make this pipeline not too abstract, so that the user can have full control over it. It will help automate repetitive tasks like creating folds, creating OOF and TEST predictions from an experiment.
 <hr>
 
 ## Key Features Of The Pipeline 
