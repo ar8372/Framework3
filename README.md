@@ -33,7 +33,7 @@ I have tried to make this pipeline not too abstract, thus all the controls will 
 ### 2.Automates Hyperparameter tuning, experimentation, OOF and TEST predictions.<br>
 > Demo: https://www.kaggle.com/code/raj401/inference-mnist
 ```
-!python experiment.py  # find optimal hyperparameters
+!python experiment.py  # finds optimal hyperparameters
 !python predict.py     # creates OOF and TEST predictions
 !python output.py      # creates submission.csv file
 ```
