@@ -3,7 +3,10 @@
 The Pipeline is quite modular in nature following ```py37``` guidelines. It uses ```OOPs``` concepts which makes it quite robust and easy to debug.
 
 I have tried to make this pipeline not too abstract, thus all the controls will be in hand of the user. It will just help automate repetitive tasks like creating folds, creating OOF and TEST predictions from an experiment.
+<hr>
+
 ## Key Features Of The Pipeline 
+
 ### 1.Visualize Experimentations
 > Visualize effect of various feature groups and and preprocessing techniques on the score.
 
@@ -45,6 +48,7 @@ I have tried to make this pipeline not too abstract, thus all the controls will 
 <hr>
 
 # How to use it
+
 ## Environment setup
 ### Folder Structure
 > It allows working on different competitions together. Here example: ```tmay``` and ```amex```
@@ -107,20 +111,20 @@ pip install iterative-stratification
 
 > STEP-->2 : run init_folders.py --> create_datasets.py 
 
->STEP-->3 : put train.parquet, test.parquet, sample.parquet in input folder 
-    [requirement] train:- id_col, features, target ( train may or may not have id column but test must have id column)
-    [if not in parquet then convert using csv_to_parquet.py]
-    [Now see once input content train, sample, test using show_input.py]
-    test:- id_col, features 
-    sample:- id_col, target 
+>STEP-->3 : put train.parquet, test.parquet, sample.parquet in input folder <br>
+    [requirement] train:- id_col, features, target ( train may or may not have id column but test must have id column)<br>
+    [if not in parquet then convert using csv_to_parquet.py]<br>
+    [Now see once input content train, sample, test using show_input.py]<br>
+    test:- id_col, features <br>
+    sample:- id_col, target <br>
 
 >STEP-->4 : run keys.py
 
->STEP-->5 : run create_folds.py
-    [ Create New id columns for train]
-    [ No need to sort test as test will always have submission with id column just never RESHUFFLE]
-    [ Sort train by id column, if not create one by reshuffling since when we get folds we will also sort them]
-    [No need to sort test, we just predict on them, no training]
+>STEP-->5 : run create_folds.py<br>
+    [ Create New id columns for train]<br>
+    [ No need to sort test as test will always have submission with id column just never RESHUFFLE]<br>
+    [ Sort train by id column, if not create one by reshuffling since when we get folds we will also sort them]<br>
+    [No need to sort test, we just predict on them, no training]<br>
 
 ##### train--------[ converted to ]------------->my_folds
 ```
@@ -133,15 +137,15 @@ After this what should we have these files in input folder
     [You may now remove train folder]
     check once everything is as it should be using show_input.py 
 ```  
-> STEP-->6 : run experiment.py / auto_exp.py # we should pass list of optimize_on  in run()
-            We won't be predicting for all the experiments we do. So keep log_exp_22.pkl file in a subfolder
-            also make seperate folder for preds: oof_preds, test_preds 
-            # After 5-6 hr do plot the auto table to see which set performs well and you can limit the search in that direction 
-            # Like "f_base", "f_max" performs quite well 
+> STEP-->6 : run experiment.py / auto_exp.py  we should pass list of optimize_on in run()<br>
+            We won't be predicting for all the experiments we do. So keep log_exp_22.pkl file in a subfolder<br>
+            also make seperate folder for preds: oof_preds, test_preds <br>
+            After 5-6 hr do plot the auto table to see which set performs well and you can limit the search in that direction <br>
+            Like "f_base", "f_max" performs quite well 
             
-> STEP-->7 : run predict.py  or run seed_it.py # calls opt() function but not run() so keep it that way as obj() don't require optimize_on
-            Note : run() takes list optimize_on 
-                 : obj() takes single integer optimize_on for each fold 
+> STEP-->7 : run predict.py  or run seed_it.py # calls opt() function but not run() so keep it that way as obj() don't require optimize_on<br>
+            Note : run() takes list optimize_on <br>
+                 : obj() takes single integer optimize_on for each fold <br>
                  : both takes fold_name
                  
 > STEP-->8 : run output.py after running predict.py 
