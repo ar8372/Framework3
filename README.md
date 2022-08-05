@@ -42,9 +42,6 @@ I have tried to make this pipeline not too abstract, so that the user can have f
 <p>
     <img src="resources/6.png" />
 </p>
-
-### 4.Automates submission of prediction to Kaggle and maintain a log of all the scores .<br>
-```python submit.py```
 <hr>
 
 # How to use it
