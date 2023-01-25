@@ -31,15 +31,23 @@ class Storage:
             f"../configs/configs-{self.locker['comp_name']}/useful_features_l_1.pkl"
         )
         # -----------------------------Table
-        self.Table = self.load_pickle(f"../configs/configs-{self.locker['comp_name']}/Table.pkl")
+        self.Table = self.load_pickle(
+            f"../configs/configs-{self.locker['comp_name']}/Table.pkl"
+        )
         # ------------------------------my folds
-        self.my_folds = pd.read_csv(
-            f"../configs/configs-{self.locker['comp_name']}/my_folds.csv"
+        # self.my_folds = pd.read_csv(
+        #     f"../configs/configs-{self.locker['comp_name']}/my_folds.csv"
+        # )
+        self.my_folds = pd.read_parquet(
+            f"../input/input-{self.locker['comp_name']}/my_folds.parquet"
         )
         # ------------------------------ test
         self.test = None
         if self.locker["data_type"] == "tabular":
-            self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/test.csv")
+            # self.test = pd.read_csv(f"../configs/configs-{self.locker['comp_name']}/test.csv")
+            self.test = pd.read_parquet(
+                f"../input/input-{self.locker['comp_name']}/test.parquet"
+            )
         # ---------------------------------container
         self.names = [
             "locker",
@@ -67,6 +75,17 @@ class Storage:
                 if self.names[k] == "Table":
                     print(f"{k}. {self.names[k]} :=======>")
                     print(self.obj[k])
+                elif k == 2:
+                    # asked for feture dict
+                    # for f1,f2,ft in self.obj[k]:
+                    #     print(ft)
+                    for i,(l,val) in enumerate(self.features_dict.items()):
+                        print(l)
+                        print(val[0],"-->",val[1])
+                        print()
+                        print()
+                    #print(self.features_dict)
+                    #print(self.features_dict.keys())
                 else:
                     print(f"{k}. {self.names[k]} :=======>", self.obj[k])
                 print()
@@ -110,4 +129,5 @@ class Storage:
 if __name__ == "__main__":
     s = Storage()
     s.help()
-    s.show([0, 1, 2, 3, 4])
+    s.show([2])
+    # s.show([0, 1, 2, 3, 4])

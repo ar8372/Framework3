@@ -8,6 +8,8 @@ import pickle
 from collections import defaultdict
 from utils import *
 
+
+# Here we just creates folds and we don't recreate tables
 """
 import os
 import sys 
@@ -27,7 +29,13 @@ if __name__ == "__main__":
     x.close()
     with open(f"../configs/configs-{comp_name}/locker.pkl", "rb") as f:
         a = pickle.load(f)
+    locker = a 
 
+    source= 'dummy'
+    title = 'ver2'
+    target_name = locker['target_name'] #"prediction"
+    id_name = locker['id_name'] # "customer_ID"
+    fold_list = ["fold3", "fold5", "fold10", "fold20"]
     # # test = pd.read_csv(f"../input/input-{comp_name}/test.csv")
     # test = pd.read_parquet(f"../input/input-{comp_name}/test.parquet")
     # # test.to_csv(f"../configs/configs-{comp_name}/test.csv",index=False)
@@ -52,8 +60,14 @@ if __name__ == "__main__":
         ):
             print(len(train_idx), len(val_idx))
             df.loc[val_idx, "fold"] = fold
-    elif a["comp_type"] in ["binary", "multiclass", "2class"]:
-        df = pd.read_parquet(f"../input/input-{comp_name}/train.parquet")
+    else:
+        try:
+            df = pd.read_parquet(f"../input/input-{source}/train.parquet")
+        except:
+            try:
+                df = pd.read_csv(f"../input/input-{source}/train.csv")
+            except:
+                raise Exception("train is neither parquet nor csv")
         if a["id_name"] in df.columns:  # always create new ID column for train # keep it simple
             df.drop(a["id_name"], axis=1, inplace=True)
 
@@ -78,34 +92,9 @@ if __name__ == "__main__":
                 df.loc[val_idx, f] = fold
             df[f] = df[f].astype('int8') # bydefault it is int64
             print()
-    else:
-        df = pd.read_parquet(f"../input/input-{comp_name}/train.parquet")
-        if a["id_name"] in df.columns:  # always create new ID column for train # keep it simple
-            df.drop(a["id_name"], axis=1, inplace=True)
-
-        # reset for all
-        fix_random(231) # to make result reproducible
-        df = df.sample(frac=1).reset_index(drop=True)  # use later as it changes index
-        df.index.name = a["id_name"]
-        df = df.sort_index().reset_index() # sorting is very necessary
-        for f,v in a['fold_dict'].items():
-            # 'fold5', 5
-            print(f,v,"=============>")
-            df[f] = 1
-            kf = model_selection.KFold(
-                n_splits=v, shuffle=True, random_state=23
-            )
-            target_name = a["target_name"]
-            for fold, (train_idx, val_idx) in enumerate(
-                kf.split(X=df, y=df[target_name].values)
-            ):
-                print(fold+1,":",len(train_idx), len(val_idx))
-
-                df.loc[val_idx, f] = fold
-            df[f] = df[f].astype('int8') # bydefault it is int64
-            print()       
 
     if a["data_type"] in ["image_path", "image_df"]:
+        raise Exception()
         # df.to_csv(f"../configs/configs-{comp_name}/my_folds.csv", index=False)
         df.to_parquet(f"../configs/configs-{comp_name}/my_folds.parquet", index=False)
 
@@ -116,66 +105,60 @@ if __name__ == "__main__":
             pickle.dump(useful_features, f)
     elif a["data_type"] == "tabular":
         # df.to_csv(f"../configs/configs-{comp_name}/my_folds.csv", index=False)
-        df.to_parquet(f"../input/input-{comp_name}/my_folds.parquet", index=False)
+        #df.to_parquet(f"../input/input-{comp_name}/my_folds.parquet", index=False)
         # test = pd.read_csv(f"../input/input-{comp_name}/test.csv")
 
         # Now no need to save test in cnfigs as we are saving it in input only [heavy files in input folder]
         #test = pd.read_parquet(f"../input/input-{comp_name}/test.parquet")
         ## test.to_csv(f"../configs/configs-{comp_name}/test.csv", index=False)
         #test.to_parquet(f"../configs/configs-{comp_name}/test.parquet", index=False)
+        try:
+            test = pd.read_parquet(f"../input/input-{source}/test.parquet")
+        except:
+            try:
+                # csv format data is present 
+                test = pd.read_csv(f"../input/input-{source}/test.csv")
+                #test.to_parquet(f"../input/input-{comp_name}/test.parquet", index=False)
 
-        test = pd.read_parquet(f"../input/input-{comp_name}/test.parquet")
-        useful_features = test.drop(a["id_name"], axis=1).columns.tolist()
+                # sample = pd.read_csv(f"../input/input-{comp_name}/sample.csv")
+                # sample.to_parquet(f"../input/input-{comp_name}/sample.parquet", index=False)
+            except:
+                raise Exception("test is neither parquet nor csv")
+
+
+        all_columns = list(test.drop(id_name, axis=1).columns)
+        useful_features_l_1 = load_pickle(f"../configs/configs-{a['comp_name']}/useful_features_l_1.pkl")
+
+
+        # any true
+        if any(x in useful_features_l_1 for x in all_columns): #all_columns in useful_features_l_1):
+            # some already present
+            pass 
+            #raise Exception("Some features are already present in useful_features_l_1")
+
+        print("These features will be added:")
+        print(all_columns)
+        v = input("Do you want to proceed? [y/n] : ")
+        if v.lower() == 'n':
+            raise Exception("Process Terminated")
+        useful_features_l_1 += all_columns 
+        useful_features_l_1 = list(set(useful_features_l_1))
         with open(
             f"../configs/configs-{a['comp_name']}/useful_features_l_1.pkl", "wb"
         ) as f:
-            pickle.dump(useful_features, f)
+            pickle.dump(useful_features_l_1, f)
+        # 
+        train = df[all_columns].copy()
+        test = test[all_columns].copy()
+        train.to_parquet(f"../input/input-{comp_name}/train_{title}.parquet")
+        test.to_parquet(f"../input/input-{comp_name}/test_{title}.parquet")
 
-    # --------------------------------dump current
-    current_dict = defaultdict()
-    current_dict["current_level"] = 1
-    current_dict["current_feature_no"] = 0
-    current_dict["current_exp_no"] = 0
-    current_dict["current_ens_no"] = 0
-    with open(f"../configs/configs-{a['comp_name']}/current_dict.pkl", "wb") as f:
-        pickle.dump(current_dict, f)
-    # --------------------------------dump features_dict
-    feat_dict = defaultdict()
-    feat_dict["base"] = [useful_features, 0]
-    #feat_dict["l_1_f_0"] = [useful_features, 0, "base"]
-    with open(f"../configs/configs-{a['comp_name']}/features_dict.pkl", "wb") as f:
-        pickle.dump(feat_dict, f)
-    # ---------------------------------dump Table
-    Table = pd.DataFrame(
-        columns=[
-            "exp_no",
-            "model_name",
-            "bv",
-            "bp",
-            "random_state",
-            "with_gpu",
-            "aug_type",
-            "_dataset",
-            "use_cutmix",
-            "callbacks_list",
-            "features_list",
-            "level_no",
-            "oof_fold_name",
-            "opt_fold_name",
-            "fold_no",
-            "no_iterations",
-            "prep_list",
-            "metrics_name",
-            "seed_mean",
-            "seed_std",  # ---\
-            "fold_mean",
-            "fold_std",
-            "pblb_single_seed",
-            "pblb_all_seed",
-            "pblb_all_fold",
-            "notes",
-        ]
-    )
-    with open(f"../configs/configs-{a['comp_name']}/Table.pkl", "wb") as f:
-        pickle.dump(Table, f)
-    # -------------------------------------------
+        input_dict = load_pickle(f"../input/input-{comp_name}/input_dict.pkl")
+        input_dict[title] = all_columns
+        save_pickle(f"../input/input-{comp_name}/input_dict.pkl", input_dict)
+
+        #-----------
+        print("New data Sucessfully added")
+
+
+

@@ -50,6 +50,7 @@ import pretrainedmodels
 import torch.nn as nn
 from torch.nn import functional as F
 
+
 class trainer_p1:
     def __init__(
         self, model, train_loader, valid_loader, optimizer, scheduler, use_cutmix
@@ -68,17 +69,17 @@ class trainer_p1:
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         #     self.optimizer, mode="max", verbose=True, patience=7, factor=0.5
         # )
-        self.scheduler = scheduler 
+        self.scheduler = scheduler
         self.locc_fn = nn.CrossEntropyLoss()
         self.use_cutmix = use_cutmix
 
     def loss_fn_multilabel(self, outputs, targets):
-        o1, o2, o3 = outputs 
+        o1, o2, o3 = outputs
         t1, t2, t3 = targets
         l1 = nn.CrossEntropyLoss()(o1, t1)
         l2 = nn.CrossEntropyLoss()(o2, t2)
         l3 = nn.CrossEntropyLoss()(o3, t3)
-        return (l1+l2+l3)/3
+        return (l1 + l2 + l3) / 3
 
     def loss_fn(self, targets, output):
         device = "cuda"
@@ -174,14 +175,13 @@ class trainer_p1:
                 grapheme_root = grapheme_root.to("cuda", dtype=torch.long)
                 vowel_diacritic = vowel_diacritic.to("cuda", dtype=torch.long)
                 consonant_diacritic = consonant_diacritic.to("cuda", dtype=torch.long)
-                targets = (grapheme_root, vowel_diacritic,consonant_diacritic)
+                targets = (grapheme_root, vowel_diacritic, consonant_diacritic)
                 output = self.model(data["image"])
                 loss = self.loss_fn_multilabel(output, targets)
             else:
                 output = self.model(data["image"])
                 loss = self.loss_fn(data["targets"], output)
 
-        
         loss.backward()
         self.optimizer.step()
 
@@ -210,11 +210,11 @@ class trainer_p1:
             grapheme_root = grapheme_root.to("cuda", dtype=torch.long)
             vowel_diacritic = vowel_diacritic.to("cuda", dtype=torch.long)
             consonant_diacritic = consonant_diacritic.to("cuda", dtype=torch.long)
-            targets = (grapheme_root, vowel_diacritic,consonant_diacritic)
+            targets = (grapheme_root, vowel_diacritic, consonant_diacritic)
             output = self.model(data["image"])
             loss = self.loss_fn_multilabel(output, targets)
         else:
-        # upto here
+            # upto here
             # make sure forward function of model has same keys
             output = self.model(data["image"])  # **data)
 
@@ -227,14 +227,14 @@ class trainer_p1:
             counter = 0
             train_loss = self.train_one_epoch()
             valid_loss = self.validate_one_epoch()
-            # scheduler 
+            # scheduler
             self.scheduler.step(valid_loss)
 
             if epoch % 2 == 0:
                 print(
                     f"epoch {epoch}, train loss {train_loss}, valid loss {valid_loss}"
                 )
-        #self.optimizer.swap_swa_sgd() ## Here
+        # self.optimizer.swap_swa_sgd() ## Here
 
     def predict_one_step(self, data):
         for k, v in data.items():
@@ -244,8 +244,8 @@ class trainer_p1:
 
     def predict(self, test_loader):
         if self.locker["comp_type"] == "multi_label":
-            outputs = [[],[],[]]
-            preds = [[],[],[]]
+            outputs = [[], [], []]
+            preds = [[], [], []]
             with torch.no_grad():
                 for batch_index, data in enumerate(test_loader):
                     out = self.predict_one_step(data)
@@ -260,11 +260,17 @@ class trainer_p1:
                         out[2]
                     )  # out.argmax(1) required when the final layer gives probabilites of classes and we want hard class
 
-            preds[0] = torch.cat(outputs[0])  # .view(-1) view(-1) is needed when we want 1D array
-            preds[1] = torch.cat(outputs[1])  # .view(-1) view(-1) is needed when we want 1D array
-            preds[2] = torch.cat(outputs[2])  # .view(-1) view(-1) is needed when we want 1D array
-        
-        else:    
+            preds[0] = torch.cat(
+                outputs[0]
+            )  # .view(-1) view(-1) is needed when we want 1D array
+            preds[1] = torch.cat(
+                outputs[1]
+            )  # .view(-1) view(-1) is needed when we want 1D array
+            preds[2] = torch.cat(
+                outputs[2]
+            )  # .view(-1) view(-1) is needed when we want 1D array
+
+        else:
             outputs = []
             with torch.no_grad():
                 for batch_index, data in enumerate(test_loader):
@@ -274,14 +280,19 @@ class trainer_p1:
                         out
                     )  # out.argmax(1) required when the final layer gives probabilites of classes and we want hard class
 
-            preds = torch.cat(outputs)  # .view(-1) view(-1) is needed when we want 1D array
-            
-        return [preds] # make output as list of arrays for one d output make it a list of one element
+            preds = torch.cat(
+                outputs
+            )  # .view(-1) view(-1) is needed when we want 1D array
+
+        return [
+            preds
+        ]  # make output as list of arrays for one d output make it a list of one element
 
     def save(self, path):
         state_dict = self.model.cpu().state_dict()
         self.model = self.model.cuda()
         torch.save(state_dict, path)
+
 
 class ResNet34(nn.Module):
     def __init__(self, pretrained):
@@ -297,13 +308,13 @@ class ResNet34(nn.Module):
 
     def forward(self, x):
         # supports all kind of image size
-        bs, _, _, _ = x.shape 
+        bs, _, _, _ = x.shape
         x = self.model.features(x)
         x = F.adaptive_avg_pool2d(x, 1).reshape(bs, -1)
         l0 = self.l0(x)
         l1 = self.l1(x)
         l2 = self.l2(x)
-        return l0, l1, l2    
+        return l0, l1, l2
 
 
 class pretrained_models(nn.Module):
@@ -314,10 +325,10 @@ class pretrained_models(nn.Module):
     # kernel_size:- size of convolving kernel
     def __init__(self, no_features):
         super().__init__()
-        model_name = 'resnet34'
+        model_name = "resnet34"
         self.model = pretrainedmodels.__dict__[model_name](pretrained="imagenet")
         # adding a head
-        in_features = self.model.last_linear.in_features 
+        in_features = self.model.last_linear.in_features
         self.model.last_linear = torch.nn.Linear(in_features, 10)
         # self.layer0 = nn.Conv2d(in_channels = 3, out_channels = 50, kernel_size=3, padding=1)
         # self.layer1 = nn.Linear(50, 32)
@@ -346,7 +357,7 @@ class pretrained_models(nn.Module):
         # x = self.layer2(x)
         # x = self.layer3(x)
         # return x
-        
+
         x = data
         return self.model(x)
 
@@ -354,6 +365,7 @@ class pretrained_models(nn.Module):
         # x = x.view(x.size(0), -1)
         # x = self.linear_layers(x)
         # return x
+
 
 class p1_model1(nn.Module):
     # basic pytorch model
@@ -379,9 +391,9 @@ class p1_model1(nn.Module):
             ReLU(inplace=True),
             MaxPool2d(kernel_size=2, stride=2),
         )
-        self.linear_layers1 = nn.Linear(100,168) #Sequential(Linear(4 * 7 * 7, 168))
-        self.linear_layers2 = nn.Linear(100,11) #Sequential(Linear(4 * 7 * 7, 11))
-        self.linear_layers3 = nn.Linear(100,7) #Sequential(Linear(4 * 7 * 7, 7))
+        self.linear_layers1 = nn.Linear(100, 168)  # Sequential(Linear(4 * 7 * 7, 168))
+        self.linear_layers2 = nn.Linear(100, 11)  # Sequential(Linear(4 * 7 * 7, 11))
+        self.linear_layers3 = nn.Linear(100, 7)  # Sequential(Linear(4 * 7 * 7, 7))
 
     def forward(self, data):
         # batch_size, no_featrues : xtrain.shape
@@ -397,7 +409,8 @@ class p1_model1(nn.Module):
         x1 = self.linear_layers1(x)
         x2 = self.linear_layers2(x)
         x3 = self.linear_layers3(x)
-        return x1, x2, x3 
+        return x1, x2, x3
+
 
 class p1_model(nn.Module):
     # basic pytorch model
@@ -516,10 +529,10 @@ class DigitRecognizerModel(nn.Module):
 
     def forward(self, image, targets=None):
         x = self.model(image)
-        if targets is not None: 
+        if targets is not None:
             targets = targets.type(torch.LongTensor)
             targets = targets.to("cuda")
-            #print(targets.device, x.device, "these are devices") # very strong sanity check
+            # print(targets.device, x.device, "these are devices") # very strong sanity check
             loss = nn.CrossEntropyLoss()(x, targets)
             metrics = self.monitor_metrics(x, targets)
             return x, loss, metrics

@@ -16,7 +16,7 @@ class KeyMaker:
         id_name="PassengerId",
         comp_type="2class",
         metrics_name="accuracy",
-        no_folds=5,
+        fold_dict={'fold5':5},
         data_type="image",  # ["image", "tabular", "text"]
     ):
         #
@@ -40,6 +40,7 @@ class KeyMaker:
             "msle",
             "rmsle",
             "r2",
+            "amex_metric",
         ]
         self.data_list = ["tabular", "image", "text"]
         self.comp_list = ["regression", "2class", "multi_class", "multi_label"]
@@ -48,7 +49,7 @@ class KeyMaker:
         self.id_name = id_name
         self.comp_type = comp_type
         self.metrics_name = metrics_name
-        self.no_folds = no_folds
+        self.fold_dict = fold_dict
         self.locker = defaultdict()
 
         self.sanity_check()  # --> sanity check
@@ -73,7 +74,7 @@ class KeyMaker:
         id_name="--|--",
         comp_type="--|--",
         metrics_name="--|--",
-        no_folds="--|--",
+        fold_dict="--|--",
         data_type="--|--",
     ):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
@@ -87,7 +88,7 @@ class KeyMaker:
         self.id_name = a["id_name"]
         self.comp_type = a["comp_type"]
         self.metrics_name = a["metrics_name"]
-        self.no_folds = a["no_folds"]
+        self.fold_dict = a["fold_dict"]
         self.data_type = a["data_type"]
 
         if random_state != "--|--":
@@ -103,8 +104,8 @@ class KeyMaker:
             self.comp_type = comp_type
         if metrics_name != "--|--":
             self.metrics_name = metrics_name
-        if no_folds != "--|--":
-            self.no_folds = no_folds
+        if fold_dict != "--|--":
+            self.fold_dict = fold_dict
         if data_type != "--|--":
             self.data_type = data_type
 
@@ -119,7 +120,7 @@ class KeyMaker:
         self.locker["target_name"] = self.target_name
         self.locker["id_name"] = self.id_name
         self.locker["comp_type"] = self.comp_type
-        self.locker["no_folds"] = self.no_folds
+        self.locker["fold_dict"] = self.fold_dict
         self.locker["data_type"] = self.data_type
 
         with open(f"../configs/configs-{a['comp_name']}/locker.pkl", "wb") as f:
@@ -169,14 +170,58 @@ if __name__ == "__main__":
     # x.id_name = "image_id"
     # x.target_name = ['grapheme_root','vowel_diacritic','consonant_diacritic']
     # x.comp_type = "multi_label"
-    # x.no_folds = 5 
+    # x.no_folds = 5
     # x.data_type = "image_path"
 
-    # tmay
-    x.id_name = "id"
-    x.target_name = "target"
-    x.comp_type = "2class"
-    x.no_folds = 5
+    # # tmay
+    # x.id_name = "id"
+    # x.target_name = "target"
+    # x.comp_type = "2class"
+    # x.no_folds = 5
+    # x.data_type = "tabular"
+
+    # # # amex
+    # x.id_name = "customer_ID"
+    # x.target_name = "prediction"
+    # x.comp_type = "2class"
+    # x.fold_dict =    {           # no_folds : replace it
+    #     "fold3": 3,
+    #     "fold5": 5,
+    #     "fold10": 10,
+    #     "fold20": 20
+    # }                                          # 10
+    # x.data_type = "tabular"
+
+    # amex5
+    # x.id_name = "customer_ID"
+    # x.target_name = "prediction"
+    # x.comp_type = "2class"
+    # x.no_folds = 5
+    # x.data_type = "tabular"
+
+
+    # # getaroom
+    # x.id_name = "Property_ID"
+    # x.target_name = "Habitability_score"
+    # x.comp_type = "regression"
+    # x.fold_dict =    {           # no_folds : replace it
+    #     "fold3": 3,
+    #     "fold5": 5,
+    #     "fold10": 10,
+    #     "fold20": 20
+    # }                                          # 10
+    # x.data_type = "tabular"
+
+
+    x.id_name = "ID"
+    x.target_name = "Time_taken"
+    x.comp_type = "regression"
+    x.fold_dict =    {           # no_folds : replace it
+        "fold3": 3,
+        "fold5": 5,
+        "fold10": 10,
+        "fold20": 20
+    }                                          # 10
     x.data_type = "tabular"
 
     x.update()

@@ -1,4 +1,63 @@
-#First set ref.txt 
+pip install -r requirements.txt
+conda install scikit-learn
+
+[TABULAR STEPS]
+STEP-->1 : First set ref
+STEP-->2 : run init_folders.py --> create_datasets.py 
+STEP-->3 : put train.parquet, test.parquet, sample.parquet in input folder 
+    [requirement] train:- id_col, features, target ( train may or may not have id column but test must have id column)
+    [if not in parquet then convert using csv_to_parquet.py]
+    [Now see once input content train, sample, test using show_input.py]
+    test:- id_col, features 
+    sample:- id_col, target 
+STEP-->4 : run keys.py
+STEP-->5 : run create_folds.py
+    [ Create New id columns for train]
+    [ No need to sort test as test will always have submission with id column just never RESHUFFLE]
+    [ Sort train by id column, if not create one by reshuffling since when we get folds we will also sort them]
+    [No need to sort test, we just predict on them, no training]
+ 
+train------------------->my_folds
+# After this what should we have these files in input folder
+    # what we did is train------------------->my_folds
+    my_folds:- id_col, features, target , fold_cols
+    test:- id_col, features  
+    sample:- id_col, target_col 
+
+    [You may now remove train folder]
+    check once everything is as it should be using show_input.py 
+STEP-->6 : run experiment.py / auto_exp.py # we should pass list of optimize_on  in run()
+            We won't be predicting for all the experiments we do. So keep log_exp_22.pkl file in a subfolder
+            also make seperate folder for preds: oof_preds, test_preds 
+            # After 5-6 hr do plot the auto table to see which set performs well and you can limit the search in that direction 
+            # Like "f_base", "f_max" performs quite well 
+STEP-->7 : run predict.py  or run seed_it.py # calls opt() function but not run() so keep it that way as obj() don't require optimize_on
+            Note : run() takes list optimize_on 
+                 : obj() takes single integer optimize_on for each fold 
+                 : both takes fold_name
+STEP-->8 : run output.py after running predict.py 
+STEP-->9 : make submission 
+        submit.py 
+            kaggle competitions list
+            kaggle competitions leaderboard amex-default-prediction --show | --download
+            kaggle competitions submisssions amex-default-prediction 
+            kaggle competitions submit ventilator-pressure-prediction -f submission.csv -m "exp_{}_fold/single/all" #submit your submission.csv
+        Note: all parquet file contains id and target , all pkl files contain 1d prediction
+STEP-->10 : auto_exp 
+
+
+
+
+
+# initialize datasets 
+# configs: 
+    should contain only those file which is used to reproduce the submission. 
+    So Table, and the log files[very small size file 1kb so keep it as it is used later for visualization] , my_folds, test, locker, current_dict
+    # no need to store seed_all and seed_single file as they are not used in creating ensemble of models,
+    # seed_all/seed_single since trained on full datasets are end points and can be only used to make submission and achieve highest possible.
+
+# tabular df:
+
 
 # image_df: image pixels are stored as dataframe 
 STEPS: 
@@ -9,7 +68,9 @@ target_name : as that of sample target column
 -----------Make format like below exactly ----------------------
 train: ImageId, Label, pixel0, pixel1, pixel2, ... , pixel200,  
 test: ImageId, pixel0, pixel1, pixel2, ... , pixel200 
-sample: ImageId, Label
+sample: ImageId, Label # sample may be huge in size and it don't change over time unline my_folds and test, so it is better to keep 
+# fixed things in input 
+
 3> run keys.py after setting appropriate name of variables
 4> run create_folds.py to create [my_folds.csv]
 
@@ -39,3 +100,207 @@ image2.jpeg
 
 # Note:- 
 keep [self.valid_preds] and [spyelf.test_preds]
+
+
+############################################################
+#                  CREATE DATASETS                         #
+############################################################
+op 1> Create empty datasets on kaggle manually 
+op 2> init datasets from cmd and create it after changing json names  
+
+
+pickle is best but works only inside python while Feather is more portable across languages than pickle
+/home/pramit_mazumdar/anaconda3/envs/AKR_env2/bin/pip show pandas 
+Need to be compatible in case of pickle
+#AKR_env2: 1.4.2
+#AKR_env: 1.3.5
+#kaggle: 1.3.5
+# This is stable 
+!pip install --upgrade pandas==1.3.5 
+For saving pandas dataframe parquet is best 
+For saving 1D numpy array pkl is best 
+
+
+# NOT THAT GREAT BENEFIT
+# Regarding improving speed in 
+Case of exp:- save the optimize on fold in disc and call it everytime directly no need to preprocess and all 
+Case of auto_exp:- Can't help here 
+
+Case of seed:- save full dataset preprocessed 
+Case of predict: Case of folds:- save each fold preprocessed 
+
+
+## To Do: implement First sort my_folds then save back [DONE]
+# then takeout predictions and keep separately [DONE]
+# save auto_logs separately for different model.
+ reason:- different model has different sets of settings and same for all experiment with same model name
+          Also saving different table is good because as no of exp increases then loading whole dataset will take up quit a space.
+# delete Table where ever possible 
+# make oof/test preds contain fold10, fold5 do same for features_dict and while finding features in bottleneck and sanity_check [DONE]
+# remove reading test file each time inside for loop of predict
+# just after fitting model we can actually deleted xtrain, ytrain 
+# idea source:- https://www.kaggle.com/code/ambrosm/amex-lightgbm-quickstart
+
+#--> Big Step do later 
+# implement fillna_with parameter but in next comp 
+# If we make sepearte Table for each model will that not help create multi-processing [ SPLIT EVERYTHING MODEL WISE ]
+( so at one time only work on one experiment in a given model, but will allow to work on separate model simultaneously also loading time of table will decrease)
+# current dict of each model will be also different : Actually no need to maintain it just load from the table last row
+[Just store level no, and when we jump to level 2 we will not run any code for the moment, that we can do] 
+In that way we don't have to deal with the issue of current dict overwritten by unwanted experiment
+2 LEVEL REF 
+comp_name >>> model_name 
+
+
+########################################################
+#                DATASETS                              #
+########################################################
+
+# amex: Some previous version of ambrosm
+"""
+has no nan so can train NN
+"""
+# amex2: V9: Better hyperparameters , ambrosm
+"""
+has nans so don't train NN
+"""
+    fold3 3 =============>
+    1 : 305942 152971
+    2 : 305942 152971
+    3 : 305942 152971
+
+    fold5 5 =============>
+    1 : 367130 91783
+    2 : 367130 91783
+    3 : 367130 91783
+    4 : 367131 91782
+    5 : 367131 91782
+
+    fold10 10 =============>
+    1 : 413021 45892
+    2 : 413021 45892
+    3 : 413021 45892
+    4 : 413022 45891
+    5 : 413022 45891
+    6 : 413022 45891
+    7 : 413022 45891
+    8 : 413022 45891
+    9 : 413022 45891
+    10 : 413022 45891
+
+    fold20 20 =============>
+    1 : 435967 22946
+    2 : 435967 22946
+    3 : 435967 22946
+    4 : 435967 22946
+    5 : 435967 22946
+    6 : 435967 22946
+    7 : 435967 22946
+    8 : 435967 22946
+    9 : 435967 22946
+    10 : 435967 22946
+    11 : 435967 22946
+    12 : 435967 22946
+    13 : 435967 22946
+    14 : 435968 22945
+    15 : 435968 22945
+    16 : 435968 22945
+    17 : 435968 22945
+    18 : 435968 22945
+    19 : 435968 22945
+    20 : 435968 22945
+
+# amex3: Devastator: train shape (458913, 2635), test shape (924621, 2634)            #1815)
+fold3 3 =============>
+1 : 305942 152971
+2 : 305942 152971
+3 : 305942 152971
+
+fold5 5 =============>
+1 : 367130 91783
+2 : 367130 91783
+3 : 367130 91783
+4 : 367131 91782
+5 : 367131 91782
+
+fold10 10 =============>
+1 : 413021 45892
+2 : 413021 45892
+3 : 413021 45892
+4 : 413022 45891
+5 : 413022 45891
+6 : 413022 45891
+7 : 413022 45891
+8 : 413022 45891
+9 : 413022 45891
+10 : 413022 45891
+
+fold20 20 =============>
+1 : 435967 22946
+2 : 435967 22946
+3 : 435967 22946
+4 : 435967 22946
+5 : 435967 22946
+6 : 435967 22946
+7 : 435967 22946
+8 : 435967 22946
+9 : 435967 22946
+10 : 435967 22946
+11 : 435967 22946
+12 : 435967 22946
+13 : 435967 22946
+14 : 435968 22945
+15 : 435968 22945
+16 : 435968 22945
+17 : 435968 22945
+18 : 435968 22945
+19 : 435968 22945
+20 : 435968 22945
+
+# amex4: ragnar latest my_folds (458913, 3358), test (924621, 3353)
+# useful_features 3352
+fold3 3 =============>
+1 : 305942 152971
+2 : 305942 152971
+3 : 305942 152971
+
+fold5 5 =============>
+1 : 367130 91783
+2 : 367130 91783
+3 : 367130 91783
+4 : 367131 91782
+5 : 367131 91782
+
+fold10 10 =============>
+1 : 413021 45892
+2 : 413021 45892
+3 : 413021 45892
+4 : 413022 45891
+5 : 413022 45891
+6 : 413022 45891
+7 : 413022 45891
+8 : 413022 45891
+9 : 413022 45891
+10 : 413022 45891
+
+fold20 20 =============>
+1 : 435967 22946
+2 : 435967 22946
+3 : 435967 22946
+4 : 435967 22946
+5 : 435967 22946
+6 : 435967 22946
+7 : 435967 22946
+8 : 435967 22946
+9 : 435967 22946
+10 : 435967 22946
+11 : 435967 22946
+12 : 435967 22946
+13 : 435967 22946
+14 : 435968 22945
+15 : 435968 22945
+16 : 435968 22945
+17 : 435968 22945
+18 : 435968 22945
+19 : 435968 22945
+20 : 435968 22945

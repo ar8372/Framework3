@@ -77,7 +77,7 @@ class TextDataset:
 
 
 class BengaliDataset(Dataset):
-    def __init__(self, image_paths,targets, img_height, img_width, transform):
+    def __init__(self, image_paths, targets, img_height, img_width, transform):
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
@@ -85,26 +85,26 @@ class BengaliDataset(Dataset):
         with open(f"../configs/configs-{comp_name}/locker.pkl", "rb") as f:
             self.locker = pickle.load(f)
 
-        #self.csv = csv.reset_index()
+        # self.csv = csv.reset_index()
         self.paths = image_paths
         self.targets = targets
-        self.img_ids = self.paths #csv[self.locker["id_name"]]
+        self.img_ids = self.paths  # csv[self.locker["id_name"]]
         self.img_height = img_height
         self.img_width = img_width
         self.transform = transform
 
     def __len__(self):
-        #return len(self.csv)
+        # return len(self.csv)
         return len(self.paths)
 
     def __getitem__(self, idx):
         path = self.paths[idx]
         path = f"{path}.png"
-        #print("Found", path)
-        #img = Image.open(path)
-        img  = Image.open(r"../input/input-bengaliai/train_images/Train_10.png")
+        # print("Found", path)
+        # img = Image.open(path)
+        img = Image.open(r"../input/input-bengaliai/train_images/Train_10.png")
         img = np.array(img)
-        #print("Found-->")
+        # print("Found-->")
         # img = joblib.load(
         #     f"../input/input-{self.locker['comp_name']}/train_images/{img_id}.pkl"
         # )
@@ -120,8 +120,8 @@ class BengaliDataset(Dataset):
         # np.repeat(item, no_times, along axis)
         # it repeats item along an axis
         # duplicates whole image 3 times to create RGB channels
-        #img = img[img, 3, 2] 
-        img =  np.repeat(img, 3, 2)
+        # img = img[img, 3, 2]
+        img = np.repeat(img, 3, 2)
         # or
         # most of the models take RGB image convert PIL grayscale to "RGB"
         # img = Image.fromarray(image).convert("RGB")
@@ -129,30 +129,30 @@ class BengaliDataset(Dataset):
         if self.transform is not None:
             img = self.transform(image=img)["image"]
 
-        img=  torch.tensor(img, dtype=torch.float)
-        img = torch.permute(img,(2,1,0)) 
+        img = torch.tensor(img, dtype=torch.float)
+        img = torch.permute(img, (2, 1, 0))
 
         target_list = self.locker["target_name"]
         # target_1 = self.csv.iloc[index][target_list[0]].values
         # target_2 = self.csv.iloc[index][target_list[1]].values
         # target_3 = self.csv.iloc[index][target_list[2]].values
-        target_1 = self.targets[idx, 0] #.iloc[index][target_list[0]].values
-        target_2 = self.targets[idx, 1] #.iloc[index][target_list[1]].values
-        target_3 = self.targets[idx, 2] #.iloc[index][target_list[2]].values
+        target_1 = self.targets[idx, 0]  # .iloc[index][target_list[0]].values
+        target_2 = self.targets[idx, 1]  # .iloc[index][target_list[1]].values
+        target_3 = self.targets[idx, 2]  # .iloc[index][target_list[2]].values
 
         return {
-            "image" : torch.tensor(img, dtype=torch.float),
+            "image": torch.tensor(img, dtype=torch.float),
             "grapheme_root": torch.tensor(target_1, dtype=torch.long),
             "vowel_diacritic": torch.tensor(target_2, dtype=torch.long),
             "consonant_diacritic": torch.tensor(target_3, dtype=torch.long),
         }
 
-        #return img, np.array([target_1, target_2, target_3])
+        # return img, np.array([target_1, target_2, target_3])
 
 
 # tez2 1 channel pretrained 3channel models
 class DigitRecognizerDataset:
-    def __init__(self, df, augmentations, model_name): # temp adding model name
+    def __init__(self, df, augmentations, model_name):  # temp adding model name
         with open(os.path.join(sys.path[0], "ref.txt"), "r") as x:
             for i in x:
                 comp_name = i
@@ -165,13 +165,12 @@ class DigitRecognizerDataset:
         self.df = self.df.drop(columns=[self.locker["target_name"]])
         self.augmentations = augmentations
 
-        
         if self.locker["comp_name"] == "twistmnist":
-            self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28,50))
-            self.images = self.images[:, :, -28:] # remove the 1's
+            self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28, 50))
+            self.images = self.images[:, :, -28:]  # remove the 1's
         else:
             self.images = self.df.to_numpy(dtype=np.float32).reshape((-1, 28, 28))
-        self.model_name = model_name 
+        self.model_name = model_name
 
     def __len__(self):
         return len(self.df)
@@ -181,15 +180,14 @@ class DigitRecognizerDataset:
         target = self.targets[item]
         image = self.images[item]
         if self.model_name == "pretrained":
-            image = 255- image 
+            image = 255 - image
             image = image[:, :, np.newaxis]
             image = np.repeat(image, 3, 2)
-            image=  torch.tensor(image, dtype=torch.float)
-            image = torch.permute(image,(2,1,0)) 
+            image = torch.tensor(image, dtype=torch.float)
+            image = torch.permute(image, (2, 1, 0))
             # or
             # image = np.transpose(iamge, (2,0,1)).astype(np.float32)
             # pytorch expects batch size * no of channels * height * weidth\
-
 
         else:
             image = np.expand_dims(image, axis=0)

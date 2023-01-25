@@ -1,0 +1,5 @@
+
+1: did feature extraction 2: used extracted features and score cv increased  repeated till exp3 
+exp 4 to exp 10 ran xgbc
+
+
